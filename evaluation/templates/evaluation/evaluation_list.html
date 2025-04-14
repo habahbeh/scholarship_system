@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "قائمة التقييمات" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "تقييمات الطلبات" %}</h1>
+            <p class="text-muted">{% trans "قائمة بجميع التقييمات التي قمت بها لطلبات الابتعاث." %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-tachometer-alt me-2"></i> {% trans "لوحة تحكم المقيِّم" %}
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- مرشحات البحث -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{% trans "تصفية النتائج" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "فرصة الابتعاث" %}</label>
+                    <input type="text" name="scholarship" class="form-control" placeholder="{% trans 'اسم الفرصة' %}" value="{{ request.GET.scholarship }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "جولة التقييم" %}</label>
+                    <select name="round" class="form-select">
+                        <option value="">{% trans "الكل" %}</option>
+                        {% for round in evaluation_rounds %}
+                        <option value="{{ round.id }}" {% if request.GET.round|stringformat:"i" == round.id|stringformat:"i" %}selected{% endif %}>
+                            {{ round.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "الحالة" %}</label>
+                    <select name="status" class="form-select">
+                        <option value="">{% trans "الكل" %}</option>
+                        <option value="submitted" {% if request.GET.status == "submitted" %}selected{% endif %}>{% trans "مقدم" %}</option>
+                        <option value="draft" {% if request.GET.status == "draft" %}selected{% endif %}>{% trans "مسودة" %}</option>
+                    </select>
+                </div>
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i> {% trans "بحث" %}
+                    </button>
+                    <a href="{% url 'evaluation:evaluation_list' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-2"></i> {% trans "إعادة ضبط" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- قائمة التقييمات -->
+    <div class="card shadow-sm border-0">
+        {% if evaluations %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "فرصة الابتعاث" %}</th>
+                        <th>{% trans "مقدم الطلب" %}</th>
+                        <th>{% trans "جولة التقييم" %}</th>
+                        <th>{% trans "الدرجة الإجمالية" %}</th>
+                        <th>{% trans "تاريخ التقييم" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluation in evaluations %}
+                    <tr>
+                        <td>
+                            <strong>{{ evaluation.application.scholarship.title }}</strong>
+                            <small class="d-block text-muted">{{ evaluation.application.scholarship.scholarship_type.name }}</small>
+                        </td>
+                        <td>{{ evaluation.application.applicant.get_full_name }}</td>
+                        <td>
+                            {{ evaluation.evaluation_round.name }}
+                            <small class="d-block text-muted">{{ evaluation.evaluation_round.get_round_type_display }}</small>
+                        </td>
+                        <td>
+                            {% if evaluation.overall_score %}
+                            <span class="badge bg-{% if evaluation.overall_score >= 8 %}success{% elif evaluation.overall_score >= 5 %}primary{% else %}warning{% endif %} p-2">
+                                {{ evaluation.overall_score|floatformat:1 }}/10
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary p-2">{% trans "غير محدد" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ evaluation.evaluation_date|date:"Y-m-d" }}</td>
+                        <td>
+                            {% if evaluation.is_submitted %}
+                            <span class="badge bg-success p-2">{% trans "مقدم" %}</span>
+                            {% else %}
+                            <span class="badge bg-warning p-2">{% trans "مسودة" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'evaluation:evaluation_detail' evaluation.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if not evaluation.is_submitted %}
+                                <a href="{% url 'evaluation:evaluate_application' evaluation.id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ترقيم الصفحات -->
+        {% if evaluations.has_other_pages %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if evaluations.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-double-right me-1"></i>
+                            {% trans "الأولى" %}
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ evaluations.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-right me-1"></i>
+                            {% trans "السابقة" %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in evaluations.paginator.page_range %}
+                    {% if evaluations.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > evaluations.number|add:'-3' and num < evaluations.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if evaluations.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ evaluations.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {% trans "التالية" %}
+                            <i class="fas fa-angle-left me-1"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ evaluations.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {% trans "الأخيرة" %}
+                            <i class="fas fa-angle-double-left me-1"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-clipboard-list fa-4x text-muted mb-4"></i>
+                <h5 class="mb-3">{% trans "لا توجد تقييمات حالياً" %}</h5>
+                <p class="text-muted">{% trans "ستظهر هنا قائمة بالتقييمات التي قمت بها لطلبات الابتعاث." %}</p>
+                <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-tachometer-alt me-2"></i> {% trans "العودة إلى لوحة تحكم المقيِّم" %}
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

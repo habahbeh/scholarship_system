@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "إحصائيات الطلبات" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس الصفحة -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h1 class="mb-2">{% trans "إحصائيات الطلبات" %}</h1>
+            <p class="text-muted">{% trans "تحليل بيانات طلبات الابتعاث وعرض المؤشرات الإحصائية" %}</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> {% trans "العودة للوحة التحكم" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- قسم التصفية -->
+    <div class="filter-section shadow-sm">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                {{ filter_form.scholarship_type|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.status|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.date_range|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.group_by|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.chart_type|as_crispy_field }}
+            </div>
+            <div class="col-md-3" id="start_date_container" style="display: none;">
+                {{ filter_form.start_date|as_crispy_field }}
+            </div>
+            <div class="col-md-3" id="end_date_container" style="display: none;">
+                {{ filter_form.end_date|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "تطبيق" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- بطاقات الإحصائيات الرئيسية -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                                <i class="fas fa-file-alt fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-end">
+                                <h3 class="mb-0">{{ total_applications }}</h3>
+                                <p class="text-muted mb-0">{% trans "إجمالي الطلبات" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% for gender_stat in applications_by_gender %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rounded-circle bg-{{ gender_stat.applicant__profile__gender|yesno:'info,danger' }} bg-opacity-10 p-3">
+                                <i class="fas fa-{{ gender_stat.applicant__profile__gender|yesno:'male,female' }} fa-2x text-{{ gender_stat.applicant__profile__gender|yesno:'info,danger' }}"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-end">
+                                <h3 class="mb-0">{{ gender_stat.count }}</h3>
+                                <p class="text-muted mb-0">
+                                    {% if gender_stat.applicant__profile__gender == 'M' %}
+                                        {% trans "المتقدمين (ذكور)" %}
+                                    {% elif gender_stat.applicant__profile__gender == 'F' %}
+                                        {% trans "المتقدمات (إناث)" %}
+                                    {% else %}
+                                        {% trans "غير محدد" %}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- الرسوم البيانية -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{% trans "توزيع الطلبات" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{% trans "بيانات الطلبات" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "الفئة" %}</th>
+                                    <th>{% trans "العدد" %}</th>
+                                    <th>{% trans "النسبة" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in chart_labels|length|get_range %}
+                                <tr>
+                                    <td>
+                                        <span class="d-inline-block me-2" style="width: 12px; height: 12px; background-color: {{ chart_colors|index:i }};"></span>
+                                        {{ chart_labels|index:i }}
+                                    </td>
+                                    <td>{{ chart_values|index:i }}</td>
+                                    <td>
+                                        {% if total_applications > 0 %}
+                                            {{ chart_values|index:i|percentage:total_applications|floatformat:1 }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // التعامل مع حقول التاريخ المخصص
+    const dateRangeField = document.querySelector('#id_date_range');
+    const startDateContainer = document.querySelector('#start_date_container');
+    const endDateContainer = document.querySelector('#end_date_container');
+    
+    function toggleDateFields() {
+        if (dateRangeField.value === 'custom') {
+            startDateContainer.style.display = 'block';
+            endDateContainer.style.display = 'block';
+        } else {
+            startDateContainer.style.display = 'none';
+            endDateContainer.style.display = 'none';
+        }
+    }
+    
+    dateRangeField.addEventListener('change', toggleDateFields);
+    toggleDateFields(); // تشغيل عند تحميل الصفحة
+    
+    // إعداد الرسم البياني
+    const chartLabels = {{ chart_labels|safe }};
+    const chartValues = {{ chart_values|safe }};
+    const chartType = '{{ chart_type }}';
+    
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    
+    // ألوان الرسم البياني
+    const chartColors = [
+        'rgba(54, 162, 235, 0.7)', // أزرق
+        'rgba(255, 99, 132, 0.7)',  // أحمر
+        'rgba(75, 192, 192, 0.7)',  // أخضر
+        'rgba(255, 159, 64, 0.7)',  // برتقالي
+        'rgba(153, 102, 255, 0.7)', // بنفسجي
+        'rgba(255, 205, 86, 0.7)',  // أصفر
+        'rgba(201, 203, 207, 0.7)', // رمادي
+    ];
+    
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        }
+    };
+    
+    let chartConfig;
+    if (chartType === 'pie' || chartType === 'doughnut') {
+        chartConfig = {
+            type: chartType,
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    data: chartValues,
+                    backgroundColor: chartColors,
+                    borderColor: 'white',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        };
+    } else {
+        // للرسوم البيانية الخطية والأعمدة
+        chartConfig = {
+            type: chartType,
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: '{% trans "عدد الطلبات" %}',
+                    data: chartValues,
+                    backgroundColor: chartColors,
+                    borderColor: chartColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        };
+    }
+    
+    new Chart(ctx, chartConfig);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لوحة تحكم المقيِّم" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .evaluation-card {
+        transition: transform 0.3s;
+    }
+    .evaluation-card:hover {
+        transform: translateY(-5px);
+    }
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .status-pending {
+        background-color: #ffc107;
+    }
+    .status-completed {
+        background-color: #198754;
+    }
+    .status-expired {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">{% trans "لوحة تحكم المقيِّم" %}</h1>
+            <p class="text-muted">{% trans "مرحبًا بك في لوحة تحكم المقيِّم الخاصة بك، يمكنك متابعة التقييمات المطلوبة منك وتنفيذها من هنا." %}</p>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- الإحصائيات والمعلومات العامة -->
+    <div class="row mb-4">
+        <!-- اللجان التي أنا عضو فيها -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "اللجان التي أنا عضو فيها" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if committees %}
+                    <div class="list-group list-group-flush">
+                        {% for committee in committees %}
+                        <a href="{% url 'evaluation:committee_detail' committee.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">{{ committee.name }}</h6>
+                                    <small class="text-muted">{% trans "عدد الأعضاء:" %} {{ committee.member_count }}</small>
+                                </div>
+                                {% if committee.is_active %}
+                                <span class="badge bg-success rounded-pill">{% trans "نشطة" %}</span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill">{% trans "غير نشطة" %}</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p>{% trans "أنت لست عضوًا في أي لجنة تقييم حاليًا." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- جولات التقييم النشطة -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "جولات التقييم النشطة" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_rounds %}
+                    <div class="list-group list-group-flush">
+                        {% for round in active_rounds %}
+                        <a href="{% url 'evaluation:round_detail' round.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">{{ round.name }}</h6>
+                                    <small class="text-muted">{{ round.get_round_type_display }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="d-block text-danger">{% trans "تنتهي في:" %} {{ round.end_date|date:"Y-m-d" }}</small>
+                                    <small class="text-muted">{{ round.committee.name }}</small>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <p>{% trans "لا توجد جولات تقييم نشطة حالياً." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التقييمات المعلقة -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "التقييمات المطلوبة منك" %}</h5>
+                    <span class="badge bg-warning">{{ pending_evaluations|length }} {% trans "تقييم" %}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if pending_evaluations %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "الطلب" %}</th>
+                                    <th>{% trans "مقدم الطلب" %}</th>
+                                    <th>{% trans "جولة التقييم" %}</th>
+                                    <th>{% trans "تاريخ الانتهاء" %}</th>
+                                    <th>{% trans "الإجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in pending_evaluations %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ evaluation.application.scholarship.title }}</strong>
+                                        <small class="d-block text-muted">
+                                            {{ evaluation.application.scholarship.scholarship_type.name }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {{ evaluation.application.applicant.get_full_name }}
+                                    </td>
+                                    <td>
+                                        {{ evaluation.evaluation_round.name }}
+                                        <small class="d-block text-muted">
+                                            {{ evaluation.evaluation_round.get_round_type_display }}
+                                        </small>
+                                    </td>
+                                    <td class="{% if evaluation.evaluation_round.end_date|date:'Y-m-d' < now|date:'Y-m-d' %}text-danger{% endif %}">
+                                        {{ evaluation.evaluation_round.end_date|date:"Y-m-d" }}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'evaluation:evaluate_application' evaluation.id %}" class="btn btn-primary">
+                                            <i class="fas fa-clipboard-check me-1"></i> {% trans "تقييم" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5>{% trans "مبروك! ليس لديك تقييمات معلقة حالياً." %}</h5>
+                        <p class="text-muted">{% trans "ستظهر هنا أي تقييمات مطلوبة منك لاحقاً." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التقييمات المكتملة -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "آخر التقييمات المكتملة" %}</h5>
+                    <a href="{% url 'evaluation:evaluation_list' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if completed_evaluations %}
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "الطلب" %}</th>
+                                    <th>{% trans "مقدم الطلب" %}</th>
+                                    <th>{% trans "جولة التقييم" %}</th>
+                                    <th>{% trans "الدرجة" %}</th>
+                                    <th>{% trans "تاريخ التقييم" %}</th>
+                                    <th>{% trans "الإجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in completed_evaluations %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ evaluation.application.scholarship.title }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ evaluation.application.applicant.get_full_name }}
+                                    </td>
+                                    <td>
+                                        {{ evaluation.evaluation_round.name }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if evaluation.overall_score >= 8 %}success{% elif evaluation.overall_score >= 5 %}primary{% else %}warning{% endif %}">
+                                            {{ evaluation.overall_score|floatformat:1 }}/10
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ evaluation.evaluation_date|date:"Y-m-d" }}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'evaluation:evaluation_detail' evaluation.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i> {% trans "عرض" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <p>{% trans "لم تكمل أي تقييمات بعد." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

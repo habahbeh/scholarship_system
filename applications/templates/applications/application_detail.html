@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "تفاصيل الطلب" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'applications:my_applications' %}">{% trans "طلباتي" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "طلب" %} #{{ application.id }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{% trans "تفاصيل الطلب" %}</h3>
+                    <div>
+                        {% if application.status.order <= 2 %}
+                        <a href="{% url 'applications:update_application' application.id %}" class="btn btn-light me-2">
+                            <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'applications:application_documents' application.id %}" class="btn btn-light">
+                            <i class="fas fa-file-alt me-1"></i> {% trans "المستندات" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <h5 class="text-primary">{% trans "معلومات الطلب" %}</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th class="bg-light" style="width: 30%;">{% trans "رقم الطلب" %}</th>
+                                        <td>#{{ application.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">{% trans "فرصة الابتعاث" %}</th>
+                                        <td><a href="{% url 'announcements:scholarship_detail' application.scholarship.id %}" target="_blank">{{ application.scholarship.title }}</a></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">{% trans "تاريخ التقديم" %}</th>
+                                        <td>{{ application.application_date|date:"Y-m-d H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">{% trans "آخر تحديث" %}</th>
+                                        <td>{{ application.last_update|date:"Y-m-d H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">{% trans "الحالة" %}</th>
+                                        <td>
+                                            <span class="badge bg-{{ application.status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }} rounded-pill px-3 py-2">
+                                                {{ application.status.name }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="text-primary">{% trans "خطاب الدوافع" %}</h5>
+                        <div class="p-3 border rounded bg-light">
+                            {{ application.motivation_letter|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    {% if application.research_proposal %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">{% trans "مقترح البحث" %}</h5>
+                        <div class="p-3 border rounded bg-light">
+                            {{ application.research_proposal|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h5 class="text-primary">{% trans "خطاب القبول" %}</h5>
+                        {% if application.acceptance_letter %}
+                            <div class="p-3 border rounded bg-light">
+                                <p><i class="fas fa-check-circle text-success me-2"></i> {% trans "نعم، لدي قبول مبدئي" %}</p>
+                                <p><strong>{% trans "الجامعة:" %}</strong> {{ application.acceptance_university }}</p>
+                            </div>
+                        {% else %}
+                            <div class="p-3 border rounded bg-light">
+                                <p><i class="fas fa-times-circle text-danger me-2"></i> {% trans "لا يوجد قبول مبدئي" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if application.comments %}
+                    <div class="mb-4">
+                        <h5 class="text-primary">{% trans "ملاحظات إضافية" %}</h5>
+                        <div class="p-3 border rounded bg-light">
+                            {{ application.comments|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h5 class="text-primary">{% trans "المستندات المرفقة" %}</h5>
+                        {% if documents %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>{% trans "نوع المستند" %}</th>
+                                            <th>{% trans "الوصف" %}</th>
+                                            <th>{% trans "تاريخ الرفع" %}</th>
+                                            <th>{% trans "الإجراءات" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for document in documents %}
+                                        <tr>
+                                            <td>{{ document.name }}</td>
+                                            <td>{{ document.description|default:"-" }}</td>
+                                            <td>{{ document.upload_date|date:"Y-m-d" }}</td>
+                                            <td>
+                                                <a href="{{ document.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="{% trans 'عرض' %}">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% trans "لم يتم رفع أي مستندات حتى الآن." %}
+                                <a href="{% url 'applications:application_documents' application.id %}" class="alert-link">{% trans "رفع المستندات الآن؟" %}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if logs %}
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "سجل التغييرات" %}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="timeline">
+                        {% for log in logs %}
+                        <div class="timeline-item mb-4">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <div class="timeline-icon bg-{{ log.to_status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }} rounded-circle">
+                                        <i class="fas fa-check text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="timeline-content border-start ps-3">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1">{{ log.to_status.name }}</h6>
+                                        <small class="text-muted">{{ log.created_at|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                    {% if log.from_status %}
+                                    <p class="text-muted small mb-2">
+                                        {% trans "تم تغيير الحالة من" %} <span class="badge bg-secondary">{{ log.from_status.name }}</span> {% trans "إلى" %} <span class="badge bg-{{ log.to_status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }}">{{ log.to_status.name }}</span>
+                                    </p>
+                                    {% else %}
+                                    <p class="text-muted small mb-2">
+                                        {% trans "تم إنشاء الطلب بحالة" %} <span class="badge bg-{{ log.to_status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }}">{{ log.to_status.name }}</span>
+                                    </p>
+                                    {% endif %}
+                                    {% if log.comment %}
+                                    <p class="mb-0">{{ log.comment }}</p>
+                                    {% endif %}
+                                    <p class="text-muted small mb-0">
+                                        {% trans "بواسطة:" %} {{ log.created_by.get_full_name|default:log.created_by.username }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "حالة الطلب" %}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="border border-{{ application.status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }} rounded-circle p-3 me-3" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-clipboard-check fa-2x text-{{ application.status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }}"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">{{ application.status.name }}</h5>
+                            <p class="text-muted mb-0">{% trans "آخر تحديث:" %} {{ application.last_update|date:"Y-m-d H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-track">
+                        <ul class="list-unstyled">
+                            {% for i in "12345"|make_list %}
+                                {% with order=i|add:"0" %}
+                                <li class="d-flex align-items-center {% if not forloop.last %}mb-3{% endif %}">
+                                    <div class="me-3">
+                                        <span class="progress-marker {% if application.status.order >= order %}bg-success{% else %}bg-light border{% endif %} rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            {% if application.status.order > order %}
+                                                <i class="fas fa-check text-white"></i>
+                                            {% elif application.status.order == order %}
+                                                <i class="fas fa-sync-alt text-white fa-spin"></i>
+                                            {% else %}
+                                                <span class="text-muted">{{ order }}</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 {% if application.status.order < order %}text-muted{% endif %}">
+                                            {% if order == 1 %}
+                                                {% trans "تقديم الطلب" %}
+                                            {% elif order == 2 %}
+                                                {% trans "المراجعة الأولية" %}
+                                            {% elif order == 3 %}
+                                                {% trans "التقييم" %}
+                                            {% elif order == 4 %}
+                                                {% trans "الموافقة النهائية" %}
+                                            {% elif order == 5 %}
+                                                {% trans "اكتمال الإجراءات" %}
+                                            {% endif %}
+                                        </h6>
+                                        {% if application.status.order == order %}
+                                        <p class="text-muted small mb-0">{% trans "الحالة الحالية" %}</p>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endwith %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "معلومات المتقدم" %}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if application.applicant.profile.profile_picture %}
+                            <img src="{{ application.applicant.profile.profile_picture.url }}" alt="{{ application.applicant.get_full_name }}" class="rounded-circle me-3" style="width: 64px; height: 64px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px;">
+                                <i class="fas fa-user text-muted fa-2x"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-1">{{ application.applicant.get_full_name }}</h5>
+                            <p class="text-muted mb-0">{{ application.applicant.profile.get_role_display }}</p>
+                        </div>
+                    </div>
+                    
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-muted me-2"></i> {{ application.applicant.email }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone text-muted me-2"></i> {{ application.applicant.profile.phone_number }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-graduation-cap text-muted me-2"></i> {{ application.applicant.profile.faculty }}
+                        </li>
+                        <li>
+                            <i class="fas fa-user-graduate text-muted me-2"></i> {{ application.applicant.profile.get_academic_rank_display|default:"-" }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- للمشرفين فقط -->
+            {% if perms.applications.change_application %}
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "إجراءات المشرف" %}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <a href="{% url 'applications:change_status' application.id %}" class="btn btn-primary d-block mb-2">
+                        <i class="fas fa-exchange-alt me-2"></i> {% trans "تغيير حالة الطلب" %}
+                    </a>
+                    
+                    {% if perms.applications.delete_application %}
+                    <a href="{% url 'applications:delete_application' application.id %}" class="btn btn-outline-danger d-block">
+                        <i class="fas fa-trash-alt me-2"></i> {% trans "حذف الطلب" %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .timeline-content {
+        flex: 1;
+    }
+</style>
+{% endblock %}

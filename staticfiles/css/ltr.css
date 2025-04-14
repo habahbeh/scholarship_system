@@ -1,0 +1,9 @@
+/* تخصيصات إضافية للغة الإنجليزية */
+body {
+    font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+    text-align: left;
+}
+
+.dropdown-menu {
+    text-align: left;
+}

@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لجان التقييم" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "لجان التقييم" %}</h1>
+            <p class="text-muted">{% trans "قائمة لجان التقييم المسؤولة عن تقييم طلبات الابتعاث." %}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if perms.evaluation.add_committee %}
+            <a href="{% url 'evaluation:committee_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> {% trans "إنشاء لجنة جديدة" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        {% if committees %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "اسم اللجنة" %}</th>
+                        <th>{% trans "عدد الأعضاء" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "تاريخ الإنشاء" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for committee in committees %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'evaluation:committee_detail' committee.id %}" class="fw-bold text-decoration-none">
+                                {{ committee.name }}
+                            </a>
+                        </td>
+                        <td>{{ committee.member_count }}</td>
+                        <td>
+                            {% if committee.is_active %}
+                            <span class="badge bg-success">{% trans "نشطة" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "غير نشطة" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ committee.created_at|date:"Y-m-d" }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'evaluation:committee_detail' committee.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if perms.evaluation.change_committee %}
+                                <a href="{% url 'evaluation:committee_edit' committee.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.evaluation.delete_committee %}
+                                <a href="{% url 'evaluation:committee_delete' committee.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ترقيم الصفحات -->
+        {% if committees.has_other_pages %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if committees.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="fas fa-angle-double-right me-1"></i>
+                            {% trans "الأولى" %}
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ committees.previous_page_number }}">
+                            <i class="fas fa-angle-right me-1"></i>
+                            {% trans "السابقة" %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in committees.paginator.page_range %}
+                    {% if committees.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > committees.number|add:'-3' and num < committees.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if committees.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ committees.next_page_number }}">
+                            {% trans "التالية" %}
+                            <i class="fas fa-angle-left me-1"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ committees.paginator.num_pages }}">
+                            {% trans "الأخيرة" %}
+                            <i class="fas fa-angle-double-left me-1"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-users fa-4x text-muted mb-4"></i>
+                <h5 class="mb-3">{% trans "لا توجد لجان تقييم حالياً" %}</h5>
+                {% if perms.evaluation.add_committee %}
+                <a href="{% url 'evaluation:committee_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> {% trans "إنشاء لجنة جديدة" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

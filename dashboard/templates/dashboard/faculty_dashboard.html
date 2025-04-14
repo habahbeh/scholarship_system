@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لوحة تحكم عضو هيئة التدريس" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+    
+    .bg-light-primary {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    
+    .bg-light-success {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .bg-light-warning {
+        background-color: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .bg-light-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .bg-light-info {
+        background-color: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+    
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+    
+    .faculty-banner {
+        background-color: #1e3a8a;
+        background-image: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+    }
+    
+    .deadline-card {
+        border-right: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس لوحة التحكم -->
+    <div class="faculty-banner shadow-sm">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">{% trans "لوحة تحكم عضو هيئة التدريس" %}</h1>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-university me-2"></i>
+                    {% if faculty %}{{ faculty.name }}{% else %}{% trans "الكلية غير محددة" %}{% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="{% url 'applications:admin_applications' %}" class="btn btn-light">
+                    <i class="fas fa-clipboard-list me-1"></i> {% trans "استعراض الطلبات" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات الإحصائيات -->
+    <div class="row mb-4">
+        <!-- إجمالي الطلاب -->
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card stats-card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stats-icon bg-light-primary">
+                        <i class="fas fa-user-graduate fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-1">{{ students_count }}</h5>
+                        <p class="card-text text-muted mb-0">{% trans "إجمالي الطلاب" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- إجمالي الطلبات -->
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card stats-card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stats-icon bg-light-success">
+                        <i class="fas fa-clipboard-list fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-1">{{ faculty_applications.count }}</h5>
+                        <p class="card-text text-muted mb-0">{% trans "إجمالي الطلبات" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الطلبات المقبولة -->
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card stats-card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stats-icon bg-light-danger">
+                        <i class="fas fa-check-circle fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-1">
+                            {% for status in applications_by_status %}
+                                {% if "مقبول" in status.status__name %}
+                                    {{ status.count }}
+                                {% endif %}
+                            {% endfor %}
+                        </h5>
+                        <p class="card-text text-muted mb-0">{% trans "الطلبات المقبولة" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- العمود الأيسر - الرسوم البيانية وأحدث الطلبات -->
+        <div class="col-lg-8">
+            <!-- توزيع الطلبات حسب الحالة -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "توزيع طلبات الابتعاث حسب الحالة" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if applications_by_status %}
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد بيانات لعرضها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- توزيع الطلبات حسب نوع الابتعاث -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "توزيع طلبات الابتعاث حسب النوع" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if applications_by_type %}
+                        <div class="chart-container">
+                            <canvas id="typesChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد بيانات لعرضها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- أحدث الطلبات -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "أحدث الطلبات" %}</h5>
+                    <a href="{% url 'applications:admin_applications' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_applications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{% trans "المتقدم" %}</th>
+                                        <th>{% trans "فرصة الابتعاث" %}</th>
+                                        <th>{% trans "تاريخ التقديم" %}</th>
+                                        <th>{% trans "الحالة" %}</th>
+                                        <th>{% trans "الإجراءات" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in recent_applications %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if application.applicant.profile.profile_picture %}
+                                                        <img src="{{ application.applicant.profile.profile_picture.url }}" alt="{{ application.applicant.get_full_name }}" class="student-avatar me-2">
+                                                    {% else %}
+                                                        <div class="bg-light student-avatar me-2 d-flex align-items-center justify-content-center">
+                                                            <i class="fas fa-user text-secondary"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <span class="d-block">{{ application.applicant.get_full_name }}</span>
+                                                        <small class="text-muted">{{ application.applicant.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{{ application.scholarship.title|truncatechars:30 }}</td>
+                                            <td>{{ application.application_date|date:"Y-m-d" }}</td>
+                                            <td>
+                                                {% if application.status.order == 1 %}
+                                                    <span class="badge bg-warning">{{ application.status.name }}</span>
+                                                {% elif application.status.order == 2 %}
+                                                    <span class="badge bg-primary">{{ application.status.name }}</span>
+                                                {% elif application.status.order == 3 or application.status.order == 4 %}
+                                                    <span class="badge bg-success">{{ application.status.name }}</span>
+                                                {% elif application.status.order == 5 %}
+                                                    <span class="badge bg-danger">{{ application.status.name }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ application.status.name }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد طلبات حالية" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- العمود الأيمن - القوائم والإشعارات -->
+        <div class="col-lg-4">
+            <!-- الموعد النهائي لفرص الابتعاث القادمة -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "الموعد النهائي لفرص الابتعاث القادمة" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_deadlines %}
+                        <div class="list-group list-group-flush">
+                            {% for scholarship in upcoming_deadlines %}
+                                <div class="list-group-item list-group-item-action deadline-card">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <div>
+                                            <h6 class="mb-1">{{ scholarship.title }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-graduation-cap me-1"></i> {{ scholarship.scholarship_type.name }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-danger rounded-pill mb-1">
+                                                {{ scholarship.deadline|timeuntil }}
+                                            </span>
+                                            <small class="d-block text-muted">
+                                                {{ scholarship.deadline|date:"Y-m-d" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد فرص ابتعاث تنتهي قريباً" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ملخص حالة الطلبات -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "ملخص حالة الطلبات" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if applications_by_status %}
+                        <ul class="list-group">
+                            {% for status in applications_by_status %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ status.status__name }}
+                                    <span class="badge bg-primary rounded-pill">{{ status.count }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد طلبات لعرض حالتها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- روابط سريعة -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "روابط سريعة" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'applications:admin_applications' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-clipboard-list me-2 text-primary"></i> {% trans "استعراض طلبات الطلاب" %}
+                        </a>
+                        <a href="{% url 'announcements:scholarship_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-graduation-cap me-2 text-success"></i> {% trans "استعراض فرص الابتعاث" %}
+                        </a>
+                        <a href="{% url 'announcements:announcement_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-bullhorn me-2 text-info"></i> {% trans "عرض الإعلانات" %}
+                        </a>
+                        <a href="{% url 'dashboard:application_stats' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-pie me-2 text-warning"></i> {% trans "عرض الإحصائيات" %}
+                        </a>
+                        <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user-circle me-2 text-danger"></i> {% trans "الملف الشخصي" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if applications_by_status %}
+        // توزيع الطلبات حسب الحالة
+        var statusCtx = document.getElementById('statusChart').getContext('2d');
+        var statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    {% for status in applications_by_status %}
+                        "{{ status.status__name }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for status in applications_by_status %}
+                            {{ status.count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(13, 110, 253, 0.7)',
+                        'rgba(25, 135, 84, 0.7)',
+                        'rgba(220, 53, 69, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% if applications_by_type %}
+        // توزيع الطلبات حسب نوع الابتعاث
+        var typesCtx = document.getElementById('typesChart').getContext('2d');
+        var typesChart = new Chart(typesCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for type in applications_by_type %}
+                        "{{ type.scholarship__scholarship_type__name }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: '{% trans "عدد الطلبات" %}',
+                    data: [
+                        {% for type in applications_by_type %}
+                            {{ type.count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

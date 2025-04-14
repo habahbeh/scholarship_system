@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ scholarship.title }} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'announcements:scholarship_list' %}">{% trans "فرص الابتعاث" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ scholarship.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h1 class="card-title mb-3">{{ scholarship.title }}</h1>
+                    
+                    <div class="mb-4">
+                        <span class="badge bg-primary rounded-pill px-3 py-2 mb-2">{{ scholarship.scholarship_type.name }}</span>
+                        {% if scholarship.is_active %}
+                            <span class="badge bg-success rounded-pill px-3 py-2 mb-2">{% trans "متاح للتقديم" %}</span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill px-3 py-2 mb-2">{% trans "منتهي" %}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="text-primary mt-4">{% trans "وصف الفرصة" %}</h5>
+                    <div class="border-bottom mb-3 pb-3">
+                        {{ scholarship.description|linebreaks }}
+                    </div>
+                    
+                    <h5 class="text-primary mt-4">{% trans "المتطلبات" %}</h5>
+                    <div class="border-bottom mb-3 pb-3">
+                        {{ scholarship.requirements|linebreaks }}
+                    </div>
+                    
+                    {% if scholarship.benefits %}
+                    <h5 class="text-primary mt-4">{% trans "المميزات" %}</h5>
+                    <div class="border-bottom mb-3 pb-3">
+                        {{ scholarship.benefits|linebreaks }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if scholarship.eligibility_criteria %}
+                    <h5 class="text-primary mt-4">{% trans "معايير الأهلية" %}</h5>
+                    <div class="border-bottom mb-3 pb-3">
+                        {{ scholarship.eligibility_criteria|linebreaks }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if scholarship.application_process %}
+                    <h5 class="text-primary mt-4">{% trans "عملية التقديم" %}</h5>
+                    <div class="border-bottom mb-3 pb-3">
+                        {{ scholarship.application_process|linebreaks }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if scholarship.attachment %}
+                    <div class="mt-4">
+                        <a href="{{ scholarship.attachment.url }}" class="btn btn-outline-primary" target="_blank">
+                            <i class="fas fa-file-download me-2"></i> {% trans "تحميل المرفق" %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- زر التقديم -->
+            <div class="mt-4">
+                {% if scholarship.is_active %}
+                    {% if user.is_authenticated %}
+                        {% if has_applied %}
+                            <a href="#" class="btn btn-success disabled">
+                                <i class="fas fa-check me-2"></i> {% trans "تم التقديم" %}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'applications:apply' scholarship.id %}" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i> {% trans "التقديم الآن" %}
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}?next={% url 'announcements:scholarship_detail' scholarship.id %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i> {% trans "سجل دخول للتقديم" %}
+                        </a>
+                    {% endif %}
+                    
+                    {% if perms.announcements.change_scholarship %}
+                        <a href="{% url 'announcements:scholarship_edit' scholarship.id %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-edit me-2"></i> {% trans "تعديل" %}
+                        </a>
+                    {% endif %}
+                    
+                    {% if perms.announcements.delete_scholarship %}
+                        <a href="{% url 'announcements:scholarship_delete' scholarship.id %}" class="btn btn-outline-danger ms-2">
+                            <i class="fas fa-trash-alt me-2"></i> {% trans "حذف" %}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% trans "انتهت مهلة التقديم لهذه الفرصة." %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4 sticky-md-top" style="top: 2rem;">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "معلومات الفرصة" %}</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="far fa-calendar-alt me-2 text-primary"></i> {% trans "تاريخ النشر:" %}</span>
+                            <span class="text-muted">{{ scholarship.publication_date|date:"Y-m-d" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="far fa-clock me-2 text-primary"></i> {% trans "الموعد النهائي:" %}</span>
+                            <span class="fw-bold {% if scholarship.is_active %}text-success{% else %}text-danger{% endif %}">
+                                {{ scholarship.deadline|date:"Y-m-d" }}
+                            </span>
+                        </li>
+                        {% if scholarship.countries %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-globe me-2 text-primary"></i> {% trans "الدول المتاحة:" %}</span>
+                            <span class="text-muted">{{ scholarship.countries }}</span>
+                        </li>
+                        {% endif %}
+                        {% if scholarship.max_applicants > 0 %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-users me-2 text-primary"></i> {% trans "عدد المقاعد:" %}</span>
+                            <span class="text-muted">{{ scholarship.max_applicants }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    {% if scholarship.contact_info %}
+                    <div class="mt-4">
+                        <h6 class="fw-bold"><i class="fas fa-phone-alt me-2 text-primary"></i> {% trans "للاستفسار:" %}</h6>
+                        <p class="text-muted">{{ scholarship.contact_info|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if scholarship.universities %}
+                    <div class="mt-4">
+                        <h6 class="fw-bold"><i class="fas fa-university me-2 text-primary"></i> {% trans "الجامعات المتاحة:" %}</h6>
+                        <p class="text-muted">{{ scholarship.universities|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

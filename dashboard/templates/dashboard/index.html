@@ -1,0 +1,595 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لوحة التحكم" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-card {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .stats-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-counter {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+    }
+    
+    .alert-deadline {
+        border-right: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس لوحة التحكم -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">{% trans "لوحة التحكم" %}</h1>
+            <p class="text-muted">{% trans "مرحبًا بك في لوحة تحكم نظام الابتعاث الإلكتروني. يمكنك من هنا إدارة ومتابعة كافة عمليات الابتعاث." %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="dashboardActions" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog me-1"></i> {% trans "الإجراءات السريعة" %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardActions">
+                    {% if user_role == 'admin' %}
+                        <li><a class="dropdown-item" href="{% url 'announcements:scholarship_create' %}"><i class="fas fa-plus me-2"></i> {% trans "إضافة فرصة ابتعاث" %}</a></li>
+                        <li><a class="dropdown-item" href="{% url 'announcements:announcement_create' %}"><i class="fas fa-bullhorn me-2"></i> {% trans "إضافة إعلان" %}</a></li>
+                        <li><a class="dropdown-item" href="{% url 'evaluation:committee_create' %}"><i class="fas fa-users me-2"></i> {% trans "إنشاء لجنة تقييم" %}</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'dashboard:application_stats' %}"><i class="fas fa-chart-bar me-2"></i> {% trans "إحصائيات متقدمة" %}</a></li>
+                    {% elif user_role == 'committee' %}
+                        <li><a class="dropdown-item" href="{% url 'evaluation:evaluator_dashboard' %}"><i class="fas fa-tasks me-2"></i> {% trans "التقييمات المطلوبة" %}</a></li>
+                        <li><a class="dropdown-item" href="{% url 'evaluation:committee_dashboard' %}"><i class="fas fa-users me-2"></i> {% trans "لوحة اللجنة" %}</a></li>
+                    {% elif user_role == 'faculty' %}
+                        <li><a class="dropdown-item" href="{% url 'applications:admin_applications' %}"><i class="fas fa-clipboard-list me-2"></i> {% trans "استعراض الطلبات" %}</a></li>
+                    {% else %}
+                        <li><a class="dropdown-item" href="{% url 'applications:my_applications' %}"><i class="fas fa-clipboard-list me-2"></i> {% trans "طلباتي" %}</a></li>
+                        <li><a class="dropdown-item" href="{% url 'announcements:scholarship_list' %}"><i class="fas fa-search me-2"></i> {% trans "استعراض الفرص" %}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات الإحصائيات -->
+    <div class="row mb-4">
+        <!-- فرص الابتعاث النشطة -->
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card stats-card">
+                <div class="stats-icon text-primary">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="stats-counter">{{ active_scholarships_count }}</div>
+                <div class="stats-label">{% trans "فرص ابتعاث نشطة" %}</div>
+                <div class="mt-3">
+                    <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-sm btn-outline-primary">{% trans "استعراض" %}</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإعلانات النشطة -->
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card stats-card">
+                <div class="stats-icon text-success">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="stats-counter">{{ announcements_count }}</div>
+                <div class="stats-label">{% trans "إعلانات نشطة" %}</div>
+                <div class="mt-3">
+                    <a href="{% url 'announcements:announcement_list' %}" class="btn btn-sm btn-outline-success">{% trans "استعراض" %}</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- إحصائية متغيرة حسب نوع المستخدم -->
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card stats-card">
+                {% if user_role == 'admin' %}
+                    <div class="stats-icon text-info">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stats-counter">{{ applications_by_status.0.application_count|default:"0" }}</div>
+                    <div class="stats-label">{% trans "إجمالي الطلبات" %}</div>
+                    <div class="mt-3">
+                        <a href="{% url 'applications:admin_applications' %}" class="btn btn-sm btn-outline-info">{% trans "استعراض" %}</a>
+                    </div>
+                {% elif user_role == 'committee' %}
+                    <div class="stats-icon text-warning">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stats-counter">{{ pending_evaluations.count }}</div>
+                    <div class="stats-label">{% trans "تقييمات معلقة" %}</div>
+                    <div class="mt-3">
+                        <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-sm btn-outline-warning">{% trans "استعراض" %}</a>
+                    </div>
+                {% elif user_role == 'faculty' %}
+                    <div class="stats-icon text-secondary">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stats-counter">{{ faculty_students.count }}</div>
+                    <div class="stats-label">{% trans "طلبات الطلاب في الكلية" %}</div>
+                    <div class="mt-3">
+                        <a href="{% url 'applications:admin_applications' %}" class="btn btn-sm btn-outline-secondary">{% trans "استعراض" %}</a>
+                    </div>
+                {% else %}
+                    <div class="stats-icon text-danger">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stats-counter">{{ user_applications.count }}</div>
+                    <div class="stats-label">{% trans "طلباتي" %}</div>
+                    <div class="mt-3">
+                        <a href="{% url 'applications:my_applications' %}" class="btn btn-sm btn-outline-danger">{% trans "استعراض" %}</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي للوحة التحكم -->
+    <div class="row">
+        <!-- العمود الأيسر -->
+        <div class="col-lg-8">
+            <!-- الموعد النهائي لفرص الابتعاث القادمة -->
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "الموعد النهائي لفرص الابتعاث القادمة" %}</h5>
+                    <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_deadlines %}
+                        <div class="list-group list-group-flush">
+                            {% for scholarship in upcoming_deadlines %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="{% url 'announcements:scholarship_detail' scholarship.id %}" class="text-decoration-none">
+                                                <h6 class="mb-0">{{ scholarship.title }}</h6>
+                                            </a>
+                                            <small class="text-muted">{{ scholarship.scholarship_type.name }}</small>
+                                        </div>
+                                        <div class="text-danger">
+                                            <strong>{{ scholarship.deadline|timeuntil }}</strong>
+                                            <small class="d-block text-end">{{ scholarship.deadline|date:"Y-m-d" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p class="mb-0">{% trans "لا توجد فرص ابتعاث تنتهي قريباً" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- محتوى محدد حسب نوع المستخدم -->
+            {% if user_role == 'admin' %}
+                <!-- توزيع الطلبات حسب الحالة -->
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{% trans "توزيع الطلبات حسب الحالة" %}</h5>
+                        <a href="{% url 'dashboard:application_stats' %}" class="btn btn-sm btn-outline-primary">{% trans "إحصائيات متقدمة" %}</a>
+                    </div>
+                    <div class="card-body">
+                        {% if applications_by_status %}
+                            <div class="chart-container">
+                                <canvas id="applicationStatusChart" height="250"></canvas>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-4">
+                                <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "لا توجد بيانات لعرضها" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif user_role == 'committee' %}
+                <!-- التقييمات المعلقة -->
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{% trans "التقييمات المعلقة" %}</h5>
+                        <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if pending_evaluations %}
+                            <div class="list-group list-group-flush">
+                                {% for evaluation in pending_evaluations|slice:":5" %}
+                                    <a href="{% url 'evaluation:evaluate_application' evaluation.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ evaluation.application.scholarship.title }}</h6>
+                                                <small class="text-muted">{{ evaluation.application.applicant.get_full_name }}</small>
+                                            </div>
+                                            <span class="badge bg-warning rounded-pill">{% trans "معلق" %}</span>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center">
+                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                <p class="mb-0">{% trans "ليس لديك أي تقييمات معلقة" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif user_role == 'faculty' %}
+                <!-- توزيع الطلبات في الكلية حسب الحالة -->
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{% trans "توزيع طلبات الابتعاث في الكلية" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if faculty_applications_by_status %}
+                            <div class="chart-container">
+                                <canvas id="facultyApplicationsChart" height="250"></canvas>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-4">
+                                <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "لا توجد بيانات لعرضها" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- حالة طلبات الطالب -->
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{% trans "طلباتي" %}</h5>
+                        <a href="{% url 'applications:my_applications' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if user_applications %}
+                            <div class="list-group list-group-flush">
+                                {% for application in user_applications|slice:":5" %}
+                                    <a href="{% url 'applications:application_detail' application.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ application.scholarship.title }}</h6>
+                                                <small class="text-muted">{{ application.application_date|date:"Y-m-d" }}</small>
+                                            </div>
+                                            <span class="badge bg-{{ application.status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }} rounded-pill">{{ application.status.name }}</span>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "لم تقم بتقديم أي طلبات بعد" %}</p>
+                                <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-primary mt-3">{% trans "استعراض فرص الابتعاث" %}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- العمود الأيمن -->
+        <div class="col-lg-4">
+            <!-- روابط سريعة -->
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "روابط سريعة" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% if user_role == 'admin' %}
+                            <a href="{% url 'announcements:scholarship_create' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-plus-circle me-2 text-success"></i> {% trans "إضافة فرصة ابتعاث جديدة" %}
+                            </a>
+                            <a href="{% url 'announcements:announcement_create' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-bullhorn me-2 text-primary"></i> {% trans "نشر إعلان جديد" %}
+                            </a>
+                            <a href="{% url 'applications:admin_applications' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-clipboard-check me-2 text-info"></i> {% trans "إدارة طلبات الابتعاث" %}
+                            </a>
+                            <a href="{% url 'evaluation:committee_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-users me-2 text-warning"></i> {% trans "إدارة لجان التقييم" %}
+                            </a>
+                            <a href="{% url 'dashboard:application_stats' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-chart-pie me-2 text-danger"></i> {% trans "عرض التقارير والإحصائيات" %}
+                            </a>
+                        {% elif user_role == 'committee' %}
+                            <a href="{% url 'evaluation:evaluator_dashboard' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-tasks me-2 text-primary"></i> {% trans "التقييمات المطلوبة" %}
+                            </a>
+                            <a href="{% url 'evaluation:committee_dashboard' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-users me-2 text-success"></i> {% trans "لوحة اللجنة" %}
+                            </a>
+                            <a href="{% url 'evaluation:round_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-calendar-alt me-2 text-info"></i> {% trans "جولات التقييم" %}
+                            </a>
+                            <a href="{% url 'applications:admin_applications' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-clipboard-list me-2 text-warning"></i> {% trans "استعراض الطلبات" %}
+                            </a>
+                        {% elif user_role == 'faculty' %}
+                            <a href="{% url 'applications:admin_applications' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i> {% trans "استعراض طلبات الطلاب" %}
+                            </a>
+                            <a href="{% url 'announcements:scholarship_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-graduation-cap me-2 text-success"></i> {% trans "استعراض فرص الابتعاث" %}
+                            </a>
+                            <a href="{% url 'announcements:announcement_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-bullhorn me-2 text-info"></i> {% trans "عرض الإعلانات" %}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'announcements:scholarship_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-search me-2 text-primary"></i> {% trans "البحث عن فرص ابتعاث" %}
+                            </a>
+                            <a href="{% url 'applications:my_applications' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-clipboard-list me-2 text-success"></i> {% trans "طلباتي" %}
+                            </a>
+                            <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-user-circle me-2 text-info"></i> {% trans "الملف الشخصي" %}
+                            </a>
+                            <a href="{% url 'announcements:announcement_list' %}" class="list-group-item list-group-item-action">
+                                <i class="fas fa-bullhorn me-2 text-warning"></i> {% trans "الإعلانات" %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوى محدد حسب نوع المستخدم -->
+            {% if user_role == 'admin' %}
+                <!-- آخر الطلبات -->
+                <div class="card dashboard-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{% trans "آخر الطلبات" %}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if recent_applications %}
+                            <div class="list-group list-group-flush">
+                                {% for application in recent_applications|slice:":5" %}
+                                    <a href="{% url 'applications:application_detail' application.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ application.applicant.get_full_name }}</h6>
+                                                <small class="text-muted">{{ application.scholarship.title|truncatechars:30 }}</small>
+                                            </div>
+                                            <small class="text-muted">{{ application.application_date|date:"Y-m-d" }}</small>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center">
+                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "لا توجد طلبات حالية" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif user_role == 'committee' %}
+                <!-- اللجان التي أنا عضو فيها -->
+                <div class="card dashboard-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{% trans "لجان التقييم" %}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if user_committees %}
+                            <div class="list-group list-group-flush">
+                                {% for committee in user_committees %}
+                                    <a href="{% url 'evaluation:committee_detail' committee.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ committee.name }}</h6>
+                                                <small class="text-muted">{% trans "الأعضاء:" %} {{ committee.members.count }}</small>
+                                            </div>
+                                            {% if committee.is_active %}
+                                                <span class="badge bg-success rounded-pill">{% trans "نشطة" %}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary rounded-pill">{% trans "غير نشطة" %}</span>
+                                            {% endif %}
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "أنت لست عضواً في أي لجنة تقييم" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif user_role == 'faculty' %}
+                <!-- آخر فرص الابتعاث -->
+                <div class="card dashboard-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{% trans "آخر فرص الابتعاث" %}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if active_scholarships_count > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for scholarship in upcoming_deadlines %}
+                                    <a href="{% url 'announcements:scholarship_detail' scholarship.id %}" class="list-group-item list-group-item-action">
+                                        <h6 class="mb-1">{{ scholarship.title }}</h6>
+                                        <small class="text-muted d-block">{{ scholarship.scholarship_type.name }}</small>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <span class="badge bg-primary rounded-pill">{{ scholarship.get_status_display }}</span>
+                                            <small class="text-danger">{{ scholarship.deadline|date:"Y-m-d" }}</small>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center">
+                                <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "لا توجد فرص ابتعاث متاحة حالياً" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- آخر تحديثات الطلبات -->
+                <div class="card dashboard-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">{% trans "آخر تحديثات الطلبات" %}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if recent_application_logs %}
+                            <div class="list-group list-group-flush">
+                                {% for log in recent_application_logs %}
+                                    <a href="{% url 'applications:application_detail' log.id %}" class="list-group-item list-group-item-action">
+                                        <small class="text-muted">{{ log.logs__created_at|date:"Y-m-d H:i" }}</small>
+                                        <p class="mb-1">{{ log.scholarship__title }}</p>
+                                        <small class="d-block text-success">
+                                            <i class="fas fa-arrow-right me-1"></i>
+                                            {% trans "تم تغيير الحالة من" %} "{{ log.logs__from_status__name|default:'جديد' }}" {% trans "إلى" %} "{{ log.logs__to_status__name }}"
+                                        </small>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <p class="mb-0">{% trans "لا توجد تحديثات حالية" %}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if user_role == 'admin' and applications_by_status %}
+        // رسم بياني توزيع الطلبات حسب الحالة
+        var statusNames = [
+            {% for status in applications_by_status %}
+                "{{ status.status__name }}",
+            {% endfor %}
+        ];
+        
+        var statusCounts = [
+            {% for status in applications_by_status %}
+                {{ status.application_count }},
+            {% endfor %}
+        ];
+        
+        var statusColors = [
+            'rgba(255, 193, 7, 0.7)',  // أصفر - قيد الانتظار
+            'rgba(13, 110, 253, 0.7)', // أزرق - قيد المراجعة
+            'rgba(25, 135, 84, 0.7)',  // أخضر - مقبول
+            'rgba(220, 53, 69, 0.7)',  // أحمر - مرفوض
+            'rgba(108, 117, 125, 0.7)' // رمادي - أخرى
+        ];
+        
+        var ctx = document.getElementById('applicationStatusChart').getContext('2d');
+        var applicationStatusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: statusNames,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: statusColors,
+                    borderColor: 'white',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    {% endif %}
+    
+    {% if user_role == 'faculty' and faculty_applications_by_status %}
+        // رسم بياني توزيع طلبات الكلية حسب الحالة
+        var facultyStatusNames = [
+            {% for status in faculty_applications_by_status %}
+                "{{ status.status__name }}",
+            {% endfor %}
+        ];
+        
+        var facultyStatusCounts = [
+            {% for status in faculty_applications_by_status %}
+                {{ status.count }},
+            {% endfor %}
+        ];
+        
+        var facultyStatusColors = [
+            'rgba(255, 193, 7, 0.7)',  // أصفر
+            'rgba(13, 110, 253, 0.7)', // أزرق
+            'rgba(25, 135, 84, 0.7)',  // أخضر
+            'rgba(220, 53, 69, 0.7)',  // أحمر
+            'rgba(108, 117, 125, 0.7)' // رمادي
+        ];
+        
+        var ctx2 = document.getElementById('facultyApplicationsChart').getContext('2d');
+        var facultyApplicationsChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: facultyStatusNames,
+                datasets: [{
+                    label: '{% trans "عدد الطلبات" %}',
+                    data: facultyStatusCounts,
+                    backgroundColor: facultyStatusColors,
+                    borderColor: facultyStatusColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    {% endif %}
+});
+</script>
+{% endblock %}

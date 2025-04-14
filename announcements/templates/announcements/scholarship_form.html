@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+{% if is_create %}
+{% trans "إنشاء فرصة ابتعاث جديدة" %} - {% trans "نظام الابتعاث الإلكتروني" %}
+{% else %}
+{% trans "تعديل فرصة ابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'announcements:scholarship_list' %}">{% trans "فرص الابتعاث" %}</a></li>
+                    {% if is_create %}
+                        <li class="breadcrumb-item active" aria-current="page">{% trans "إنشاء فرصة ابتعاث جديدة" %}</li>
+                    {% else %}
+                        <li class="breadcrumb-item"><a href="{% url 'announcements:scholarship_detail' scholarship.id %}">{{ scholarship.title }}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{% trans "تعديل" %}</li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h3 class="mb-0">
+                        {% if is_create %}
+                            {% trans "إنشاء فرصة ابتعاث جديدة" %}
+                        {% else %}
+                            {% trans "تعديل فرصة ابتعاث" %}
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.title|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.scholarship_type|as_crispy_field }}
+                                <a href="{% url 'announcements:scholarship_type_create' %}" class="btn btn-sm btn-outline-secondary mt-1">
+                                    <i class="fas fa-plus"></i> {% trans "إضافة نوع ابتعاث جديد" %}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.requirements|as_crispy_field }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.benefits|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.countries|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.universities|as_crispy_field }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.deadline|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.status|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_applicants|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.eligibility_criteria|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.application_process|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.contact_info|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.attachment|as_crispy_field }}
+                            {% if not is_create and form.attachment.value %}
+                                <p class="text-muted">
+                                    <i class="fas fa-paperclip me-1"></i>
+                                    {% trans "المرفق الحالي:" %} 
+                                    <a href="{{ form.attachment.value.url }}" target="_blank">{{ form.attachment.value.name }}</a>
+                                </p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex mt-4">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-save me-1"></i>
+                                {% if is_create %}
+                                    {% trans "إنشاء الفرصة" %}
+                                {% else %}
+                                    {% trans "حفظ التغييرات" %}
+                                {% endif %}
+                            </button>
+                            <a href="{% if is_create %}{% url 'announcements:scholarship_list' %}{% else %}{% url 'announcements:scholarship_detail' scholarship.id %}{% endif %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

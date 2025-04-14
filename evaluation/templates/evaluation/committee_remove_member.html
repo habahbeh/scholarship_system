@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "إزالة عضو من اللجنة" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- مسار التنقل -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:committee_list' %}">{% trans "لجان التقييم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:committee_detail' committee.id %}">{{ committee.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "إزالة عضو" %}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-minus me-2"></i>{% trans "تأكيد إزالة العضو" %}</h4>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <div class="py-3">
+                        <i class="fas fa-user-times fa-4x text-danger mb-4"></i>
+                        
+                        <h5 class="mb-4">{% trans "هل أنت متأكد من رغبتك في إزالة العضو التالي من اللجنة؟" %}</h5>
+                        
+                        <div class="alert alert-secondary mb-4">
+                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                {% if user.profile.profile_picture %}
+                                <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.get_full_name }}" class="rounded-circle me-3" width="60" height="60">
+                                {% else %}
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-user fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="text-start">
+                                    <h4 class="mb-1">{{ user.get_full_name }}</h4>
+                                    <p class="mb-0 text-muted">{{ user.email }}</p>
+                                </div>
+                            </div>
+                            <p class="mb-0 text-muted">{% trans "سيتم إزالته من لجنة:" %} <strong>{{ committee.name }}</strong></p>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            {% trans "تحذير: لن يتمكن هذا العضو من الوصول إلى طلبات الابتعاث المخصصة لهذه اللجنة بعد إزالته. ومع ذلك، ستبقى جميع التقييمات السابقة التي قدمها كما هي." %}
+                        </div>
+                        
+                        <form method="post" class="mt-4">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-center">
+                                <button type="submit" class="btn btn-danger me-2">
+                                    <i class="fas fa-user-minus me-1"></i> {% trans "نعم، قم بإزالة العضو" %}
+                                </button>
+                                <a href="{% url 'evaluation:committee_detail' committee.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

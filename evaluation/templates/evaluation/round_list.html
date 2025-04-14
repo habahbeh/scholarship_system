@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "جولات التقييم" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-active {
+        background-color: #20c997;
+        box-shadow: 0 0 0 3px rgba(32, 201, 151, 0.2);
+    }
+    .status-completed {
+        background-color: #6c757d;
+    }
+    .status-upcoming {
+        background-color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "جولات التقييم" %}</h1>
+            <p class="text-muted">{% trans "قائمة جولات تقييم طلبات الابتعاث." %}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if perms.evaluation.add_evaluationround %}
+            <a href="{% url 'evaluation:round_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> {% trans "إنشاء جولة جديدة" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        {% if rounds %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "اسم الجولة" %}</th>
+                        <th>{% trans "النوع" %}</th>
+                        <th>{% trans "اللجنة" %}</th>
+                        <th>{% trans "تاريخ البدء" %}</th>
+                        <th>{% trans "تاريخ الانتهاء" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for round in rounds %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'evaluation:round_detail' round.id %}" class="fw-bold text-decoration-none">
+                                {{ round.name }}
+                            </a>
+                        </td>
+                        <td>{{ round.get_round_type_display }}</td>
+                        <td>
+                            <a href="{% url 'evaluation:committee_detail' round.committee.id %}" class="text-decoration-none">
+                                {{ round.committee.name }}
+                            </a>
+                        </td>
+                        <td>{{ round.start_date|date:"Y-m-d" }}</td>
+                        <td>{{ round.end_date|date:"Y-m-d" }}</td>
+                        <td>
+                            {% if round.is_in_progress %}
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator status-active"></span>
+                                <span>{% trans "جارية" %}</span>
+                            </div>
+                            {% elif round.is_completed %}
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator status-completed"></span>
+                                <span>{% trans "مكتملة" %}</span>
+                            </div>
+                            {% else %}
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator status-upcoming"></span>
+                                <span>{% trans "مستقبلية" %}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'evaluation:round_detail' round.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if round.is_in_progress or not round.is_completed %}
+                                <a href="{% url 'evaluation:round_assign_applications' round.id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-tasks"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.evaluation.change_evaluationround %}
+                                <a href="{% url 'evaluation:round_edit' round.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.evaluation.delete_evaluationround %}
+                                <a href="{% url 'evaluation:round_delete' round.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ترقيم الصفحات -->
+        {% if rounds.has_other_pages %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if rounds.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="fas fa-angle-double-right me-1"></i>
+                            {% trans "الأولى" %}
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ rounds.previous_page_number }}">
+                            <i class="fas fa-angle-right me-1"></i>
+                            {% trans "السابقة" %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in rounds.paginator.page_range %}
+                    {% if rounds.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > rounds.number|add:'-3' and num < rounds.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if rounds.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ rounds.next_page_number }}">
+                            {% trans "التالية" %}
+                            <i class="fas fa-angle-left me-1"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ rounds.paginator.num_pages }}">
+                            {% trans "الأخيرة" %}
+                            <i class="fas fa-angle-double-left me-1"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-calendar-alt fa-4x text-muted mb-4"></i>
+                <h5 class="mb-3">{% trans "لا توجد جولات تقييم حالياً" %}</h5>
+                {% if perms.evaluation.add_evaluationround %}
+                <a href="{% url 'evaluation:round_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> {% trans "إنشاء جولة جديدة" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

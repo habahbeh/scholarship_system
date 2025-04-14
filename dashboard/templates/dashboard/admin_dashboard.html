@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لوحة تحكم المشرفين" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+        font-size: 36px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس لوحة التحكم -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">{% trans "لوحة تحكم المشرفين" %}</h1>
+            <p class="text-muted">{% trans "مرحباً بك في لوحة تحكم المشرفين، يمكنك متابعة إحصائيات النظام وإدارة العمليات بشكل كامل." %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group">
+                <a href="{% url 'announcements:scholarship_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i> {% trans "إضافة فرصة ابتعاث" %}
+                </a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'announcements:announcement_create' %}"><i class="fas fa-bullhorn me-2"></i> {% trans "نشر إعلان" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'evaluation:committee_create' %}"><i class="fas fa-users me-2"></i> {% trans "إنشاء لجنة تقييم" %}</a></li>
+                    <li><a class="dropdown-item" href="{% url 'evaluation:round_create' %}"><i class="fas fa-calendar-plus me-2"></i> {% trans "إنشاء جولة تقييم" %}</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'dashboard:application_stats' %}"><i class="fas fa-chart-line me-2"></i> {% trans "تقارير متقدمة" %}</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات الإحصائيات الرئيسية -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-0">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon text-primary">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-value">{{ total_applications }}</div>
+                    <div class="stat-label">{% trans "إجمالي الطلبات" %}</div>
+                </div>
+                <div class="card-footer bg-light py-2">
+                    <a href="{% url 'applications:admin_applications' %}" class="btn btn-sm btn-link text-decoration-none w-100">
+                        {% trans "عرض التفاصيل" %} <i class="fas fa-arrow-left ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-0">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon text-success">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="stat-value">{{ total_scholarships }}</div>
+                    <div class="stat-label">{% trans "فرص الابتعاث" %}</div>
+                </div>
+                <div class="card-footer bg-light py-2">
+                    <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-sm btn-link text-decoration-none w-100">
+                        {% trans "عرض التفاصيل" %} <i class="fas fa-arrow-left ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-0">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon text-danger">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-value">{{ active_scholarships }}</div>
+                    <div class="stat-label">{% trans "فرص نشطة" %}</div>
+                </div>
+                <div class="card-footer bg-light py-2">
+                    <a href="{% url 'dashboard:scholarship_stats' %}" class="btn btn-sm btn-link text-decoration-none w-100">
+                        {% trans "عرض الإحصائيات" %} <i class="fas fa-arrow-left ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-0">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon text-info">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value" id="userCount">-</div>
+                    <div class="stat-label">{% trans "المستخدمين النشطين" %}</div>
+                </div>
+                <div class="card-footer bg-light py-2">
+                    <a href="#" class="btn btn-sm btn-link text-decoration-none w-100">
+                        {% trans "إدارة المستخدمين" %} <i class="fas fa-arrow-left ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الرسوم البيانية والإحصائيات -->
+    <div class="row">
+        <!-- توزيع الطلبات حسب الحالة -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "توزيع الطلبات حسب الحالة" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if applications_by_status %}
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد بيانات لعرضها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- توزيع الطلبات حسب نوع الابتعاث -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "الطلبات حسب نوع الابتعاث" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if applications_by_type %}
+                        <div class="chart-container">
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد بيانات لعرضها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- تطور عدد الطلبات خلال الأشهر الماضية -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "تطور عدد الطلبات خلال الأشهر الماضية" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if months %}
+                        <div class="chart-container">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد بيانات لعرضها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- أحدث الطلبات -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "أحدث الطلبات" %}</h5>
+                    <a href="{% url 'applications:admin_applications' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_applications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{% trans "المتقدم" %}</th>
+                                        <th>{% trans "فرصة الابتعاث" %}</th>
+                                        <th>{% trans "تاريخ التقديم" %}</th>
+                                        <th>{% trans "الحالة" %}</th>
+                                        <th>{% trans "الإجراءات" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in recent_applications %}
+                                        <tr>
+                                            <td>{{ application.applicant.get_full_name }}</td>
+                                            <td>{{ application.scholarship.title|truncatechars:40 }}</td>
+                                            <td>{{ application.application_date|date:"Y-m-d" }}</td>
+                                            <td>
+                                                {% if application.status.order == 1 %}
+                                                    <span class="badge bg-warning">{{ application.status.name }}</span>
+                                                {% elif application.status.order == 2 %}
+                                                    <span class="badge bg-primary">{{ application.status.name }}</span>
+                                                {% elif application.status.order == 3 or application.status.order == 4 %}
+                                                    <span class="badge bg-success">{{ application.status.name }}</span>
+                                                {% elif application.status.order == 5 %}
+                                                    <span class="badge bg-danger">{{ application.status.name }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ application.status.name }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد طلبات حالية" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // إحصائية عدد المستخدمين (هذه قيمة وهمية للعرض)
+        document.getElementById('userCount').textContent = "56";
+        
+        {% if applications_by_status %}
+        // رسم بياني لتوزيع الطلبات حسب الحالة
+        var statusCtx = document.getElementById('statusChart').getContext('2d');
+        var statusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for status in applications_by_status %}
+                        "{{ status.status__name }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for status in applications_by_status %}
+                            {{ status.count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.7)',  // أصفر
+                        'rgba(13, 110, 253, 0.7)', // أزرق
+                        'rgba(25, 135, 84, 0.7)',  // أخضر
+                        'rgba(220, 53, 69, 0.7)',  // أحمر
+                        'rgba(108, 117, 125, 0.7)' // رمادي
+                    ],
+                    borderColor: 'white',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% if applications_by_type %}
+        // رسم بياني لتوزيع الطلبات حسب نوع الابتعاث
+        var typeCtx = document.getElementById('typeChart').getContext('2d');
+        var typeChart = new Chart(typeCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for type in applications_by_type %}
+                        "{{ type.scholarship__scholarship_type__name }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: '{% trans "عدد الطلبات" %}',
+                    data: [
+                        {% for type in applications_by_type %}
+                            {{ type.count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% if months %}
+        // رسم بياني لتطور عدد الطلبات خلال الأشهر الماضية
+        var monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        var monthlyChart = new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: [
+                    {% for month in months %}
+                        "{{ month }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: '{% trans "عدد الطلبات" %}',
+                    data: [
+                        {% for count in counts %}
+                            {{ count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

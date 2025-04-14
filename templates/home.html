@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الرئيسية" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3">{% trans "نظام الابتعاث الإلكتروني" %}</h1>
+            <h2 class="h4 text-muted">{% trans "جامعة البترا" %}</h2>
+            <p class="lead mt-4">
+                {% trans "نظام متكامل لإدارة جميع مراحل الابتعاث في جامعة البترا، بدءًا من الإعلان عن الفرص المتاحة، مرورًا بعملية التقديم، التقييم، الترشيح، القبول، التمويل المالي، ومتابعة الطلبة المبتعثين." %}
+            </p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-bullhorn fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">{% trans "فرص الابتعاث" %}</h5>
+                <p class="card-text">{% trans "استكشف فرص الابتعاث المتاحة للطلاب وأعضاء هيئة التدريس." %}</p>
+                <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-outline-primary">{% trans "عرض الفرص" %}</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-file-alt fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">{% trans "تقديم الطلبات" %}</h5>
+                <p class="card-text">{% trans "قدم طلب الابتعاث إلكترونياً وتابع حالة طلبك." %}</p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'applications:my_applications' %}" class="btn btn-outline-primary">{% trans "طلباتي" %}</a>
+                {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary">{% trans "تسجيل الدخول للتقديم" %}</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-bell fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">{% trans "الإعلانات" %}</h5>
+                <p class="card-text">{% trans "تابع أحدث الإعلانات والأخبار المتعلقة بالابتعاث." %}</p>
+                <a href="{% url 'announcements:announcement_list' %}" class="btn btn-outline-primary">{% trans "عرض الإعلانات" %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

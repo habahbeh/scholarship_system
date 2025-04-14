@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+{% if is_create %}
+{% trans "إنشاء جولة تقييم جديدة" %} - {% trans "نظام الابتعاث الإلكتروني" %}
+{% else %}
+{% trans "تعديل جولة تقييم" %} - {% trans "نظام الابتعاث الإلكتروني" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- مسار التنقل -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:round_list' %}">{% trans "جولات التقييم" %}</a></li>
+            {% if is_create %}
+            <li class="breadcrumb-item active" aria-current="page">{% trans "إنشاء جولة جديدة" %}</li>
+            {% else %}
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:round_detail' evaluation_round.id %}">{{ evaluation_round.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "تعديل" %}</li>
+            {% endif %}
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if is_create %}
+                        <i class="fas fa-plus-circle me-2"></i>{% trans "إنشاء جولة تقييم جديدة" %}
+                        {% else %}
+                        <i class="fas fa-edit me-2"></i>{% trans "تعديل جولة تقييم" %}
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    {% if not is_create %}
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "تعديل هذه الجولة قد يؤثر على التقييمات الجارية. الرجاء التأكد من صحة البيانات قبل الحفظ." %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.round_type|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.committee|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.min_evaluators|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.start_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.end_date|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.description|as_crispy_field }}
+                        
+                        <div class="form-group mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label">{{ form.criteria.label }}</label>
+                                <a href="{% url 'evaluation:criterion_create' %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="fas fa-plus me-1"></i> {% trans "إضافة معيار جديد" %}
+                                </a>
+                            </div>
+                            <div class="card border">
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for choice in form.criteria.field.choices %}
+                                        <div class="col-md-4 mb-2">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="{{ form.criteria.name }}" class="form-check-input" id="id_criteria_{{ forloop.counter }}" value="{{ choice.0 }}" {% if choice.0 in form.criteria.value %}checked{% endif %}>
+                                                <label class="form-check-label" for="id_criteria_{{ forloop.counter }}">
+                                                    {{ choice.1 }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if form.criteria.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.criteria.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {{ form.is_active|as_crispy_field }}
+                        
+                        <div class="mt-4 d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                {% if is_create %}
+                                <i class="fas fa-plus-circle me-1"></i> {% trans "إنشاء الجولة" %}
+                                {% else %}
+                                <i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}
+                                {% endif %}
+                            </button>
+                            
+                            <a href="{% if is_create %}{% url 'evaluation:round_list' %}{% else %}{% url 'evaluation:round_detail' evaluation_round.id %}{% endif %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تحديث قائمة الأقسام عند تغيير الكلية
+        const committeeSelect = document.getElementById('id_committee');
+        const roundTypeSelect = document.getElementById('id_round_type');
+        
+        // تنسيق حقول التاريخ والوقت
+        const startDateInput = document.getElementById('id_start_date');
+        const endDateInput = document.getElementById('id_end_date');
+        
+        // التأكد من أن تاريخ الانتهاء لا يسبق تاريخ البدء
+        if (startDateInput && endDateInput) {
+            startDateInput.addEventListener('change', function() {
+                if (endDateInput.value && startDateInput.value > endDateInput.value) {
+                    endDateInput.value = startDateInput.value;
+                }
+                endDateInput.min = startDateInput.value;
+            });
+            
+            if (startDateInput.value) {
+                endDateInput.min = startDateInput.value;
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

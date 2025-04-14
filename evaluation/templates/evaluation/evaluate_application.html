@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "تقييم طلب ابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .criterion-card {
+        transition: transform 0.2s;
+    }
+    .criterion-card:hover {
+        transform: translateY(-3px);
+    }
+    .score-range {
+        direction: ltr;
+    }
+    .document-card {
+        transition: all 0.3s;
+    }
+    .document-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .document-icon {
+        font-size: 2rem;
+    }
+    .pdf-icon { color: #dc3545; }
+    .doc-icon { color: #0d6efd; }
+    .img-icon { color: #198754; }
+    .file-icon { color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- مسار التنقل -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:evaluator_dashboard' %}">{% trans "لوحة تحكم المقيِّم" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "تقييم طلب" %}</li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-2">{% trans "تقييم طلب ابتعاث" %}</h2>
+            <p class="text-muted">
+                {% trans "جولة التقييم:" %} <strong>{{ evaluation.evaluation_round.name }}</strong> |
+                {% trans "فرصة الابتعاث:" %} <strong>{{ application.scholarship.title }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            {% if evaluation.is_submitted %}
+            <span class="badge bg-success p-2">{% trans "تم تقديم التقييم" %}</span>
+            {% else %}
+            <span class="badge bg-warning p-2">{% trans "مسودة" %}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- معلومات مقدم الطلب والطلب -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "معلومات الطلب" %}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">{% trans "معلومات مقدم الطلب" %}</h6>
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            {% if application.applicant.profile.profile_picture %}
+                            <img src="{{ application.applicant.profile.profile_picture.url }}" alt="{{ application.applicant.get_full_name }}" class="rounded-circle me-3" width="50" height="50">
+                            {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                <i class="fas fa-user text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0">{{ application.applicant.get_full_name }}</h6>
+                                <small class="text-muted">{{ application.applicant.email }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>{% trans "الكلية:" %}</strong>
+                            <span>{{ application.applicant.profile.faculty|default:"-" }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>{% trans "القسم:" %}</strong>
+                            <span>{{ application.applicant.profile.department|default:"-" }}</span>
+                        </div>
+                        
+                        <div>
+                            <strong>{% trans "التخصص:" %}</strong>
+                            <span>{{ application.applicant.profile.specialization|default:"-" }}</span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">{% trans "معلومات فرصة الابتعاث" %}</h6>
+                    <div>
+                        <div class="mb-2">
+                            <strong>{% trans "عنوان الفرصة:" %}</strong>
+                            <span>{{ application.scholarship.title }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>{% trans "نوع الابتعاث:" %}</strong>
+                            <span>{{ application.scholarship.scholarship_type.name }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>{% trans "تاريخ التقديم:" %}</strong>
+                            <span>{{ application.application_date|date:"Y-m-d" }}</span>
+                        </div>
+                        
+                        <div>
+                            <strong>{% trans "حالة الطلب:" %}</strong>
+                            <span class="badge bg-{{ application.status.order|add:"-1"|yesno:"warning,primary,success,danger,secondary" }}">
+                                {{ application.status.name }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">{% trans "معلومات التقييم" %}</h6>
+                    <div>
+                        <div class="mb-2">
+                            <strong>{% trans "جولة التقييم:" %}</strong>
+                            <span>{{ evaluation.evaluation_round.name }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>{% trans "نوع الجولة:" %}</strong>
+                            <span>{{ evaluation.evaluation_round.get_round_type_display }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>{% trans "تاريخ انتهاء الجولة:" %}</strong>
+                            <span class="{% if evaluation.evaluation_round.end_date|date:'Y-m-d' < now|date:'Y-m-d' %}text-danger{% endif %}">
+                                {{ evaluation.evaluation_round.end_date|date:"Y-m-d" }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "يرجى الاطلاع على جميع المعلومات والمستندات بعناية قبل إجراء التقييم." %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- مستندات الطلب -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "مستندات الطلب" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="row row-cols-1 g-3">
+                        {% for document in documents %}
+                        <div class="col">
+                            <div class="card document-card h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            {% if document.file.url|lower|endswith:".pdf" %}
+                                            <i class="far fa-file-pdf document-icon pdf-icon"></i>
+                                            {% elif document.file.url|lower|endswith:".doc" or document.file.url|lower|endswith:".docx" %}
+                                            <i class="far fa-file-word document-icon doc-icon"></i>
+                                            {% elif document.file.url|lower|endswith:".jpg" or document.file.url|lower|endswith:".jpeg" or document.file.url|lower|endswith:".png" %}
+                                            <i class="far fa-file-image document-icon img-icon"></i>
+                                            {% else %}
+                                            <i class="far fa-file document-icon file-icon"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">{{ document.name }}</h6>
+                                            <small class="text-muted d-block">{{ document.upload_date|date:"Y-m-d" }}</small>
+                                            {% if document.is_required %}
+                                            <span class="badge bg-danger">{% trans "مطلوب" %}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ms-auto">
+                                            <a href="{{ document.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                <i class="fas fa-external-link-alt"></i> {% trans "عرض" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <p class="mb-0">{% trans "لا توجد مستندات مرفقة بهذا الطلب." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- نموذج التقييم -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "نموذج التقييم" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- معلومات الطلب -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "خطاب الدوافع المقدم" %}</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p class="mb-0">{{ application.motivation_letter|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if application.research_proposal %}
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "مقترح البحث المقدم" %}</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p class="mb-0">{{ application.research_proposal|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- معايير التقييم -->
+                        <h5 class="mb-3 mt-4">{% trans "معايير التقييم" %}</h5>
+                        
+                        {{ formset.management_form }}
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% trans "يرجى تقييم الطلب وفقاً للمعايير التالية. درجة التقييم من 0 إلى 10 حيث 0 هي الأدنى و10 هي الأعلى." %}
+                        </div>
+                        
+                        <div class="row row-cols-1 g-4 mb-4">
+                            {% for form in formset %}
+                            <div class="col">
+                                <div class="card criterion-card h-100">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">{{ form.instance.criterion.name }}</h6>
+                                        <span class="badge bg-primary">{% trans "الوزن:" %} {{ form.instance.criterion.weight }}/10</span>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if form.instance.criterion.description %}
+                                        <p class="text-muted mb-3">{{ form.instance.criterion.description }}</p>
+                                        {% endif %}
+                                        
+                                        {{ form.id }}
+                                        {{ form.evaluation }}
+                                        {{ form.criterion }}
+                                        
+                                        <div class="row mb-3">
+                                            <div class="col-md-8">
+                                                {{ form.score|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">{% trans "التقدير" %}</label>
+                                                <div class="score-range">
+                                                    <div class="progress" style="height: 25px;">
+                                                        <div class="progress-bar {% if form.instance.score < 4 %}bg-danger{% elif form.instance.score < 7 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                             role="progressbar" 
+                                                             style="width: {{ form.instance.score|default:0|mul:10 }}%;" 
+                                                             aria-valuenow="{{ form.instance.score|default:0 }}" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="10">
+                                                            {{ form.instance.score|default:0 }}/10
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            {{ form.comments|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- ملاحظات عامة على التقييم -->
+                        <div class="mb-4">
+                            {{ form.comments|as_crispy_field }}
+                        </div>
+                        
+                        <!-- تقديم التقييم -->
+                        <div class="form-check mb-4">
+                            {{ form.is_submitted.tag }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_submitted.id_for_label }}">
+                                {% trans "الانتهاء من التقييم وتقديمه" %}
+                            </label>
+                            <div class="form-text text-muted">
+                                {% trans "عند التأشير على هذا الخيار، سيتم اعتبار التقييم نهائياً ولن يمكن تعديله لاحقاً." %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> {% trans "حفظ التقييم" %}
+                            </button>
+                            
+                            <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // تحديث شريط التقدم عند تغيير الدرجة
+    document.addEventListener('DOMContentLoaded', function() {
+        const scoreInputs = document.querySelectorAll('input[name$="-score"]');
+        
+        scoreInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const value = parseInt(this.value) || 0;
+                const progressBar = this.closest('.row').querySelector('.progress-bar');
+                
+                if (progressBar) {
+                    progressBar.style.width = (value * 10) + '%';
+                    progressBar.setAttribute('aria-valuenow', value);
+                    progressBar.textContent = value + '/10';
+                    
+                    // تحديث لون شريط التقدم
+                    progressBar.classList.remove('bg-danger', 'bg-warning', 'bg-success');
+                    if (value < 4) {
+                        progressBar.classList.add('bg-danger');
+                    } else if (value < 7) {
+                        progressBar.classList.add('bg-warning');
+                    } else {
+                        progressBar.classList.add('bg-success');
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

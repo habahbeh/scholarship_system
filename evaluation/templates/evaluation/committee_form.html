@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+{% if is_create %}
+{% trans "إنشاء لجنة تقييم جديدة" %} - {% trans "نظام الابتعاث الإلكتروني" %}
+{% else %}
+{% trans "تعديل لجنة تقييم" %} - {% trans "نظام الابتعاث الإلكتروني" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- مسار التنقل -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:committee_list' %}">{% trans "لجان التقييم" %}</a></li>
+            {% if is_create %}
+            <li class="breadcrumb-item active" aria-current="page">{% trans "إنشاء لجنة جديدة" %}</li>
+            {% else %}
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:committee_detail' committee.id %}">{{ committee.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "تعديل" %}</li>
+            {% endif %}
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if is_create %}
+                        <i class="fas fa-plus-circle me-2"></i>{% trans "إنشاء لجنة تقييم جديدة" %}
+                        {% else %}
+                        <i class="fas fa-edit me-2"></i>{% trans "تعديل لجنة تقييم" %}
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {{ form|crispy }}
+
+                        <div class="mt-4 d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                {% if is_create %}
+                                <i class="fas fa-plus-circle me-1"></i> {% trans "إنشاء اللجنة" %}
+                                {% else %}
+                                <i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}
+                                {% endif %}
+                            </button>
+
+                            <a href="{% if is_create %}{% url 'evaluation:committee_list' %}{% else %}{% url 'evaluation:committee_detail' committee.id %}{% endif %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

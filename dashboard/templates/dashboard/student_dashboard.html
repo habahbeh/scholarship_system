@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "لوحة تحكم الطالب" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .application-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .application-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    
+    .status-pending {
+        background-color: #ffc107;
+    }
+    
+    .status-review {
+        background-color: #0d6efd;
+    }
+    
+    .status-approved {
+        background-color: #198754;
+    }
+    
+    .status-rejected {
+        background-color: #dc3545;
+    }
+    
+    .status-card {
+        border-left: 5px solid #dee2e6;
+    }
+    
+    .status-card.pending {
+        border-left-color: #ffc107;
+    }
+    
+    .status-card.review {
+        border-left-color: #0d6efd;
+    }
+    
+    .status-card.approved {
+        border-left-color: #198754;
+    }
+    
+    .status-card.rejected {
+        border-left-color: #dc3545;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-badge {
+        position: absolute;
+        left: -30px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+    
+    .timeline-badge.success {
+        border-color: #198754;
+        background: #198754;
+        color: white;
+    }
+    
+    .timeline-badge.primary {
+        border-color: #0d6efd;
+        background: #0d6efd;
+        color: white;
+    }
+    
+    .timeline-badge.warning {
+        border-color: #ffc107;
+        background: #ffc107;
+        color: white;
+    }
+    
+    .timeline-badge.danger {
+        border-color: #dc3545;
+        background: #dc3545;
+        color: white;
+    }
+    
+    .deadline-card {
+        border-right: 4px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس لوحة التحكم -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">{% trans "لوحة تحكم الطالب" %}</h1>
+            <p class="text-muted">{% trans "مرحباً بك في لوحة تحكم الطالب، يمكنك متابعة طلباتك واستعراض فرص الابتعاث المتاحة." %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'applications:my_applications' %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-clipboard-list me-1"></i> {% trans "طلباتي" %}
+            </a>
+            <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-primary">
+                <i class="fas fa-search me-1"></i> {% trans "البحث عن فرص" %}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- العمود الأيسر - طلباتي وفرص الابتعاث -->
+        <div class="col-lg-8">
+            <!-- طلباتي الحالية -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "طلباتي" %}</h5>
+                    <a href="{% url 'applications:my_applications' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body">
+                    {% if user_applications %}
+                        <div class="row row-cols-1 row-cols-md-2 g-4">
+                            {% for application in user_applications|slice:":4" %}
+                                <div class="col">
+                                    <div class="card application-card shadow-sm border-0">
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                                            <span>
+                                                {% if application.status.order == 1 %}
+                                                    <span class="status-indicator status-pending"></span>
+                                                {% elif application.status.order == 2 %}
+                                                    <span class="status-indicator status-review"></span>
+                                                {% elif application.status.order == 3 or application.status.order == 4 %}
+                                                    <span class="status-indicator status-approved"></span>
+                                                {% else %}
+                                                    <span class="status-indicator status-rejected"></span>
+                                                {% endif %}
+                                                <small>{{ application.status.name }}</small>
+                                            </span>
+                                            <small class="text-muted">{{ application.application_date|date:"Y-m-d" }}</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ application.scholarship.title }}</h6>
+                                            <p class="card-text text-muted small mb-2">
+                                                <i class="fas fa-graduation-cap me-1"></i> {{ application.scholarship.scholarship_type.name }}
+                                            </p>
+                                        </div>
+                                        <div class="card-footer bg-white">
+                                            <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-sm btn-outline-primary w-100">
+                                                <i class="fas fa-eye me-1"></i> {% trans "عرض التفاصيل" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if user_applications.count > 4 %}
+                            <div class="text-center mt-3">
+                                <a href="{% url 'applications:my_applications' %}" class="btn btn-link text-decoration-none">
+                                    {% trans "عرض جميع الطلبات" %} ({{ user_applications.count }})
+                                    <i class="fas fa-arrow-left ms-1"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                            <h5>{% trans "لم تقم بتقديم أي طلبات بعد" %}</h5>
+                            <p class="text-muted">{% trans "استعرض فرص الابتعاث المتاحة وقم بالتقديم على المناسب منها" %}</p>
+                            <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-search me-1"></i> {% trans "استعراض فرص الابتعاث" %}
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- فرص الابتعاث القادمة -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "فرص الابتعاث القادمة" %}</h5>
+                    <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_scholarships %}
+                        <div class="list-group list-group-flush">
+                            {% for scholarship in upcoming_scholarships %}
+                                <div class="list-group-item list-group-item-action deadline-card">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <div>
+                                            <h6 class="mb-1">{{ scholarship.title }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-graduation-cap me-1"></i> {{ scholarship.scholarship_type.name }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-danger rounded-pill mb-1">
+                                                {{ scholarship.deadline|timeuntil }}
+                                            </span>
+                                            <small class="d-block text-muted">
+                                                {{ scholarship.deadline|date:"Y-m-d" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <small class="text-muted">
+                                            {% if scholarship.countries %}
+                                                <i class="fas fa-globe me-1"></i> {{ scholarship.countries }}
+                                            {% endif %}
+                                        </small>
+                                        <a href="{% url 'announcements:scholarship_detail' scholarship.id %}" class="btn btn-sm btn-outline-primary">
+                                            {% trans "التفاصيل" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-graduation-cap fa-4x text-muted mb-3"></i>
+                            <h5>{% trans "لا توجد فرص ابتعاث قادمة حالياً" %}</h5>
+                            <p class="text-muted">{% trans "يرجى التحقق لاحقاً من الفرص الجديدة" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- العمود الأيمن - الإحصائيات والتحديثات -->
+        <div class="col-lg-4">
+            <!-- ملخص حالة طلباتي -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "ملخص حالة طلباتي" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if applications_by_status %}
+                        {% for status, apps in applications_by_status.items %}
+                            {% if status == "قيد الانتظار" %}
+                                <div class="card status-card pending mb-3">
+                            {% elif status == "قيد المراجعة" %}
+                                <div class="card status-card review mb-3">
+                            {% elif "مقبول" in status %}
+                                <div class="card status-card approved mb-3">
+                            {% elif "مرفوض" in status %}
+                                <div class="card status-card rejected mb-3">
+                            {% else %}
+                                <div class="card status-card mb-3">
+                            {% endif %}
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="d-block fw-bold">{{ status }}</span>
+                                            <small class="text-muted">
+                                                {% blocktrans count counter=apps|length %}
+                                                    طلب واحد
+                                                {% plural %}
+                                                    {{ counter }} طلبات
+                                                {% endblocktrans %}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">{{ apps|length }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد طلبات لعرض حالتها" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- آخر التحديثات -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "آخر التحديثات" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if application_logs %}
+                        <div class="timeline">
+                            {% for log in application_logs %}
+                                <div class="timeline-item">
+                                    {% if "مقبول" in log.to_status.name %}
+                                        <div class="timeline-badge success">
+                                            <i class="fas fa-check fa-xs"></i>
+                                        </div>
+                                    {% elif "مرفوض" in log.to_status.name %}
+                                        <div class="timeline-badge danger">
+                                            <i class="fas fa-times fa-xs"></i>
+                                        </div>
+                                    {% elif "مراجعة" in log.to_status.name %}
+                                        <div class="timeline-badge primary">
+                                            <i class="fas fa-sync-alt fa-xs"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="timeline-badge warning">
+                                            <i class="fas fa-clock fa-xs"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="card shadow-sm">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title mb-1">{{ log.application.scholarship.title|truncatechars:40 }}</h6>
+                                            <p class="card-text small mb-2">
+                                                <i class="fas fa-arrow-right me-1 text-success"></i>
+                                                {% trans "تم تغيير الحالة من" %} 
+                                                "{{ log.from_status.name|default:'جديد' }}" 
+                                                {% trans "إلى" %} 
+                                                "{{ log.to_status.name }}"
+                                            </p>
+                                            <small class="text-muted">{{ log.created_at|date:"Y-m-d H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p>{% trans "لا توجد تحديثات حالية" %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- آخر الإعلانات -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "آخر الإعلانات" %}</h5>
+                    <a href="{% url 'announcements:announcement_list' %}" class="btn btn-sm btn-outline-primary">{% trans "عرض الكل" %}</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for announcement in recent_announcements %}
+                            <a href="{% url 'announcements:announcement_detail' announcement.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ announcement.title }}</h6>
+                                    <small class="text-muted">{{ announcement.publication_date|date:"Y-m-d" }}</small>
+                                </div>
+                                <p class="mb-1 text-muted small">{{ announcement.content|truncatechars:80 }}</p>
+                            </a>
+                        {% empty %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                                <p>{% trans "لا توجد إعلانات حالية" %}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

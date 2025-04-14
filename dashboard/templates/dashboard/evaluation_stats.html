@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "إحصائيات التقييمات" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .progress {
+        height: 8px;
+    }
+    .scores-table th, .scores-table td {
+        padding: 12px 15px;
+    }
+    .progress-bar-score {
+        background: linear-gradient(90deg, #4dabf7 0%, #1e74fd 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- رأس الصفحة -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h1 class="mb-2">{% trans "إحصائيات التقييمات" %}</h1>
+            <p class="text-muted">{% trans "تحليل بيانات تقييمات الطلبات ومؤشرات أداء اللجان" %}</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> {% trans "العودة للوحة التحكم" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- قسم التصفية -->
+    <div class="filter-section shadow-sm">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                {{ filter_form.committee|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.round_type|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.evaluator|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.date_range|as_crispy_field }}
+            </div>
+            <div class="col-md-3" id="start_date_container" style="display: none;">
+                {{ filter_form.start_date|as_crispy_field }}
+            </div>
+            <div class="col-md-3" id="end_date_container" style="display: none;">
+                {{ filter_form.end_date|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> {% trans "تطبيق" %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- بطاقات الإحصائيات الرئيسية -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                                <i class="fas fa-clipboard-check fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-end">
+                                <h3 class="mb-0">{{ total_evaluations }}</h3>
+                                <p class="text-muted mb-0">{% trans "إجمالي التقييمات" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-end">
+                                <h3 class="mb-0">{{ completed_evaluations }}</h3>
+                                <p class="text-muted mb-0">{% trans "التقييمات المكتملة" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                                <i class="fas fa-hourglass-half fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-end">
+                                <h3 class="mb-0">{{ pending_evaluations }}</h3>
+                                <p class="text-muted mb-0">{% trans "التقييمات المعلقة" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                                <i class="fas fa-percentage fa-2x text-info"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="text-end">
+                                <h3 class="mb-0">{{ completion_rate|floatformat:1 }}%</h3>
+                                <p class="text-muted mb-0">{% trans "نسبة الإنجاز" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white p-2">
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ completion_rate }}%" aria-valuenow="{{ completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الرسوم البيانية والإحصائيات -->
+    <div class="row">
+        <!-- متوسط درجات المعايير -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{% trans "متوسط درجات المعايير" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="criteriaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- التقييمات حسب المقيّم -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{% trans "أكثر المقيّمين نشاطاً" %}</h5>
+                </div>
+                <div class="card-body px-0 pb-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>{% trans "المقيّم" %}</th>
+                                    <th class="text-center">{% trans "عدد التقييمات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluator in evaluations_by_evaluator %}
+                                <tr>
+                                    <td>{{ evaluator.evaluator__first_name }} {{ evaluator.evaluator__last_name }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary rounded-pill">{{ evaluator.count }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center py-4">
+                                        <p class="text-muted mb-0">{% trans "لا توجد بيانات" %}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- تفاصيل متوسط الدرجات -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{% trans "تفاصيل متوسط الدرجات" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover scores-table">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "المعيار" %}</th>
+                                    <th>{% trans "المتوسط" %}</th>
+                                    <th style="width: 50%;">{% trans "المقياس" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for criterion in avg_scores_by_criterion %}
+                                <tr>
+                                    <td>{{ criterion.criterion__name }}</td>
+                                    <td class="fw-bold">{{ criterion.avg_score|floatformat:1 }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-score" role="progressbar" 
+                                                 style="width: {{ criterion.avg_score|multiply:10 }}%" 
+                                                 aria-valuenow="{{ criterion.avg_score }}" 
+                                                 aria-valuemin="0" aria-valuemax="10"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4">
+                                        <p class="text-muted mb-0">{% trans "لا توجد بيانات" %}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- التقييمات حسب الجولة -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">{% trans "التقييمات حسب جولة التقييم" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="roundsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // التعامل مع حقول التاريخ المخصص
+    const dateRangeField = document.querySelector('#id_date_range');
+    const startDateContainer = document.querySelector('#start_date_container');
+    const endDateContainer = document.querySelector('#end_date_container');
+    
+    function toggleDateFields() {
+        if (dateRangeField.value === 'custom') {
+            startDateContainer.style.display = 'block';
+            endDateContainer.style.display = 'block';
+        } else {
+            startDateContainer.style.display = 'none';
+            endDateContainer.style.display = 'none';
+        }
+    }
+    
+    dateRangeField.addEventListener('change', toggleDateFields);
+    toggleDateFields(); // تشغيل عند تحميل الصفحة
+    
+    // ألوان الرسومات البيانية
+    const chartColors = [
+        'rgba(54, 162, 235, 0.7)', // أزرق
+        'rgba(255, 99, 132, 0.7)',  // أحمر
+        'rgba(75, 192, 192, 0.7)',  // أخضر
+        'rgba(255, 159, 64, 0.7)',  // برتقالي
+        'rgba(153, 102, 255, 0.7)', // بنفسجي
+        'rgba(255, 205, 86, 0.7)',  // أصفر
+        'rgba(201, 203, 207, 0.7)', // رمادي
+    ];
+    
+    // رسم بياني متوسط درجات المعايير
+    const criteriaCtx = document.getElementById('criteriaChart').getContext('2d');
+    const criteriaData = {
+        labels: [
+            {% for criterion in avg_scores_by_criterion %}
+                "{{ criterion.criterion__name }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: '{% trans "متوسط الدرجة" %}',
+            data: [
+                {% for criterion in avg_scores_by_criterion %}
+                    {{ criterion.avg_score|floatformat:1 }},
+                {% endfor %}
+            ],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointRadius: 4
+        }]
+    };
+    
+    const criteriaOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 10,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    };
+    
+    new Chart(criteriaCtx, {
+        type: 'line',
+        data: criteriaData,
+        options: criteriaOptions
+    });
+    
+    // رسم بياني التقييمات حسب الجولة
+    const roundsCtx = document.getElementById('roundsChart').getContext('2d');
+    const roundsData = {
+        labels: [
+            {% for round in evaluations_by_round %}
+                "{{ round.evaluation_round__name }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: '{% trans "عدد التقييمات" %}',
+            data: [
+                {% for round in evaluations_by_round %}
+                    {{ round.count }},
+                {% endfor %}
+            ],
+            backgroundColor: chartColors,
+            borderColor: 'white',
+            borderWidth: 1
+        }]
+    };
+    
+    const roundsOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    };
+    
+    new Chart(roundsCtx, {
+        type: 'doughnut',
+        data: roundsData,
+        options: roundsOptions
+    });
+});
+</script>
+{% endblock %}

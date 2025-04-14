@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "فرص الابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "فرص الابتعاث المتاحة" %}</h1>
+            <p class="text-muted">{% trans "استعرض فرص الابتعاث المتاحة وتقدم للحصول على الدعم الدراسي." %}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if perms.announcements.add_scholarship %}
+            <a href="{% url 'announcements:scholarship_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> {% trans "إضافة فرصة ابتعاث" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- فلاتر البحث -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "البحث والتصفية" %}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        {{ filter_form|crispy }}
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i> {% trans "تطبيق" %}
+                            </button>
+                            <a href="{% url 'announcements:scholarship_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-2"></i> {% trans "إعادة ضبط" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- قائمة فرص الابتعاث -->
+        <div class="col-md-9">
+            {% if scholarships %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for scholarship in scholarships %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-0">
+                            {% if scholarship.is_active %}
+                                <div class="badge bg-success position-absolute top-0 end-0 m-2">{% trans "متاح" %}</div>
+                            {% else %}
+                                <div class="badge bg-secondary position-absolute top-0 end-0 m-2">{% trans "منتهي" %}</div>
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                <h5 class="card-title">{{ scholarship.title }}</h5>
+                                <p class="card-text text-muted mb-2">
+                                    <small>
+                                        <i class="fas fa-tag me-1"></i> {{ scholarship.scholarship_type.name }}
+                                    </small>
+                                </p>
+                                <p class="card-text">{{ scholarship.description|truncatewords:20 }}</p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="far fa-calendar-alt me-1"></i> {% trans "الموعد النهائي:" %} {{ scholarship.deadline|date:"Y-m-d" }}
+                                    </small>
+                                    <a href="{% url 'announcements:scholarship_detail' scholarship.id %}" class="btn btn-sm btn-outline-primary">
+                                        {% trans "التفاصيل" %}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- ترقيم الصفحات -->
+                {% if scholarships.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if scholarships.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ scholarships.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in scholarships.paginator.page_range %}
+                            {% if scholarships.number == num %}
+                                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                            {% elif num > scholarships.number|add:'-3' and num < scholarships.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if scholarships.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ scholarships.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ scholarships.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% trans "لا توجد فرص ابتعاث متاحة حالياً. يرجى التحقق لاحقاً." %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

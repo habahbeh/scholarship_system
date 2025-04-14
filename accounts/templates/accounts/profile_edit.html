@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "تعديل الملف الشخصي" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{% trans "تعديل الملف الشخصي" %}</h3>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-1"></i> {% trans "العودة" %}
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                    <div class="alert alert-info">
+                        {% for message in messages %}
+                            {{ message }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 text-center">
+                                <h5 class="text-primary mb-3">{% trans "الصورة الشخصية" %}</h5>
+                                {% if form.profile_picture.value %}
+                                    <img src="{{ form.profile_picture.value.url }}" alt="{% trans 'صورة الملف الشخصي' %}" class="img-fluid rounded-circle shadow mb-3" style="width: 200px; height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="profile-placeholder rounded-circle shadow d-flex align-items-center justify-content-center bg-light mx-auto mb-3" style="width: 200px; height: 200px;">
+                                        <i class="fas fa-user fa-5x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    {{ form.profile_picture|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <h5 class="text-primary mb-3">{% trans "المعلومات الشخصية" %}</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ user_form.first_name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ user_form.last_name|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.id_number|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.date_of_birth|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.gender|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.phone_number|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.address|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">{% trans "المعلومات الأكاديمية" %}</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.faculty|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.department|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.academic_rank|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.specialization|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">{% trans "نبذة شخصية" %}</h5>
+                                {{ form.bio|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">{% trans "معلومات تسجيل الدخول" %}</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ user_form.username|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ user_form.email|as_crispy_field }}
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {% trans "لتغيير كلمة المرور، يرجى الانتقال إلى" %}
+                                    <a href="{% url 'accounts:password_change' %}" class="alert-link">{% trans "صفحة تغيير كلمة المرور" %}</a>.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary py-2">
+                                <i class="fas fa-save me-2"></i>{% trans "حفظ التغييرات" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JavaScript لتحديث قائمة الأقسام عندما يتغير اختيار الكلية
+    document.addEventListener('DOMContentLoaded', function() {
+        const facultySelect = document.getElementById('id_faculty');
+        const departmentSelect = document.getElementById('id_department');
+        
+        if (facultySelect && departmentSelect) {
+            facultySelect.addEventListener('change', function() {
+                const facultyId = this.value;
+                
+                // تفريغ قائمة الأقسام
+                departmentSelect.innerHTML = '<option value="">---------</option>';
+                
+                if (facultyId) {
+                    // هنا يجب إضافة طلب AJAX لجلب الأقسام المناسبة
+                    // للتبسيط، سيتم تنفيذ هذا لاحقاً
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

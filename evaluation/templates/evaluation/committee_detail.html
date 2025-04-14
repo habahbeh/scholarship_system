@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ committee.name }} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- مسار التنقل -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'evaluation:committee_list' %}">{% trans "لجان التقييم" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ committee.name }}</li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">{{ committee.name }}</h1>
+            <div class="d-flex align-items-center">
+                <span class="me-3">
+                    {% if committee.is_active %}
+                    <span class="badge bg-success">{% trans "نشطة" %}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{% trans "غير نشطة" %}</span>
+                    {% endif %}
+                </span>
+                <span class="text-muted">
+                    <i class="far fa-calendar-alt me-1"></i> {% trans "تاريخ الإنشاء:" %} {{ committee.created_at|date:"Y-m-d" }}
+                </span>
+            </div>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group">
+                {% if perms.evaluation.change_committee %}
+                <a href="{% url 'evaluation:committee_edit' committee.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
+                </a>
+                {% endif %}
+                {% if perms.evaluation.delete_committee %}
+                <a href="{% url 'evaluation:committee_delete' committee.id %}" class="btn btn-outline-danger">
+                    <i class="fas fa-trash me-1"></i> {% trans "حذف" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- معلومات اللجنة -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "معلومات اللجنة" %}</h5>
+                </div>
+                <div class="card-body">
+                    {% if committee.description %}
+                    <p>{{ committee.description }}</p>
+                    {% else %}
+                    <p class="text-muted fst-italic">{% trans "لا يوجد وصف للجنة" %}</p>
+                    {% endif %}
+
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">{% trans "عدد الأعضاء:" %}</span>
+                        <span>{{ committee.member_count }}</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">{% trans "تاريخ الإنشاء:" %}</span>
+                        <span>{{ committee.created_at|date:"Y-m-d" }}</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">{% trans "آخر تحديث:" %}</span>
+                        <span>{{ committee.updated_at|date:"Y-m-d" }}</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">{% trans "الحالة:" %}</span>
+                        <span>
+                            {% if committee.is_active %}
+                            <span class="badge bg-success">{% trans "نشطة" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "غير نشطة" %}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- أعضاء اللجنة -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "أعضاء اللجنة" %}</h5>
+                    {% if perms.evaluation.change_committee %}
+                    <a href="{% url 'evaluation:committee_add_member' committee.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-user-plus me-1"></i> {% trans "إضافة عضو" %}
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if members %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "الاسم" %}</th>
+                                    <th>{% trans "البريد الإلكتروني" %}</th>
+                                    <th>{% trans "الإجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in members %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% if member.profile.profile_picture %}
+                                                <img src="{{ member.profile.profile_picture.url }}" alt="{{ member.get_full_name }}" class="rounded-circle" width="40" height="40">
+                                                {% else %}
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ member.get_full_name }}</h6>
+                                                <small class="text-muted">{{ member.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ member.email }}</td>
+                                    <td>
+                                        {% if perms.evaluation.change_committee %}
+                                        <a href="{% url 'evaluation:committee_remove_member' committee.id member.id %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-user-minus"></i> {% trans "إزالة" %}
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="mb-0">{% trans "لا يوجد أعضاء في هذه اللجنة حالياً" %}</p>
+                        {% if perms.evaluation.change_committee %}
+                        <a href="{% url 'evaluation:committee_add_member' committee.id %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-user-plus me-1"></i> {% trans "إضافة عضو" %}
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- جولات التقييم الخاصة باللجنة -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% trans "جولات التقييم" %}</h5>
+                    {% if perms.evaluation.add_evaluationround %}
+                    <a href="{% url 'evaluation:round_create' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i> {% trans "إنشاء جولة جديدة" %}
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if evaluation_rounds %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "اسم الجولة" %}</th>
+                                    <th>{% trans "النوع" %}</th>
+                                    <th>{% trans "تاريخ البدء" %}</th>
+                                    <th>{% trans "تاريخ الانتهاء" %}</th>
+                                    <th>{% trans "الحالة" %}</th>
+                                    <th>{% trans "الإجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for round in evaluation_rounds %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'evaluation:round_detail' round.id %}" class="fw-bold text-decoration-none">
+                                            {{ round.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ round.get_round_type_display }}</td>
+                                    <td>{{ round.start_date|date:"Y-m-d" }}</td>
+                                    <td>{{ round.end_date|date:"Y-m-d" }}</td>
+                                    <td>
+                                        {% if round.is_in_progress %}
+                                        <span class="badge bg-primary">{% trans "جارية" %}</span>
+                                        {% elif round.is_completed %}
+                                        <span class="badge bg-success">{% trans "مكتملة" %}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{% trans "مستقبلية" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'evaluation:round_detail' round.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if perms.evaluation.change_evaluationround %}
+                                            <a href="{% url 'evaluation:round_edit' round.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                            {% if perms.evaluation.delete_evaluationround %}
+                                            <a href="{% url 'evaluation:round_delete' round.id %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <p class="mb-0">{% trans "لا توجد جولات تقييم لهذه اللجنة حالياً" %}</p>
+                        {% if perms.evaluation.add_evaluationround %}
+                        <a href="{% url 'evaluation:round_create' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-1"></i> {% trans "إنشاء جولة جديدة" %}
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "تغيير حالة الطلب" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'applications:admin_applications' %}">{% trans "إدارة الطلبات" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'applications:application_detail' application.id %}">{% trans "طلب" %} #{{ application.id }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "تغيير الحالة" %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h3 class="mb-0">{% trans "تغيير حالة الطلب" %}</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {% trans "أنت على وشك تغيير حالة الطلب رقم" %} <strong>#{{ application.id }}</strong> 
+                        {% trans "المقدم من" %} <strong>{{ application.applicant.get_full_name }}</strong>. 
+                        {% trans "الحالة الحالية هي" %} <strong>{{ application.status.name }}</strong>.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{% trans "الحالة الجديدة" %}</label>
+                            <div class="list-group">
+                                {% for status in statuses %}
+                                <label class="list-group-item list-group-item-action">
+                                    <div class="d-flex align-items-center">
+                                        <input type="radio" name="status" value="{{ status.id }}" class="form-check-input me-2" required>
+                                        <div>
+                                            <strong>{{ status.name }}</strong>
+                                            {% if status.description %}
+                                            <p class="text-muted small mb-0">{{ status.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.comment|as_crispy_field }}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% trans "سيتم تسجيل هذا التغيير في سجل الطلب وسيتم إعلام المتقدم بهذا التغيير." %}
+                        </div>
+                        
+                        <div class="d-flex mt-4">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-save me-1"></i> {% trans "حفظ التغييرات" %}
+                            </button>
+                            <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
