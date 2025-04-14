@@ -1,6 +1,12 @@
-/* تخصيصات إضافية للغة العربية */
+/*!* تخصيصات إضافية للغة العربية *!*/
+/*body {*/
+/*    font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;*/
+/*    text-align: right;*/
+/*}*/
+
 body {
-    font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+    font-family: 'Cairo', 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+    direction: rtl;
     text-align: right;
 }
 

@@ -31,6 +31,7 @@
     {% else %}
     <link rel="stylesheet" href="{% static 'css/ltr.css' %}">
     {% endif %}
+<link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
 
     <!-- Page Specific Styles -->
     {% block extra_css %}{% endblock %}
@@ -47,85 +48,164 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
-                            {% trans "الرئيسية" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'scholarships' in request.path %}active{% endif %}" href="{% url 'announcements:scholarship_list' %}">
-                            {% trans "فرص الابتعاث" %}
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'announcements:announcement_list' %}">
-                            {% trans "الإعلانات" %}
-                        </a>
-                    </li>
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'my-applications' in request.path %}active{% endif %}" href="{% url 'applications:my_applications' %}">
-                            {% trans "طلباتي" %}
-                        </a>
-                    </li>
 
-                    <!-- إضافة رابط لوحة التحكم -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'dashboard' in request.path %}active{% endif %}" href="{% url 'dashboard:index' %}">
-                            {% trans "لوحة التحكم" %}
-                        </a>
-                    </li>
+                <!-- قسم القوائم الرئيسية - الجانب الأيمن من Navbar -->
+<ul class="navbar-nav me-auto">
+    <li class="nav-item">
+        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
+            {% trans "الرئيسية" %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if 'scholarships' in request.path %}active{% endif %}" href="{% url 'announcements:scholarship_list' %}">
+            {% trans "فرص الابتعاث" %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'announcements:announcement_list' %}">
+            {% trans "الإعلانات" %}
+        </a>
+    </li>
 
-                    <!-- إضافة قائمة منسدلة للتقييم - تظهر فقط للمستخدمين المخولين -->
-                    {% if user.profile.role == 'committee' or user.profile.role == 'admin' or perms.evaluation.view_evaluationround %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'evaluation' in request.path %}active{% endif %}" href="#" id="evaluationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {% trans "التقييم" %}
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="evaluationDropdown">
-                            {% if user.profile.role == 'committee' %}
-                            <li>
-                                <a class="dropdown-item" href="{% url 'evaluation:evaluator_dashboard' %}">
-                                    <i class="fas fa-tasks me-2"></i> {% trans "لوحة المقيّم" %}
-                                </a>
-                            </li>
-                            {% endif %}
+    {% if user.is_authenticated %}
+    <li class="nav-item">
+        <a class="nav-link {% if 'my-applications' in request.path %}active{% endif %}" href="{% url 'applications:my_applications' %}">
+            {% trans "طلباتي" %}
+        </a>
+    </li>
 
-                            {% if perms.evaluation.view_committee %}
-                            <li>
-                                <a class="dropdown-item" href="{% url 'evaluation:committee_list' %}">
-                                    <i class="fas fa-users me-2"></i> {% trans "لجان التقييم" %}
-                                </a>
-                            </li>
-                            {% endif %}
+    <!-- قائمة لوحة التحكم حسب نوع المستخدم -->
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle {% if 'dashboard' in request.path %}active{% endif %}" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {% trans "لوحة التحكم" %}
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dashboardDropdown">
+            <!-- عرض لمختلف المستخدمين -->
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:index' %}">
+                    <i class="fas fa-tachometer-alt me-2"></i> {% trans "الصفحة الرئيسية" %}
+                </a>
+            </li>
 
-                            {% if perms.evaluation.view_evaluationround %}
-                            <li>
-                                <a class="dropdown-item" href="{% url 'evaluation:round_list' %}">
-                                    <i class="fas fa-calendar-alt me-2"></i> {% trans "جولات التقييم" %}
-                                </a>
-                            </li>
-                            {% endif %}
+            {% if user.profile.role == 'admin' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:admin_dashboard' %}">
+                    <i class="fas fa-user-shield me-2"></i> {% trans "لوحة تحكم المشرفين" %}
+                </a>
+            </li>
+            {% elif user.profile.role == 'student' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:student_dashboard' %}">
+                    <i class="fas fa-user-graduate me-2"></i> {% trans "لوحة تحكم الطالب" %}
+                </a>
+            </li>
+            {% elif user.profile.role == 'faculty' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:faculty_dashboard' %}">
+                    <i class="fas fa-chalkboard-teacher me-2"></i> {% trans "لوحة تحكم عضو هيئة التدريس" %}
+                </a>
+            </li>
+            {% endif %}
 
-                            {% if perms.evaluation.view_evaluationcriterion %}
-                            <li>
-                                <a class="dropdown-item" href="{% url 'evaluation:criterion_list' %}">
-                                    <i class="fas fa-list-ol me-2"></i> {% trans "معايير التقييم" %}
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                    {% endif %}
-                    {% endif %}
+            <li><hr class="dropdown-divider"></li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            {% trans "التعليمات والإرشادات" %}
-                        </a>
-                    </li>
-                </ul>                <div class="d-flex align-items-center">
+            <!-- إحصائيات وتقارير - تظهر للمستخدمين ذوي الصلاحيات -->
+            {% if perms.dashboard.view_statistics or user.profile.role == 'admin' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:application_stats' %}">
+                    <i class="fas fa-chart-bar me-2"></i> {% trans "إحصائيات الطلبات" %}
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:evaluation_stats' %}">
+                    <i class="fas fa-chart-pie me-2"></i> {% trans "إحصائيات التقييمات" %}
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{% url 'dashboard:scholarship_stats' %}">
+                    <i class="fas fa-chart-line me-2"></i> {% trans "إحصائيات فرص الابتعاث" %}
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </li>
+
+    <!-- قائمة التقييم - تظهر للأعضاء المخولين فقط -->
+    {% if user.profile.role == 'committee' or user.profile.role == 'admin' or perms.evaluation.view_evaluationround %}
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle {% if 'evaluation' in request.path %}active{% endif %}" href="#" id="evaluationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {% trans "التقييم" %}
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="evaluationDropdown">
+            <!-- لوحة تحكم المقيّم -->
+            {% if user.profile.role == 'committee' or user.profile.role == 'admin' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:evaluator_dashboard' %}">
+                    <i class="fas fa-tasks me-2"></i> {% trans "لوحة تحكم المقيّم" %}
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:evaluation_list' %}">
+                    <i class="fas fa-clipboard-check me-2"></i> {% trans "التقييمات" %}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if perms.evaluation.view_committee or user.profile.role == 'admin' %}
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:committee_list' %}">
+                    <i class="fas fa-users me-2"></i> {% trans "لجان التقييم" %}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if perms.evaluation.view_evaluationround or user.profile.role == 'admin' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:round_list' %}">
+                    <i class="fas fa-calendar-alt me-2"></i> {% trans "جولات التقييم" %}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if perms.evaluation.view_evaluationcriterion or user.profile.role == 'admin' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:criterion_list' %}">
+                    <i class="fas fa-list-ol me-2"></i> {% trans "معايير التقييم" %}
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- قسم التوصيات والتصويت -->
+            {% if perms.evaluation.view_vote or user.profile.role == 'admin' or user.profile.role == 'committee' %}
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:vote_list' %}">
+                    <i class="fas fa-vote-yea me-2"></i> {% trans "التصويتات" %}
+                </a>
+            </li>
+            {% endif %}
+
+            {% if perms.evaluation.view_recommendation or user.profile.role == 'admin' %}
+            <li>
+                <a class="dropdown-item" href="{% url 'evaluation:recommendation_list' %}">
+                    <i class="fas fa-thumbs-up me-2"></i> {% trans "التوصيات" %}
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </li>
+    {% endif %}
+    {% endif %}
+
+    <li class="nav-item">
+        <a class="nav-link" href="#">
+            {% trans "التعليمات والإرشادات" %}
+        </a>
+    </li>
+</ul>
+
+                               <div class="d-flex align-items-center">
                     <!-- Language Switcher -->
                     <div class="mx-2">
                         {% if CURRENT_LANGUAGE == 'ar' %}
@@ -153,7 +233,7 @@
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="#">
-                                        <i class="fas fa-user-circle me-2"></i> {% trans "الملف الشخصي" %}
+                                        <i class="fas fa-user-circle menavbar-nav me-auto-2"></i> {% trans "الملف الشخصي" %}
                                     </a>
                                 </li>
                                 <li>

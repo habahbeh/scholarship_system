@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "تقديم توصية على طلب ابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- مسار التنقل -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'applications:application_detail' application.id %}">{% trans "تفاصيل الطلب" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "تقديم توصية" %}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-thumbs-up me-2"></i>{% trans "تقديم توصية على طلب ابتعاث" %}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-2x text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="alert-heading">{% trans "معلومات الطلب" %}</h5>
+                                <p class="mb-1">{% trans "المتقدم:" %} <strong>{{ application.applicant.get_full_name }}</strong></p>
+                                <p class="mb-1">{% trans "فرصة الابتعاث:" %} <strong>{{ application.scholarship.title }}</strong></p>
+                                <p class="mb-0">{% trans "حالة الطلب:" %} 
+                                    <span class="badge bg-{{ application.status.order|add:'-1'|yesno:'warning,primary,success,danger,secondary' }}">
+                                        {{ application.status.name }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "التوصية:" %}</h5>
+                            {{ form.recommendation|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "الملاحظات:" %}</h5>
+                            {{ form.comments|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">{% trans "الشروط:" %}</h5>
+                            <p class="text-muted small">{% trans "في حالة اختيار الموافقة بشروط" %}</p>
+                            {{ form.conditions|as_crispy_field }}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-1"></i> {% trans "تقديم التوصية" %}
+                            </button>
+                            
+                            <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // إظهار/إخفاء حقل الشروط حسب نوع التوصية
+    const recommendationSelect = document.getElementById('id_recommendation');
+    const conditionsField = document.getElementById('div_id_conditions').parentNode;
+    
+    function toggleConditionsField() {
+        if (recommendationSelect.value === 'approve_with_conditions') {
+            conditionsField.style.display = 'block';
+        } else {
+            conditionsField.style.display = 'none';
+        }
+    }
+    
+    // تنفيذ عند تحميل الصفحة
+    toggleConditionsField();
+    
+    // تنفيذ عند تغيير التوصية
+    recommendationSelect.addEventListener('change', toggleConditionsField);
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "قائمة التصويتات" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "قائمة التصويتات" %}</h1>
+            <p class="text-muted">{% trans "قائمة التصويتات على طلبات الابتعاث من أعضاء اللجان." %}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-tachometer-alt me-2"></i> {% trans "لوحة تحكم المقيِّم" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- مرشحات البحث -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{% trans "تصفية النتائج" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "المتقدم" %}</label>
+                    <input type="text" name="applicant" class="form-control" placeholder="{% trans 'اسم المتقدم' %}" value="{{ request.GET.applicant }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "عضو اللجنة" %}</label>
+                    <input type="text" name="committee_member" class="form-control" placeholder="{% trans 'اسم العضو' %}" value="{{ request.GET.committee_member }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{% trans "نتيجة التصويت" %}</label>
+                    <select name="vote" class="form-select">
+                        <option value="">{% trans "الكل" %}</option>
+                        <option value="approve" {% if request.GET.vote == "approve" %}selected{% endif %}>{% trans "موافق" %}</option>
+                        <option value="reject" {% if request.GET.vote == "reject" %}selected{% endif %}>{% trans "غير موافق" %}</option>
+                        <option value="abstain" {% if request.GET.vote == "abstain" %}selected{% endif %}>{% trans "ممتنع" %}</option>
+                    </select>
+                </div>
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i> {% trans "بحث" %}
+                    </button>
+                    <a href="{% url 'evaluation:vote_list' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-2"></i> {% trans "إعادة ضبط" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- قائمة التصويتات -->
+    <div class="card shadow-sm border-0">
+        {% if votes %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "الطلب" %}</th>
+                        <th>{% trans "المتقدم" %}</th>
+                        <th>{% trans "عضو اللجنة" %}</th>
+                        <th>{% trans "التصويت" %}</th>
+                        <th>{% trans "تاريخ التصويت" %}</th>
+                        <th>{% trans "ملاحظات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vote in votes %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'applications:application_detail' vote.application.id %}" class="text-decoration-none">
+                                #{{ vote.application.id }}
+                            </a>
+                        </td>
+                        <td>{{ vote.application.applicant.get_full_name }}</td>
+                        <td>{{ vote.committee_member.get_full_name }}</td>
+                        <td>
+                            {% if vote.vote == 'approve' %}
+                            <span class="badge bg-success">{% trans "موافق" %}</span>
+                            {% elif vote.vote == 'reject' %}
+                            <span class="badge bg-danger">{% trans "غير موافق" %}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{% trans "ممتنع" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ vote.vote_date|date:"Y-m-d" }}</td>
+                        <td>
+                            {% if vote.comments %}
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ vote.comments }}">
+                                <i class="fas fa-comment-dots"></i>
+                            </button>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ترقيم الصفحات -->
+        {% if votes.has_other_pages %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if votes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-double-right me-1"></i>
+                            {% trans "الأولى" %}
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ votes.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-angle-right me-1"></i>
+                            {% trans "السابقة" %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in votes.paginator.page_range %}
+                    {% if votes.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > votes.number|add:'-3' and num < votes.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if votes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ votes.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {% trans "التالية" %}
+                            <i class="fas fa-angle-left me-1"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ votes.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {% trans "الأخيرة" %}
+                            <i class="fas fa-angle-double-left me-1"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-vote-yea fa-4x text-muted mb-4"></i>
+                <h5 class="mb-3">{% trans "لا توجد تصويتات حالياً" %}</h5>
+                <p class="text-muted">{% trans "لم يتم تسجيل أي تصويتات على طلبات الابتعاث حتى الآن." %}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تفعيل tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
