@@ -141,25 +141,43 @@
     </div>
 </div>
 
+{% block extra_js %}
 <script>
-    // JavaScript لتحديث قائمة الأقسام عندما يتغير اختيار الكلية
     document.addEventListener('DOMContentLoaded', function() {
         const facultySelect = document.getElementById('id_faculty');
         const departmentSelect = document.getElementById('id_department');
-        
+
         if (facultySelect && departmentSelect) {
             facultySelect.addEventListener('change', function() {
                 const facultyId = this.value;
-                
+
                 // تفريغ قائمة الأقسام
                 departmentSelect.innerHTML = '<option value="">---------</option>';
-                
+
                 if (facultyId) {
-                    // هنا يجب إضافة طلب AJAX لجلب الأقسام المناسبة
-                    // للتبسيط، سيتم تنفيذ هذا لاحقاً
+                    // إجراء طلب AJAX لجلب الأقسام
+                    fetch(`/accounts/ajax/get-departments/?faculty_id=${facultyId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // إضافة الأقسام إلى القائمة
+                            data.forEach(department => {
+                                const option = document.createElement('option');
+                                option.value = department.id;
+                                option.textContent = department.name;
+                                departmentSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error fetching departments:', error));
                 }
             });
+
+            // تنفيذ الكود عند تحميل الصفحة إذا كانت هناك كلية محددة بالفعل
+            if (facultySelect.value) {
+                const event = new Event('change');
+                facultySelect.dispatchEvent(event);
+            }
         }
     });
 </script>
+{% endblock %}
 {% endblock %}

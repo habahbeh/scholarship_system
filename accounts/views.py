@@ -23,6 +23,7 @@ class CustomLoginView(LoginView):
 class CustomLogoutView(LogoutView):
     """وجهة عرض تسجيل الخروج"""
     next_page = reverse_lazy('home')
+    template_name = 'accounts/logout.html'
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -86,7 +87,7 @@ class CustomPasswordResetView(PasswordResetView):
     """وجهة عرض إعادة تعيين كلمة المرور"""
     form_class = CustomPasswordResetForm
     template_name = 'accounts/password_reset.html'
-    email_template_name = 'emails/password_reset_email.html'
+    email_template_name = 'accounts/password_reset_email.html'  # تصحيح مسار القالب
     subject_template_name = 'emails/password_reset_subject.txt'
     success_url = reverse_lazy('accounts:password_reset_done')
 

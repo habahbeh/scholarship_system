@@ -643,7 +643,8 @@ def vote_list(request):
 @permission_required('evaluation.view_recommendation')
 def recommendation_list(request):
     """عرض قائمة التوصيات"""
-    recommendations = Recommendation.objects.all().order_by('-recommendation_date')
+    # Change this line from using recommendation_date to created_at
+    recommendations = Recommendation.objects.all().order_by('-created_at')
 
     # ترقيم الصفحات
     paginator = Paginator(recommendations, 10)
