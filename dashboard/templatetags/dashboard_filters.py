@@ -67,6 +67,7 @@ def startswith(value, arg):
     except (AttributeError, TypeError):
         return False
 
+
 @register.filter
 def yesno(value, arg=None):
     """
@@ -87,14 +88,22 @@ def yesno(value, arg=None):
     bits = arg.split(',')
     if len(bits) < 2:
         return value  # Invalid arg.
-    try:
-        yes, no, maybe = bits
-    except ValueError:
-        # Unpack list of wrong size (no "maybe" value provided).
-        yes, no = bits
-        maybe = no
+
+    # Safer way to extract values - avoids unpacking error
+    yes = bits[0]
+    no = bits[1]
+    maybe = bits[2] if len(bits) > 2 else no
+
     if value is None:
         return maybe
     if value:
         return yes
     return no
+
+@register.filter
+def mul(value, arg):
+    """Multiplies the value by the argument"""
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return ''

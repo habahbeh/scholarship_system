@@ -23,4 +23,14 @@ urlpatterns = [
 
     # لوحة التحكم
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+
+
+# Add these URL patterns to announcements/urls.py
+
+# Inside the urlpatterns list:
+path('scholarship-types/', views.scholarship_type_list, name='scholarship_type_list'),
+path('scholarship-types/create/', views.scholarship_type_create, name='scholarship_type_create'),
+path('scholarship-types/<int:pk>/edit/', views.scholarship_type_edit, name='scholarship_type_edit'),
+path('scholarship-types/<int:pk>/delete/', views.scholarship_type_delete, name='scholarship_type_delete'),
+
 ]

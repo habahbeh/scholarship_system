@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "أنواع الابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "أنواع الابتعاث" %}</h1>
+            <p class="text-muted">{% trans "إدارة أنواع الابتعاث المتاحة في النظام." %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            {% if perms.announcements.add_scholarshiptype %}
+            <a href="{% url 'announcements:scholarship_type_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> {% trans "إضافة نوع جديد" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        {% if scholarship_types %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "الاسم" %}</th>
+                        <th>{% trans "الوصف" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scholarship_type in scholarship_types %}
+                    <tr>
+                        <td><strong>{{ scholarship_type.name }}</strong></td>
+                        <td>
+                            {% if scholarship_type.description %}
+                                {{ scholarship_type.description }}
+                            {% else %}
+                                <span class="text-muted fst-italic">{% trans "لا يوجد وصف" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                {% if perms.announcements.change_scholarshiptype %}
+                                <a href="{% url 'announcements:scholarship_type_edit' scholarship_type.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.announcements.delete_scholarshiptype %}
+                                <a href="{% url 'announcements:scholarship_type_delete' scholarship_type.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-graduation-cap fa-4x text-muted mb-4"></i>
+                <h5 class="mb-3">{% trans "لا توجد أنواع ابتعاث حالياً" %}</h5>
+                {% if perms.announcements.add_scholarshiptype %}
+                <a href="{% url 'announcements:scholarship_type_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> {% trans "إضافة نوع جديد" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

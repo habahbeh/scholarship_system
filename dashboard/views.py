@@ -458,6 +458,9 @@ def scholarship_stats(request):
         count=Count('id')
     ).order_by('-count')[:10]
 
+    # إجمالي عدد الطلبات - ADDED THIS LINE
+    applications_total = Application.objects.count()
+
     # نسب القبول
     scholarships_acceptance_rates = []
     for scholarship in scholarships:
@@ -481,6 +484,7 @@ def scholarship_stats(request):
         'scholarships_by_status': scholarships_by_status,
         'applications_per_scholarship': applications_per_scholarship,
         'scholarships_acceptance_rates': scholarships_acceptance_rates,
+        'applications_total': applications_total,  # ADDED THIS LINE
     }
 
     return render(request, 'dashboard/scholarship_stats.html', context)

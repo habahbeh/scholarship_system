@@ -228,3 +228,74 @@ def admin_dashboard(request):
         'scholarship_types': scholarship_types,
     }
     return render(request, 'announcements/admin_dashboard.html', context)
+
+
+
+# Add these view functions to announcements/views.py
+
+@login_required
+@permission_required('announcements.view_scholarshiptype')
+def scholarship_type_list(request):
+    """عرض قائمة أنواع الابتعاث"""
+    scholarship_types = ScholarshipType.objects.all().order_by('name')
+    context = {
+        'scholarship_types': scholarship_types,
+    }
+    return render(request, 'announcements/scholarship_type_list.html', context)
+
+@login_required
+@permission_required('announcements.add_scholarshiptype')
+def scholarship_type_create(request):
+    """إنشاء نوع ابتعاث جديد"""
+    if request.method == 'POST':
+        form = ScholarshipTypeForm(request.POST)
+        if form.is_valid():
+            scholarship_type = form.save()
+            messages.success(request, _("تم إنشاء نوع الابتعاث بنجاح"))
+            return redirect('announcements:scholarship_type_list')
+    else:
+        form = ScholarshipTypeForm()
+
+    context = {
+        'form': form,
+        'is_create': True,
+    }
+    return render(request, 'announcements/scholarship_type_form.html', context)
+
+@login_required
+@permission_required('announcements.change_scholarshiptype')
+def scholarship_type_edit(request, pk):
+    """تعديل نوع ابتعاث"""
+    scholarship_type = get_object_or_404(ScholarshipType, pk=pk)
+
+    if request.method == 'POST':
+        form = ScholarshipTypeForm(request.POST, instance=scholarship_type)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("تم تحديث نوع الابتعاث بنجاح"))
+            return redirect('announcements:scholarship_type_list')
+    else:
+        form = ScholarshipTypeForm(instance=scholarship_type)
+
+    context = {
+        'form': form,
+        'scholarship_type': scholarship_type,
+        'is_create': False,
+    }
+    return render(request, 'announcements/scholarship_type_form.html', context)
+
+@login_required
+@permission_required('announcements.delete_scholarshiptype')
+def scholarship_type_delete(request, pk):
+    """حذف نوع ابتعاث"""
+    scholarship_type = get_object_or_404(ScholarshipType, pk=pk)
+
+    if request.method == 'POST':
+        scholarship_type.delete()
+        messages.success(request, _("تم حذف نوع الابتعاث بنجاح"))
+        return redirect('announcements:scholarship_type_list')
+
+    context = {
+        'scholarship_type': scholarship_type,
+    }
+    return render(request, 'announcements/scholarship_type_confirm_delete.html', context)

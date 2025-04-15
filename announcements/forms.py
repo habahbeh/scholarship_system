@@ -43,9 +43,9 @@ class AnnouncementForm(forms.ModelForm):
         }
 
 
-class ScholarshipTypeForm(forms.ModelForm):
-    """نموذج إنشاء/تعديل نوع ابتعاث"""
 
+class ScholarshipTypeForm(forms.ModelForm):
+    """نموذج نوع الابتعاث"""
     class Meta:
         model = ScholarshipType
         fields = ['name', 'description']
@@ -101,3 +101,5 @@ class ScholarshipFilterForm(forms.Form):
         label=_("بحث"),
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('بحث...')})
     )
+
+
