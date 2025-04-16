@@ -25,6 +25,9 @@ class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('home')
     template_name = 'accounts/logout.html'
 
+    # Allow both GET and POST
+    http_method_names = ['get', 'post']
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             messages.info(request, _("تم تسجيل الخروج بنجاح"))

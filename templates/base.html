@@ -199,25 +199,36 @@
     {% endif %}
 
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link {% if 'instructions' in request.path %}active{% endif %}"
+           href="{% url 'core:instructions' %}">
             {% trans "التعليمات والإرشادات" %}
         </a>
     </li>
 </ul>
 
                                <div class="d-flex align-items-center">
-                    <!-- Language Switcher -->
-                    <div class="mx-2">
-                        {% if CURRENT_LANGUAGE == 'ar' %}
-                            <a href="{% url 'set_language' %}?lang=en&next={{ request.path }}" class="btn btn-outline-light btn-sm">
-                                <i class="fas fa-globe me-1"></i> English
-                            </a>
-                        {% else %}
-                            <a href="{% url 'set_language' %}?lang=ar&next={{ request.path }}" class="btn btn-outline-light btn-sm">
-                                <i class="fas fa-globe me-1"></i> العربية
-                            </a>
-                        {% endif %}
-                    </div>
+                   <!-- Language Switcher -->
+<div class="mx-2">
+    {% if CURRENT_LANGUAGE == 'ar' %}
+        <form action="{% url 'set_language' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <input name="next" type="hidden" value="{{ request.path }}">
+            <input name="language" type="hidden" value="en">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-globe me-1"></i> English
+            </button>
+        </form>
+    {% else %}
+        <form action="{% url 'set_language' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <input name="next" type="hidden" value="{{ request.path|slice:'3:' }}">
+            <input name="language" type="hidden" value="ar">
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-globe me-1"></i> العربية
+            </button>
+        </form>
+    {% endif %}
+</div>
 
                     <!-- User Menu -->
 {% if user.is_authenticated %}
@@ -242,11 +253,18 @@
                 </a>
             </li>
             <li><hr class="dropdown-divider"></li>
+
+
             <li>
-                <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
-                    <i class="fas fa-sign-out-alt me-2"></i> {% trans "تسجيل الخروج" %}
-                </a>
-            </li>
+    <form method="post" action="{% url 'accounts:logout' %}" class="dropdown-item p-0">
+        {% csrf_token %}
+        <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start">
+            <i class="fas fa-sign-out-alt me-2"></i> {% trans "تسجيل الخروج" %}
+        </button>
+    </form>
+</li>
+
+
         </ul>
     </div>
 {% else %}

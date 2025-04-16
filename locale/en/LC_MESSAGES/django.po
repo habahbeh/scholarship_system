@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-11 20:46+0300\n"
+"POT-Creation-Date: 2025-04-16 19:12+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,9 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: accounts/admin.py:12 accounts/templates/accounts/profile.html:5
-#: accounts/templates/accounts/profile.html:13 templates/base.html:101
+#: accounts/templates/accounts/profile.html:13
+#: dashboard/templates/dashboard/faculty_dashboard.html:352
+#: dashboard/templates/dashboard/index.html:354 templates/base.html:247
 msgid "الملف الشخصي"
 msgstr ""
 
@@ -52,6 +54,7 @@ msgid "اسم العائلة"
 msgstr ""
 
 #: accounts/forms.py:34 accounts/forms.py:160
+#: evaluation/templates/evaluation/committee_detail.html:126
 msgid "البريد الإلكتروني"
 msgstr ""
 
@@ -72,6 +75,7 @@ msgid "الجنس"
 msgstr ""
 
 #: accounts/forms.py:60 accounts/models.py:27 accounts/models.py:68
+#: dashboard/forms.py:72
 msgid "الكلية"
 msgstr ""
 
@@ -104,7 +108,16 @@ msgstr ""
 msgid "رمز الكلية"
 msgstr ""
 
-#: accounts/models.py:12 accounts/models.py:28
+#: accounts/models.py:12 accounts/models.py:28 announcements/models.py:11
+#: announcements/models.py:33
+#: announcements/templates/announcements/scholarship_type_list.html:30
+#: applications/models.py:12
+#: applications/templates/applications/application_detail.html:119
+#: applications/templates/applications/application_documents.html:69
+#: dashboard/models.py:20 evaluation/models.py:12 evaluation/models.py:34
+#: evaluation/models.py:57
+#: evaluation/templates/evaluation/criterion_list.html:31
+#: templates/instructions.html:318
 msgid "الوصف"
 msgstr ""
 
@@ -176,11 +189,12 @@ msgstr ""
 msgid "غير منطبق"
 msgstr ""
 
-#: accounts/models.py:61
+#: accounts/models.py:61 evaluation/forms.py:28
 msgid "المستخدم"
 msgstr ""
 
-#: accounts/models.py:66
+#: accounts/models.py:66 announcements/forms.py:63 announcements/models.py:30
+#: announcements/models.py:68
 msgid "العنوان"
 msgstr ""
 
@@ -208,20 +222,79 @@ msgstr ""
 #: accounts/templates/accounts/login.html:6
 #: accounts/templates/accounts/login.html:14
 #: accounts/templates/accounts/login.html:30
-#: accounts/templates/accounts/register.html:95 templates/base.html:119
+#: accounts/templates/accounts/password_reset_complete.html:23
+#: accounts/templates/accounts/register.html:95 templates/base.html:272
 msgid "تسجيل الدخول"
 msgstr ""
 
 #: accounts/templates/accounts/login.html:6
+#: accounts/templates/accounts/logout.html:4
 #: accounts/templates/accounts/password_change.html:6
 #: accounts/templates/accounts/password_reset.html:6
+#: accounts/templates/accounts/password_reset_complete.html:5
 #: accounts/templates/accounts/password_reset_confirm.html:6
 #: accounts/templates/accounts/password_reset_done.html:5
 #: accounts/templates/accounts/profile.html:5
 #: accounts/templates/accounts/profile_edit.html:6
-#: accounts/templates/accounts/register.html:6 templates/base.html:10
-#: templates/base.html:44 templates/base.html:140 templates/home.html:5
-#: templates/home.html:11
+#: accounts/templates/accounts/register.html:6
+#: announcements/templates/announcements/announcement_confirm_delete.html:5
+#: announcements/templates/announcements/announcement_detail.html:5
+#: announcements/templates/announcements/announcement_form.html:8
+#: announcements/templates/announcements/announcement_form.html:10
+#: announcements/templates/announcements/announcement_list.html:5
+#: announcements/templates/announcements/scholarship_confirm_delete.html:5
+#: announcements/templates/announcements/scholarship_detail.html:5
+#: announcements/templates/announcements/scholarship_form.html:8
+#: announcements/templates/announcements/scholarship_form.html:10
+#: announcements/templates/announcements/scholarship_list.html:6
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:5
+#: announcements/templates/announcements/scholarship_type_form.html:8
+#: announcements/templates/announcements/scholarship_type_form.html:10
+#: announcements/templates/announcements/scholarship_type_list.html:5
+#: applications/templates/applications/admin_applications.html:6
+#: applications/templates/applications/application_confirm_delete.html:5
+#: applications/templates/applications/application_detail.html:5
+#: applications/templates/applications/application_documents.html:6
+#: applications/templates/applications/application_form.html:8
+#: applications/templates/applications/application_form.html:10
+#: applications/templates/applications/change_status.html:6
+#: applications/templates/applications/document_confirm_delete.html:5
+#: applications/templates/applications/my_applications.html:5
+#: dashboard/templates/dashboard/admin_dashboard.html:5
+#: dashboard/templates/dashboard/application_stats.html:7
+#: dashboard/templates/dashboard/evaluation_stats.html:7
+#: dashboard/templates/dashboard/faculty_dashboard.html:5
+#: dashboard/templates/dashboard/index.html:5
+#: dashboard/templates/dashboard/scholarship_stats.html:7
+#: dashboard/templates/dashboard/student_dashboard.html:5
+#: evaluation/templates/evaluation/committee_add_member.html:6
+#: evaluation/templates/evaluation/committee_confirm_delete.html:5
+#: evaluation/templates/evaluation/committee_detail.html:5
+#: evaluation/templates/evaluation/committee_form.html:8
+#: evaluation/templates/evaluation/committee_form.html:10
+#: evaluation/templates/evaluation/committee_list.html:5
+#: evaluation/templates/evaluation/committee_remove_member.html:5
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:5
+#: evaluation/templates/evaluation/criterion_form.html:8
+#: evaluation/templates/evaluation/criterion_form.html:10
+#: evaluation/templates/evaluation/criterion_list.html:5
+#: evaluation/templates/evaluation/evaluate_application.html:7
+#: evaluation/templates/evaluation/evaluation_detail.html:6
+#: evaluation/templates/evaluation/evaluation_list.html:5
+#: evaluation/templates/evaluation/evaluator_dashboard.html:5
+#: evaluation/templates/evaluation/recommendation_detail.html:5
+#: evaluation/templates/evaluation/recommendation_form.html:6
+#: evaluation/templates/evaluation/recommendation_list.html:5
+#: evaluation/templates/evaluation/round_assign_applications.html:6
+#: evaluation/templates/evaluation/round_confirm_delete.html:5
+#: evaluation/templates/evaluation/round_detail.html:6
+#: evaluation/templates/evaluation/round_form.html:8
+#: evaluation/templates/evaluation/round_form.html:10
+#: evaluation/templates/evaluation/round_list.html:5
+#: evaluation/templates/evaluation/vote_form.html:6
+#: evaluation/templates/evaluation/vote_list.html:5 templates/base.html:10
+#: templates/base.html:45 templates/base.html:293 templates/home.html:5
+#: templates/home.html:11 templates/instructions.html:5
 msgid "نظام الابتعاث الإلكتروني"
 msgstr ""
 
@@ -233,15 +306,51 @@ msgstr ""
 msgid "ليس لديك حساب؟"
 msgstr ""
 
-#: accounts/templates/accounts/login.html:43 templates/base.html:122
+#: accounts/templates/accounts/login.html:43 templates/base.html:275
 msgid "التسجيل"
+msgstr ""
+
+#: accounts/templates/accounts/logout.html:4
+#: accounts/templates/accounts/logout.html:12
+#: accounts/templates/accounts/logout.html:18 templates/base.html:262
+msgid "تسجيل الخروج"
+msgstr ""
+
+#: accounts/templates/accounts/logout.html:13
+msgid "هل أنت متأكد من رغبتك في تسجيل الخروج؟"
+msgstr ""
+
+#: accounts/templates/accounts/logout.html:21
+#: announcements/templates/announcements/announcement_confirm_delete.html:28
+#: announcements/templates/announcements/announcement_form.html:78
+#: announcements/templates/announcements/scholarship_confirm_delete.html:28
+#: announcements/templates/announcements/scholarship_form.html:127
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:48
+#: announcements/templates/announcements/scholarship_type_form.html:57
+#: applications/templates/applications/application_confirm_delete.html:39
+#: applications/templates/applications/application_form.html:89
+#: applications/templates/applications/change_status.html:73
+#: applications/templates/applications/document_confirm_delete.html:28
+#: evaluation/templates/evaluation/committee_add_member.html:50
+#: evaluation/templates/evaluation/committee_confirm_delete.html:48
+#: evaluation/templates/evaluation/committee_form.html:58
+#: evaluation/templates/evaluation/committee_remove_member.html:60
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:47
+#: evaluation/templates/evaluation/criterion_form.html:82
+#: evaluation/templates/evaluation/evaluate_application.html:335
+#: evaluation/templates/evaluation/recommendation_form.html:69
+#: evaluation/templates/evaluation/round_assign_applications.html:102
+#: evaluation/templates/evaluation/round_confirm_delete.html:50
+#: evaluation/templates/evaluation/round_form.html:124
+#: evaluation/templates/evaluation/vote_form.html:63
+msgid "إلغاء"
 msgstr ""
 
 #: accounts/templates/accounts/password_change.html:6
 #: accounts/templates/accounts/password_change.html:14
 #: accounts/templates/accounts/password_change.html:39
 #: accounts/templates/accounts/password_reset_confirm.html:29
-#: templates/base.html:106
+#: templates/base.html:252
 msgid "تغيير كلمة المرور"
 msgstr ""
 
@@ -273,6 +382,17 @@ msgstr ""
 #: accounts/templates/accounts/password_reset_confirm.html:48
 #: accounts/templates/accounts/password_reset_done.html:38
 msgid "العودة إلى صفحة تسجيل الدخول"
+msgstr ""
+
+#: accounts/templates/accounts/password_reset_complete.html:5
+#: accounts/templates/accounts/password_reset_complete.html:13
+msgid "تم إعادة تعيين كلمة المرور"
+msgstr ""
+
+#: accounts/templates/accounts/password_reset_complete.html:18
+msgid ""
+"تم إعادة تعيين كلمة المرور الخاصة بك بنجاح. يمكنك الآن تسجيل الدخول باستخدام "
+"كلمة المرور الجديدة."
 msgstr ""
 
 #: accounts/templates/accounts/password_reset_confirm.html:6
@@ -351,6 +471,20 @@ msgid "فريق نظام الابتعاث الإلكتروني - جامعة ال
 msgstr ""
 
 #: accounts/templates/accounts/profile.html:15
+#: announcements/templates/announcements/announcement_detail.html:47
+#: announcements/templates/announcements/announcement_form.html:26
+#: announcements/templates/announcements/scholarship_detail.html:98
+#: announcements/templates/announcements/scholarship_form.html:26
+#: announcements/templates/announcements/scholarship_type_form.html:24
+#: applications/templates/applications/application_detail.html:29
+#: applications/templates/applications/application_form.html:24
+#: applications/templates/applications/my_applications.html:56
+#: evaluation/templates/evaluation/committee_detail.html:51
+#: evaluation/templates/evaluation/committee_form.html:25
+#: evaluation/templates/evaluation/evaluation_detail.html:183
+#: evaluation/templates/evaluation/recommendation_detail.html:56
+#: evaluation/templates/evaluation/round_detail.html:92
+#: evaluation/templates/evaluation/round_form.html:25
 msgid "تعديل"
 msgstr ""
 
@@ -402,10 +536,12 @@ msgid "المعلومات الأكاديمية"
 msgstr ""
 
 #: accounts/templates/accounts/profile.html:92
+#: evaluation/templates/evaluation/evaluate_application.html:102
 msgid "الكلية:"
 msgstr ""
 
 #: accounts/templates/accounts/profile.html:96
+#: evaluation/templates/evaluation/evaluate_application.html:107
 msgid "القسم:"
 msgstr ""
 
@@ -414,6 +550,7 @@ msgid "الرتبة الأكاديمية:"
 msgstr ""
 
 #: accounts/templates/accounts/profile.html:104
+#: evaluation/templates/evaluation/evaluate_application.html:112
 msgid "التخصص:"
 msgstr ""
 
@@ -435,6 +572,14 @@ msgid "صفحة تغيير كلمة المرور"
 msgstr ""
 
 #: accounts/templates/accounts/profile_edit.html:134
+#: announcements/templates/announcements/announcement_form.html:74
+#: announcements/templates/announcements/scholarship_form.html:123
+#: announcements/templates/announcements/scholarship_type_form.html:52
+#: applications/templates/applications/application_form.html:83
+#: applications/templates/applications/change_status.html:70
+#: evaluation/templates/evaluation/committee_form.html:53
+#: evaluation/templates/evaluation/criterion_form.html:77
+#: evaluation/templates/evaluation/round_form.html:119
 msgid "حفظ التغييرات"
 msgstr ""
 
@@ -455,75 +600,3199 @@ msgstr ""
 msgid "تم تسجيل الدخول بنجاح"
 msgstr ""
 
-#: accounts/views.py:29
+#: accounts/views.py:33
 msgid "تم تسجيل الخروج بنجاح"
 msgstr ""
 
-#: accounts/views.py:41
+#: accounts/views.py:45
 msgid "تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول."
 msgstr ""
 
-#: accounts/views.py:63
+#: accounts/views.py:67
 msgid "تم تحديث الملف الشخصي بنجاح"
 msgstr ""
 
-#: accounts/views.py:82
+#: accounts/views.py:86
 msgid "تم تغيير كلمة المرور بنجاح"
 msgstr ""
 
-#: accounts/views.py:100
+#: accounts/views.py:104
 msgid "تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول."
 msgstr ""
 
-#: scholarship_system/settings/base.py:139
-msgid "العربية"
+#: announcements/admin.py:29 announcements/forms.py:77
+#: announcements/models.py:71
+#: announcements/templates/announcements/announcement_detail.html:28
+#: evaluation/models.py:37
+#: evaluation/templates/evaluation/criterion_list.html:56
+msgid "نشط"
 msgstr ""
 
-#: scholarship_system/settings/base.py:140
-msgid "الإنجليزية"
+#: announcements/forms.py:61
+msgid "الأحدث"
 msgstr ""
 
-#: templates/base.html:10 templates/base.html:43 templates/home.html:12
-msgid "جامعة البترا"
+#: announcements/forms.py:62
+msgid "الموعد النهائي"
 msgstr ""
 
-#: templates/base.html:53 templates/base.html:146 templates/home.html:5
-msgid "الرئيسية"
+#: announcements/forms.py:69
+msgid "كل الأنواع"
 msgstr ""
 
-#: templates/base.html:58 templates/base.html:147 templates/home.html:26
+#: announcements/forms.py:70 announcements/models.py:14
+#: announcements/models.py:31 dashboard/forms.py:27 dashboard/forms.py:70
+msgid "نوع الابتعاث"
+msgstr ""
+
+#: announcements/forms.py:76 applications/forms.py:80
+msgid "كل الحالات"
+msgstr ""
+
+#: announcements/forms.py:78 announcements/models.py:27
+#: dashboard/templates/dashboard/scholarship_stats.html:302
+msgid "مغلق"
+msgstr ""
+
+#: announcements/forms.py:81 announcements/models.py:40
+#: applications/forms.py:88
+#: applications/templates/applications/admin_applications.html:53
+#: applications/templates/applications/application_detail.html:60
+#: applications/templates/applications/my_applications.html:34
+#: dashboard/forms.py:69 dashboard/templates/dashboard/admin_dashboard.html:223
+#: dashboard/templates/dashboard/faculty_dashboard.html:211
+#: evaluation/templates/evaluation/committee_detail.html:199
+#: evaluation/templates/evaluation/committee_list.html:31
+#: evaluation/templates/evaluation/criterion_list.html:33
+#: evaluation/templates/evaluation/evaluation_list.html:57
+#: evaluation/templates/evaluation/evaluation_list.html:88
+#: evaluation/templates/evaluation/round_detail.html:274
+#: evaluation/templates/evaluation/round_list.html:56
+msgid "الحالة"
+msgstr ""
+
+#: announcements/forms.py:87
+msgid "الدولة"
+msgstr ""
+
+#: announcements/forms.py:88
+msgid "أدخل اسم الدولة"
+msgstr ""
+
+#: announcements/forms.py:95
+msgid "ترتيب حسب"
+msgstr ""
+
+#: announcements/forms.py:101 applications/forms.py:113
+#: evaluation/templates/evaluation/evaluation_list.html:66
+#: evaluation/templates/evaluation/recommendation_list.html:56
+#: evaluation/templates/evaluation/vote_list.html:47
+msgid "بحث"
+msgstr ""
+
+#: announcements/forms.py:102 applications/forms.py:115
+msgid "بحث..."
+msgstr ""
+
+#: announcements/models.py:10
+msgid "اسم النوع"
+msgstr ""
+
+#: announcements/models.py:15
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:12
+#: announcements/templates/announcements/scholarship_type_form.html:20
+#: announcements/templates/announcements/scholarship_type_list.html:5
+#: announcements/templates/announcements/scholarship_type_list.html:11
+msgid "أنواع الابتعاث"
+msgstr ""
+
+#: announcements/models.py:25
+#: dashboard/templates/dashboard/scholarship_stats.html:301
+#: dashboard/views.py:524
+#: evaluation/templates/evaluation/evaluate_application.html:72
+#: evaluation/templates/evaluation/evaluation_detail.html:79
+#: evaluation/templates/evaluation/evaluation_detail.html:134
+#: evaluation/templates/evaluation/evaluation_list.html:61
+#: evaluation/templates/evaluation/evaluation_list.html:118
+msgid "مسودة"
+msgstr ""
+
+#: announcements/models.py:26
+#: dashboard/templates/dashboard/scholarship_stats.html:300
+msgid "منشور"
+msgstr ""
+
+#: announcements/models.py:34
+#: announcements/templates/announcements/scholarship_detail.html:41
+msgid "المتطلبات"
+msgstr ""
+
+#: announcements/models.py:35
+#: announcements/templates/announcements/scholarship_detail.html:47
+msgid "المميزات"
+msgstr ""
+
+#: announcements/models.py:36
+msgid "الدول المتاحة"
+msgstr ""
+
+#: announcements/models.py:37
+msgid "الجامعات المتاحة"
+msgstr ""
+
+#: announcements/models.py:38
+msgid "الموعد النهائي للتقديم"
+msgstr ""
+
+#: announcements/models.py:39 announcements/models.py:70
+msgid "تاريخ النشر"
+msgstr ""
+
+#: announcements/models.py:41
+msgid "الحد الأقصى للمتقدمين"
+msgstr ""
+
+#: announcements/models.py:41
+msgid "0 يعني غير محدود"
+msgstr ""
+
+#: announcements/models.py:42
+#: announcements/templates/announcements/scholarship_detail.html:54
+msgid "معايير الأهلية"
+msgstr ""
+
+#: announcements/models.py:43
+#: announcements/templates/announcements/scholarship_detail.html:61
+msgid "عملية التقديم"
+msgstr ""
+
+#: announcements/models.py:44
+msgid "معلومات الاتصال"
+msgstr ""
+
+#: announcements/models.py:45
+msgid "مرفق"
+msgstr ""
+
+#: announcements/models.py:46 announcements/models.py:72
+msgid "تم إنشاؤه بواسطة"
+msgstr ""
+
+#: announcements/models.py:48 announcements/models.py:75
+msgid "تم التحديث في"
+msgstr ""
+
+#: announcements/models.py:51
+msgid "فرصة ابتعاث"
+msgstr ""
+
+#: announcements/models.py:52
+#: announcements/templates/announcements/scholarship_detail.html:14
+#: announcements/templates/announcements/scholarship_form.html:21
+#: announcements/templates/announcements/scholarship_list.html:6
+#: applications/templates/applications/application_form.html:26
+#: dashboard/templates/dashboard/admin_dashboard.html:97 templates/base.html:61
+#: templates/base.html:300 templates/home.html:26
 msgid "فرص الابتعاث"
 msgstr ""
 
-#: templates/base.html:63 templates/base.html:148
-msgid "التعليمات والإرشادات"
+#: announcements/models.py:69
+msgid "المحتوى"
 msgstr ""
 
-#: templates/base.html:68 templates/base.html:149 templates/base.html:153
-msgid "اتصل بنا"
+#: announcements/models.py:74
+msgid "تم الإنشاء في"
 msgstr ""
 
-#: templates/base.html:96
+#: announcements/models.py:78
+msgid "إعلان"
+msgstr ""
+
+#: announcements/models.py:79
+#: announcements/templates/announcements/announcement_detail.html:14
+#: announcements/templates/announcements/announcement_form.html:21
+#: announcements/templates/announcements/announcement_list.html:5
+#: announcements/templates/announcements/announcement_list.html:11
+#: dashboard/templates/dashboard/index.html:357 templates/base.html:66
+#: templates/home.html:54
+msgid "الإعلانات"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_confirm_delete.html:5
+msgid "حذف إعلان"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_confirm_delete.html:13
+#: announcements/templates/announcements/scholarship_confirm_delete.html:13
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:21
+#: applications/templates/applications/application_confirm_delete.html:13
+#: applications/templates/applications/document_confirm_delete.html:13
+#: evaluation/templates/evaluation/committee_confirm_delete.html:23
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:22
+#: evaluation/templates/evaluation/round_confirm_delete.html:23
+msgid "تأكيد الحذف"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_confirm_delete.html:17
+msgid "هل أنت متأكد من حذف الإعلان التالي؟"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_confirm_delete.html:19
+msgid "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف هذا الإعلان بشكل نهائي."
+msgstr ""
+
+#: announcements/templates/announcements/announcement_confirm_delete.html:25
+#: announcements/templates/announcements/scholarship_confirm_delete.html:25
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:45
+#: applications/templates/applications/application_confirm_delete.html:36
+#: applications/templates/applications/document_confirm_delete.html:25
+#: evaluation/templates/evaluation/committee_confirm_delete.html:45
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:44
+#: evaluation/templates/evaluation/round_confirm_delete.html:47
+msgid "نعم، قم بالحذف"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_detail.html:13
+#: announcements/templates/announcements/announcement_form.html:20
+#: announcements/templates/announcements/scholarship_detail.html:13
+#: announcements/templates/announcements/scholarship_form.html:20
+#: applications/templates/applications/application_detail.html:13
+#: applications/templates/applications/application_documents.html:14
+#: applications/templates/applications/application_form.html:20
+#: applications/templates/applications/change_status.html:14
+#: templates/base.html:56 templates/base.html:299 templates/home.html:5
+msgid "الرئيسية"
+msgstr "Home"
+
+#: announcements/templates/announcements/announcement_detail.html:30
+#: evaluation/templates/evaluation/criterion_list.html:58
+msgid "غير نشط"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_detail.html:35
+#: announcements/templates/announcements/scholarship_detail.html:124
+msgid "تاريخ النشر:"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_detail.html:53
+#: announcements/templates/announcements/scholarship_detail.html:104
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:13
+#: applications/templates/applications/admin_applications.html:91
+#: applications/templates/applications/application_documents.html:85
+#: evaluation/templates/evaluation/committee_confirm_delete.html:15
+#: evaluation/templates/evaluation/committee_detail.html:56
+#: evaluation/templates/evaluation/round_confirm_delete.html:15
+#: evaluation/templates/evaluation/round_detail.html:98
+msgid "حذف"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_detail.html:58
+#: evaluation/templates/evaluation/evaluation_detail.html:179
+#: evaluation/templates/evaluation/recommendation_detail.html:51
+msgid "العودة للقائمة"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_form.html:8
+#: announcements/templates/announcements/announcement_form.html:23
+#: announcements/templates/announcements/announcement_form.html:39
+msgid "إضافة إعلان جديد"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_form.html:10
+#: announcements/templates/announcements/announcement_form.html:41
+msgid "تعديل إعلان"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_form.html:72
+msgid "إنشاء الإعلان"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_list.html:16
+#: dashboard/templates/dashboard/index.html:63
+msgid "إضافة إعلان"
+msgstr ""
+
+#: announcements/templates/announcements/announcement_list.html:86
+msgid "لا توجد إعلانات متاحة حالياً."
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_confirm_delete.html:5
+msgid "حذف فرصة ابتعاث"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_confirm_delete.html:17
+msgid "هل أنت متأكد من حذف فرصة الابتعاث التالية؟"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_confirm_delete.html:19
+msgid ""
+"هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات المرتبطة بهذه الفرصة "
+"بشكل نهائي."
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:30
+msgid "متاح للتقديم"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:32
+#: announcements/templates/announcements/scholarship_list.html:57
+msgid "منتهي"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:36
+msgid "وصف الفرصة"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:70
+msgid "تحميل المرفق"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:83
+#: evaluation/models.py:95
+msgid "تم التقديم"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:87
+msgid "التقديم الآن"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:92
+msgid "سجل دخول للتقديم"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:110
+msgid "انتهت مهلة التقديم لهذه الفرصة."
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:119
+msgid "معلومات الفرصة"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:128
+#: announcements/templates/announcements/scholarship_list.html:72
+msgid "الموعد النهائي:"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:135
+msgid "الدول المتاحة:"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:141
+msgid "عدد المقاعد:"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:149
+msgid "للاستفسار:"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_detail.html:156
+msgid "الجامعات المتاحة:"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_form.html:8
+#: announcements/templates/announcements/scholarship_form.html:23
+#: announcements/templates/announcements/scholarship_form.html:39
+msgid "إنشاء فرصة ابتعاث جديدة"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_form.html:10
+#: announcements/templates/announcements/scholarship_form.html:41
+msgid "تعديل فرصة ابتعاث"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_form.html:56
+#: announcements/templates/announcements/scholarship_type_form.html:8
+#: announcements/templates/announcements/scholarship_type_form.html:35
+msgid "إضافة نوع ابتعاث جديد"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_form.html:111
+msgid "المرفق الحالي:"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_form.html:121
+msgid "إنشاء الفرصة"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:12
+msgid "فرص الابتعاث المتاحة"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:13
+msgid "استعرض فرص الابتعاث المتاحة وتقدم للحصول على الدعم الدراسي."
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:18
+#: dashboard/templates/dashboard/admin_dashboard.html:55
+#: dashboard/templates/dashboard/index.html:62
+msgid "إضافة فرصة ابتعاث"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:29
+#: applications/templates/applications/admin_applications.html:22
+msgid "البحث والتصفية"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:36
+#: applications/templates/applications/admin_applications.html:29
+#: dashboard/templates/dashboard/application_stats.html:74
+#: dashboard/templates/dashboard/evaluation_stats.html:80
+#: dashboard/templates/dashboard/scholarship_stats.html:75
+msgid "تطبيق"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:39
+#: applications/templates/applications/admin_applications.html:32
+#: dashboard/templates/dashboard/scholarship_stats.html:83
+#: evaluation/templates/evaluation/evaluation_list.html:69
+#: evaluation/templates/evaluation/recommendation_list.html:59
+#: evaluation/templates/evaluation/vote_list.html:50
+msgid "إعادة ضبط"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:55
+msgid "متاح"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:75
+#: applications/templates/applications/admin_applications.html:85
+#: applications/templates/applications/my_applications.html:52
+#: dashboard/templates/dashboard/student_dashboard.html:252
+msgid "التفاصيل"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_list.html:129
+msgid "لا توجد فرص ابتعاث متاحة حالياً. يرجى التحقق لاحقاً."
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:5
+msgid "حذف نوع ابتعاث"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:11
+#: announcements/templates/announcements/scholarship_type_form.html:19
+#: dashboard/templates/dashboard/index.html:5
+#: dashboard/templates/dashboard/index.html:52
+#: evaluation/templates/evaluation/committee_add_member.html:13
+#: evaluation/templates/evaluation/committee_confirm_delete.html:12
+#: evaluation/templates/evaluation/committee_detail.html:12
+#: evaluation/templates/evaluation/committee_form.html:19
+#: evaluation/templates/evaluation/committee_remove_member.html:12
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:12
+#: evaluation/templates/evaluation/criterion_form.html:19
+#: evaluation/templates/evaluation/evaluate_application.html:41
+#: evaluation/templates/evaluation/evaluation_detail.html:60
+#: evaluation/templates/evaluation/recommendation_detail.html:35
+#: evaluation/templates/evaluation/recommendation_form.html:13
+#: evaluation/templates/evaluation/round_assign_applications.html:22
+#: evaluation/templates/evaluation/round_confirm_delete.html:12
+#: evaluation/templates/evaluation/round_detail.html:37
+#: evaluation/templates/evaluation/round_form.html:19
+#: evaluation/templates/evaluation/vote_form.html:13 templates/base.html:80
+#: templates/base.html:242
 msgid "لوحة التحكم"
 msgstr ""
 
-#: templates/base.html:112
-msgid "تسجيل الخروج"
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:27
+msgid "هل أنت متأكد من رغبتك في حذف نوع الابتعاث التالي؟"
 msgstr ""
 
-#: templates/base.html:141
-msgid "نظام متكامل لإدارة عمليات الابتعاث في جامعة البترا."
+#: announcements/templates/announcements/scholarship_type_confirm_delete.html:38
+msgid ""
+"تحذير: سيؤدي هذا الإجراء إلى حذف نوع الابتعاث بشكل نهائي. قد يؤثر ذلك على "
+"فرص الابتعاث المرتبطة به."
 msgstr ""
 
-#: templates/base.html:144
+#: announcements/templates/announcements/scholarship_type_form.html:10
+#: announcements/templates/announcements/scholarship_type_form.html:37
+msgid "تعديل نوع ابتعاث"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_form.html:22
+#: announcements/templates/announcements/scholarship_type_list.html:17
+#: announcements/templates/announcements/scholarship_type_list.html:71
+msgid "إضافة نوع جديد"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_form.html:50
+msgid "إضافة"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_list.html:12
+msgid "إدارة أنواع الابتعاث المتاحة في النظام."
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_list.html:29
+#: applications/models.py:11
+#: evaluation/templates/evaluation/committee_detail.html:125
+msgid "الاسم"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_list.html:31
+#: applications/templates/applications/admin_applications.html:54
+#: applications/templates/applications/application_detail.html:121
+#: applications/templates/applications/application_documents.html:71
+#: applications/templates/applications/my_applications.html:35
+#: dashboard/templates/dashboard/admin_dashboard.html:224
+#: dashboard/templates/dashboard/faculty_dashboard.html:212
+#: evaluation/templates/evaluation/committee_detail.html:127
+#: evaluation/templates/evaluation/committee_detail.html:200
+#: evaluation/templates/evaluation/committee_list.html:33
+#: evaluation/templates/evaluation/criterion_list.html:34
+#: evaluation/templates/evaluation/evaluation_list.html:89
+#: evaluation/templates/evaluation/evaluator_dashboard.html:146
+#: evaluation/templates/evaluation/evaluator_dashboard.html:211
+#: evaluation/templates/evaluation/recommendation_list.html:78
+#: evaluation/templates/evaluation/round_list.html:57
+msgid "الإجراءات"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_list.html:42
+#: evaluation/templates/evaluation/criterion_list.html:48
+msgid "لا يوجد وصف"
+msgstr ""
+
+#: announcements/templates/announcements/scholarship_type_list.html:68
+msgid "لا توجد أنواع ابتعاث حالياً"
+msgstr ""
+
+#: announcements/views.py:89
+msgid "تم إنشاء فرصة الابتعاث بنجاح"
+msgstr ""
+
+#: announcements/views.py:107
+msgid "تم تحديث فرصة الابتعاث بنجاح"
+msgstr ""
+
+#: announcements/views.py:123
+msgid "تم حذف فرصة الابتعاث بنجاح"
+msgstr ""
+
+#: announcements/views.py:156
+msgid "هذا الإعلان غير نشط حالياً."
+msgstr ""
+
+#: announcements/views.py:161
+msgid "هذا الإعلان غير نشط حالياً ولا يمكن عرضه."
+msgstr ""
+
+#: announcements/views.py:170
+msgid "الإعلان المطلوب غير موجود."
+msgstr ""
+
+#: announcements/views.py:183
+msgid "تم إنشاء الإعلان بنجاح"
+msgstr ""
+
+#: announcements/views.py:201
+msgid "تم تحديث الإعلان بنجاح"
+msgstr ""
+
+#: announcements/views.py:217
+msgid "تم حذف الإعلان بنجاح"
+msgstr ""
+
+#: announcements/views.py:231 announcements/views.py:275
+msgid "تم إنشاء نوع الابتعاث بنجاح"
+msgstr ""
+
+#: announcements/views.py:296
+msgid "تم تحديث نوع الابتعاث بنجاح"
+msgstr ""
+
+#: announcements/views.py:316
+msgid "تم حذف نوع الابتعاث بنجاح"
+msgstr ""
+
+#: applications/admin.py:52
+msgid "تم تغيير الحالة من لوحة الإدارة"
+msgstr ""
+
+#: applications/forms.py:38
+#: applications/templates/applications/application_documents.html:124
+msgid "السيرة الذاتية"
+msgstr ""
+
+#: applications/forms.py:39
+#: applications/templates/applications/application_documents.html:135
+msgid "كشف الدرجات"
+msgstr ""
+
+#: applications/forms.py:40
+#: applications/templates/applications/application_documents.html:146
+msgid "الشهادة العلمية"
+msgstr ""
+
+#: applications/forms.py:41
+#: applications/templates/applications/application_documents.html:157
+#: applications/templates/applications/application_form.html:112
+msgid "إثبات الهوية"
+msgstr ""
+
+#: applications/forms.py:42
+#: applications/templates/applications/application_documents.html:168
+msgid "شهادة اللغة"
+msgstr ""
+
+#: applications/forms.py:43
+msgid "رسالة توصية"
+msgstr ""
+
+#: applications/forms.py:44
+#: applications/templates/applications/application_detail.html:89
+#: applications/templates/applications/application_documents.html:179
+msgid "خطاب القبول"
+msgstr ""
+
+#: applications/forms.py:45
+msgid "خطة البحث"
+msgstr ""
+
+#: applications/forms.py:46
+msgid "مستند آخر"
+msgstr ""
+
+#: applications/forms.py:50
+#: applications/templates/applications/application_detail.html:118
+#: applications/templates/applications/application_documents.html:68
+msgid "نوع المستند"
+msgstr ""
+
+#: applications/forms.py:56 applications/models.py:62
+msgid "وصف المستند"
+msgstr ""
+
+#: applications/forms.py:58
+msgid "وصف اختياري للمستند"
+msgstr ""
+
+#: applications/forms.py:62 applications/models.py:63
+msgid "الملف"
+msgstr ""
+
+#: applications/forms.py:70
+msgid "تعليق"
+msgstr ""
+
+#: applications/forms.py:73
+msgid "أدخل تعليقًا اختياريًا لشرح سبب التغيير"
+msgstr ""
+
+#: applications/forms.py:81 applications/views.py:37
+msgid "قيد الانتظار"
+msgstr ""
+
+#: applications/forms.py:82
+msgid "قيد المراجعة"
+msgstr ""
+
+#: applications/forms.py:83
+#: dashboard/templates/dashboard/scholarship_stats.html:156
+msgid "مقبول"
+msgstr ""
+
+#: applications/forms.py:84
+msgid "مرفوض"
+msgstr ""
+
+#: applications/forms.py:95 applications/models.py:26
+#: applications/templates/applications/admin_applications.html:51
+#: applications/templates/applications/application_detail.html:48
+#: applications/templates/applications/my_applications.html:31
+#: dashboard/templates/dashboard/admin_dashboard.html:221
+#: dashboard/templates/dashboard/faculty_dashboard.html:209
+#: dashboard/templates/dashboard/scholarship_stats.html:145
+#: dashboard/templates/dashboard/scholarship_stats.html:202
+#: evaluation/templates/evaluation/evaluation_list.html:42
+#: evaluation/templates/evaluation/evaluation_list.html:83
+#: evaluation/templates/evaluation/round_detail.html:271
+msgid "فرصة الابتعاث"
+msgstr ""
+
+#: applications/forms.py:97
+#: evaluation/templates/evaluation/evaluation_list.html:43
+msgid "اسم الفرصة"
+msgstr ""
+
+#: applications/forms.py:101
+msgid "من تاريخ"
+msgstr ""
+
+#: applications/forms.py:107
+msgid "إلى تاريخ"
+msgstr ""
+
+#: applications/models.py:13 dashboard/models.py:22 evaluation/models.py:36
+#: evaluation/templates/evaluation/criterion_list.html:29
+msgid "الترتيب"
+msgstr ""
+
+#: applications/models.py:16 applications/models.py:30
+#: applications/templates/applications/application_detail.html:199
+#: dashboard/forms.py:35
+msgid "حالة الطلب"
+msgstr ""
+
+#: applications/models.py:17
+msgid "حالات الطلب"
+msgstr ""
+
+#: applications/models.py:28
+#: applications/templates/applications/admin_applications.html:50
+#: dashboard/templates/dashboard/admin_dashboard.html:220
+#: dashboard/templates/dashboard/faculty_dashboard.html:208
+#: evaluation/templates/evaluation/recommendation_list.html:29
+#: evaluation/templates/evaluation/recommendation_list.html:74
+#: evaluation/templates/evaluation/round_detail.html:270
+#: evaluation/templates/evaluation/vote_list.html:29
+#: evaluation/templates/evaluation/vote_list.html:65
+msgid "المتقدم"
+msgstr ""
+
+#: applications/models.py:32
+#: applications/templates/applications/admin_applications.html:52
+#: applications/templates/applications/application_detail.html:52
+#: applications/templates/applications/my_applications.html:32
+#: dashboard/templates/dashboard/admin_dashboard.html:222
+#: dashboard/templates/dashboard/faculty_dashboard.html:210
+msgid "تاريخ التقديم"
+msgstr ""
+
+#: applications/models.py:33
+#: applications/templates/applications/application_detail.html:56
+#: applications/templates/applications/my_applications.html:33
+msgid "آخر تحديث"
+msgstr ""
+
+#: applications/models.py:34
+#: applications/templates/applications/application_detail.html:73
+#: applications/templates/applications/application_form.html:103
+msgid "خطاب الدوافع"
+msgstr ""
+
+#: applications/models.py:35
+msgid "اشرح لماذا تريد التقدم لهذه الفرصة وما هي أهدافك"
+msgstr ""
+
+#: applications/models.py:36
+#: applications/templates/applications/application_detail.html:81
+msgid "مقترح البحث"
+msgstr ""
+
+#: applications/models.py:37
+msgid "إذا كان الابتعاث لدراسة الدكتوراه، أرفق مقترح البحث الخاص بك"
+msgstr ""
+
+#: applications/models.py:38
+#: applications/templates/applications/application_detail.html:104
+msgid "ملاحظات إضافية"
+msgstr ""
+
+#: applications/models.py:39
+msgid "أي معلومات إضافية تود إضافتها لطلبك"
+msgstr ""
+
+#: applications/models.py:40
+msgid "هل لديك قبول مبدئي؟"
+msgstr ""
+
+#: applications/models.py:41
+msgid "اسم الجامعة التي لديك قبول فيها"
+msgstr ""
+
+#: applications/models.py:45
+msgid "طلب ابتعاث"
+msgstr ""
+
+#: applications/models.py:46
+msgid "طلبات الابتعاث"
+msgstr ""
+
+#: applications/models.py:59 applications/models.py:78 evaluation/models.py:87
+#: evaluation/models.py:142 evaluation/models.py:170
+#: evaluation/templates/evaluation/evaluator_dashboard.html:142
+#: evaluation/templates/evaluation/evaluator_dashboard.html:206
+#: evaluation/templates/evaluation/recommendation_list.html:73
+#: evaluation/templates/evaluation/vote_list.html:64
+msgid "الطلب"
+msgstr ""
+
+#: applications/models.py:61
+msgid "اسم المستند"
+msgstr ""
+
+#: applications/models.py:64
+#: applications/templates/applications/application_detail.html:120
+#: applications/templates/applications/application_documents.html:70
+msgid "تاريخ الرفع"
+msgstr ""
+
+#: applications/models.py:65
+#: evaluation/templates/evaluation/evaluate_application.html:201
+msgid "مطلوب"
+msgstr ""
+
+#: applications/models.py:68
+msgid "مستند"
+msgstr ""
+
+#: applications/models.py:69
+#: applications/templates/applications/application_detail.html:33
+#: applications/templates/applications/application_documents.html:17
+#: applications/templates/applications/my_applications.html:60
+msgid "المستندات"
+msgstr ""
+
+#: applications/models.py:79
+msgid "من حالة"
+msgstr ""
+
+#: applications/models.py:81
+msgid "إلى حالة"
+msgstr ""
+
+#: applications/models.py:83
+msgid "تم بواسطة"
+msgstr ""
+
+#: applications/models.py:85
+msgid "تاريخ التغيير"
+msgstr ""
+
+#: applications/models.py:86
+msgid "التعليق"
+msgstr ""
+
+#: applications/models.py:89
+msgid "سجل الطلب"
+msgstr ""
+
+#: applications/models.py:90
+msgid "سجلات الطلبات"
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:6
+#: applications/templates/applications/change_status.html:15
+msgid "إدارة الطلبات"
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:12
+#: dashboard/templates/dashboard/index.html:315
+msgid "إدارة طلبات الابتعاث"
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:13
+msgid "مراجعة وإدارة طلبات الابتعاث المقدمة من المتقدمين."
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:49
+#: applications/templates/applications/application_detail.html:44
+#: applications/templates/applications/my_applications.html:30
+#: evaluation/templates/evaluation/round_detail.html:209
+#: evaluation/templates/evaluation/round_detail.html:269
+msgid "رقم الطلب"
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:88
+#: applications/templates/applications/change_status.html:17
+msgid "تغيير الحالة"
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:150
+msgid "لا توجد طلبات متطابقة"
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:151
+msgid "لا توجد طلبات تطابق معايير البحث الحالية."
+msgstr ""
+
+#: applications/templates/applications/admin_applications.html:153
+#: dashboard/templates/dashboard/student_dashboard.html:200
+msgid "عرض جميع الطلبات"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:5
+msgid "حذف طلب"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:17
+msgid "هل أنت متأكد من حذف هذا الطلب؟"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:18
+msgid "طلب رقم:"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:19
+msgid ""
+"هذا الإجراء لا يمكن التراجع عنه. سيتم حذف الطلب وجميع المستندات المرفقة به "
+"بشكل نهائي."
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:23
+msgid "معلومات الطلب:"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:25
+#: evaluation/templates/evaluation/recommendation_detail.html:150
+#: evaluation/templates/evaluation/recommendation_form.html:33
+#: evaluation/templates/evaluation/vote_form.html:33
+msgid "المتقدم:"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:26
+#: evaluation/templates/evaluation/evaluate_application.html:65
+#: evaluation/templates/evaluation/evaluation_detail.html:71
+#: evaluation/templates/evaluation/evaluation_detail.html:149
+#: evaluation/templates/evaluation/recommendation_detail.html:155
+#: evaluation/templates/evaluation/recommendation_form.html:34
+#: evaluation/templates/evaluation/vote_form.html:34
+msgid "فرصة الابتعاث:"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:27
+#: evaluation/templates/evaluation/evaluate_application.html:132
+#: evaluation/templates/evaluation/evaluation_detail.html:157
+#: evaluation/templates/evaluation/recommendation_detail.html:162
+msgid "تاريخ التقديم:"
+msgstr ""
+
+#: applications/templates/applications/application_confirm_delete.html:28
+#: evaluation/templates/evaluation/committee_detail.html:95
+#: evaluation/templates/evaluation/evaluation_detail.html:129
+#: evaluation/templates/evaluation/round_detail.html:141
+msgid "الحالة:"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:5
+#: applications/templates/applications/application_detail.html:25
+#: evaluation/templates/evaluation/recommendation_form.html:14
+#: evaluation/templates/evaluation/vote_form.html:14
+msgid "تفاصيل الطلب"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:14
+#: applications/templates/applications/application_documents.html:15
+#: applications/templates/applications/application_form.html:22
+#: applications/templates/applications/my_applications.html:5
+#: dashboard/templates/dashboard/index.html:73
+#: dashboard/templates/dashboard/index.html:146
+#: dashboard/templates/dashboard/index.html:268
+#: dashboard/templates/dashboard/index.html:351
+#: dashboard/templates/dashboard/student_dashboard.html:143
+#: dashboard/templates/dashboard/student_dashboard.html:157
+#: templates/base.html:73 templates/home.html:41
+msgid "طلباتي"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:15
+#: applications/templates/applications/application_documents.html:16
+#: applications/templates/applications/application_form.html:23
+#: applications/templates/applications/change_status.html:16
+msgid "طلب"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:39
+#: evaluation/templates/evaluation/evaluate_application.html:82
+#: evaluation/templates/evaluation/evaluation_detail.html:142
+#: evaluation/templates/evaluation/recommendation_detail.html:146
+#: evaluation/templates/evaluation/recommendation_form.html:32
+#: evaluation/templates/evaluation/vote_form.html:32
+msgid "معلومات الطلب"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:92
+msgid "نعم، لدي قبول مبدئي"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:93
+msgid "الجامعة:"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:97
+msgid "لا يوجد قبول مبدئي"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:112
+msgid "المستندات المرفقة"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:131
+#: applications/templates/applications/application_documents.html:82
+#: evaluation/templates/evaluation/evaluate_application.html:206
+#: evaluation/templates/evaluation/evaluator_dashboard.html:236
+msgid "عرض"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:143
+#: applications/templates/applications/application_documents.html:98
+msgid "لم يتم رفع أي مستندات حتى الآن."
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:144
+msgid "رفع المستندات الآن؟"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:154
+msgid "سجل التغييرات"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:173
+#: dashboard/templates/dashboard/index.html:470
+#: dashboard/templates/dashboard/student_dashboard.html:349
+msgid "تم تغيير الحالة من"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:173
+#: dashboard/templates/dashboard/index.html:470
+#: dashboard/templates/dashboard/student_dashboard.html:351
+msgid "إلى"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:177
+msgid "تم إنشاء الطلب بحالة"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:184
+msgid "بواسطة:"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:208
+#: evaluation/templates/evaluation/committee_detail.html:90
+#: evaluation/templates/evaluation/recommendation_detail.html:131
+msgid "آخر تحديث:"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:231
+#: applications/templates/applications/application_form.html:85
+msgid "تقديم الطلب"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:233
+#: dashboard/forms.py:103 evaluation/models.py:51
+msgid "المراجعة الأولية"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:235
+#: evaluation/models.py:118 templates/base.html:137
+msgid "التقييم"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:237
+msgid "الموافقة النهائية"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:239
+msgid "اكتمال الإجراءات"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:243
+msgid "الحالة الحالية"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:256
+msgid "معلومات المتقدم"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:294
+msgid "إجراءات المشرف"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:298
+#: applications/templates/applications/change_status.html:6
+#: applications/templates/applications/change_status.html:27
+msgid "تغيير حالة الطلب"
+msgstr ""
+
+#: applications/templates/applications/application_detail.html:303
+msgid "حذف الطلب"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:6
+#: applications/templates/applications/application_documents.html:27
+#: applications/templates/applications/application_documents.html:114
+#: applications/templates/applications/application_form.html:107
+msgid "المستندات المطلوبة"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:29
+msgid "العودة للطلب"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:45
+msgid ""
+"يرجى رفع المستندات المطلوبة لإكمال طلبك. تأكد من أن المستندات واضحة وبصيغة "
+"PDF أو صورة."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:54
+msgid "رفع المستند"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:61
+msgid "المستندات المرفوعة"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:104
+msgid "إكمال الطلب"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:125
+msgid "سيرة ذاتية محدثة توضح خبراتك ومؤهلاتك."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:136
+msgid "كشف درجات رسمي لآخر شهادة علمية."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:147
+msgid "صورة من الشهادة العلمية الأخيرة."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:158
+msgid "صورة من الهوية الشخصية أو جواز السفر."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:169
+msgid "شهادة إجادة اللغة الإنجليزية مثل TOEFL أو IELTS."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:180
+msgid "إن وجد، أرفق خطاب القبول من الجامعة."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:190
+msgid "إرشادات"
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:196
+msgid "تأكد من أن المستندات واضحة ومقروءة."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:200
+msgid "يفضل أن تكون المستندات بصيغة PDF."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:204
+msgid "لا يتجاوز حجم الملف 5 ميجابايت."
+msgstr ""
+
+#: applications/templates/applications/application_documents.html:208
+msgid "تأكد من رفع جميع المستندات المطلوبة."
+msgstr ""
+
+#: applications/templates/applications/application_form.html:8
+#: applications/templates/applications/application_form.html:41
+msgid "تعديل طلب ابتعاث"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:10
+#: applications/templates/applications/application_form.html:43
+msgid "التقديم على فرصة ابتعاث"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:28
+msgid "التقديم"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:51
+msgid ""
+"يرجى تعبئة النموذج التالي بعناية. بعد تقديم الطلب، سيطلب منك رفع المستندات "
+"المطلوبة."
+msgstr ""
+
+#: applications/templates/applications/application_form.html:100
+msgid "إرشادات التقديم"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:104
+msgid ""
+"اكتب بوضوح لماذا ترغب في الابتعاث، وما هي أهدافك الأكاديمية والمهنية، وكيف "
+"سيساعدك هذا الابتعاث في تحقيقها."
+msgstr ""
+
+#: applications/templates/applications/application_form.html:109
+msgid "سيرة ذاتية محدثة"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:110
+msgid "كشف درجات رسمي"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:111
+msgid "شهادات علمية"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:113
+msgid "خطاب قبول (إن وجد)"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:114
+msgid "شهادة إجادة اللغة"
+msgstr ""
+
+#: applications/templates/applications/application_form.html:121
+msgid "يرجى التأكد من صحة المعلومات قبل حفظ التغييرات."
+msgstr ""
+
+#: applications/templates/applications/application_form.html:123
+msgid "لن تتمكن من تعديل بعض المعلومات بعد تقديم الطلب."
+msgstr ""
+
+#: applications/templates/applications/change_status.html:32
+msgid "أنت على وشك تغيير حالة الطلب رقم"
+msgstr ""
+
+#: applications/templates/applications/change_status.html:33
+msgid "المقدم من"
+msgstr ""
+
+#: applications/templates/applications/change_status.html:34
+msgid "الحالة الحالية هي"
+msgstr ""
+
+#: applications/templates/applications/change_status.html:41
+msgid "الحالة الجديدة"
+msgstr ""
+
+#: applications/templates/applications/change_status.html:65
+msgid "سيتم تسجيل هذا التغيير في سجل الطلب وسيتم إعلام المتقدم بهذا التغيير."
+msgstr ""
+
+#: applications/templates/applications/document_confirm_delete.html:5
+msgid "حذف المستند"
+msgstr ""
+
+#: applications/templates/applications/document_confirm_delete.html:17
+msgid "هل أنت متأكد من حذف هذا المستند؟"
+msgstr ""
+
+#: applications/templates/applications/document_confirm_delete.html:19
+msgid "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المستند بشكل نهائي."
+msgstr ""
+
+#: applications/templates/applications/my_applications.html:11
+msgid "طلبات الابتعاث الخاصة بي"
+msgstr ""
+
+#: applications/templates/applications/my_applications.html:12
+msgid "يمكنك متابعة حالة طلباتك واستعراض التفاصيل الخاصة بكل طلب."
+msgstr ""
+
+#: applications/templates/applications/my_applications.html:16
+msgid "تقديم طلب جديد"
+msgstr ""
+
+#: applications/templates/applications/my_applications.html:119
+msgid "لا توجد طلبات حتى الآن"
+msgstr ""
+
+#: applications/templates/applications/my_applications.html:120
+msgid ""
+"لم تقم بتقديم أي طلبات ابتعاث حتى الآن. يمكنك استعراض فرص الابتعاث المتاحة "
+"والتقديم عليها."
+msgstr ""
+
+#: applications/templates/applications/my_applications.html:122
+#: dashboard/templates/dashboard/faculty_dashboard.html:343
+#: dashboard/templates/dashboard/index.html:290
+#: dashboard/templates/dashboard/index.html:341
+#: dashboard/templates/dashboard/student_dashboard.html:211
+msgid "استعراض فرص الابتعاث"
+msgstr ""
+
+#: applications/views.py:19
+msgid "انتهت مهلة التقديم لهذه الفرصة"
+msgstr ""
+
+#: applications/views.py:24
+msgid "لقد تقدمت بالفعل لهذه الفرصة"
+msgstr ""
+
+#: applications/views.py:47
+msgid "تم إنشاء الطلب"
+msgstr ""
+
+#: applications/views.py:50
+msgid "تم تقديم طلبك بنجاح"
+msgstr ""
+
+#: applications/views.py:85
+msgid "تم رفع المستند بنجاح"
+msgstr ""
+
+#: applications/views.py:107
+msgid "ليس لديك صلاحية حذف هذا المستند"
+msgstr ""
+
+#: applications/views.py:112
+msgid "تم حذف المستند بنجاح"
+msgstr ""
+
+#: applications/views.py:167
+msgid "لا يمكن تعديل هذا الطلب في مرحلته الحالية"
+msgstr ""
+
+#: applications/views.py:174
+msgid "تم تحديث معلومات الطلب بنجاح"
+msgstr ""
+
+#: applications/views.py:214
+msgid "تم تغيير حالة الطلب بنجاح"
+msgstr ""
+
+#: applications/views.py:288
+msgid "تم حذف الطلب بنجاح"
+msgstr ""
+
+#: dashboard/forms.py:11 dashboard/forms.py:55 dashboard/forms.py:133
+msgid "تاريخ البداية"
+msgstr ""
+
+#: dashboard/forms.py:17 dashboard/forms.py:61 dashboard/forms.py:139
+msgid "تاريخ النهاية"
+msgstr ""
+
+#: dashboard/forms.py:29 dashboard/forms.py:37 dashboard/forms.py:102
+#: dashboard/forms.py:115 dashboard/forms.py:149
+#: evaluation/templates/evaluation/evaluation_list.html:48
+#: evaluation/templates/evaluation/evaluation_list.html:59
+#: evaluation/templates/evaluation/recommendation_list.html:35
+#: evaluation/templates/evaluation/recommendation_list.html:46
+#: evaluation/templates/evaluation/vote_list.html:39
+msgid "الكل"
+msgstr ""
+
+#: dashboard/forms.py:42 dashboard/forms.py:120
+msgid "النطاق الزمني"
+msgstr ""
+
+#: dashboard/forms.py:44 dashboard/forms.py:122
+msgid "كل الفترات"
+msgstr ""
+
+#: dashboard/forms.py:45 dashboard/forms.py:123
+msgid "الشهر الحالي"
+msgstr ""
+
+#: dashboard/forms.py:46 dashboard/forms.py:124
+msgid "الربع الحالي"
+msgstr ""
+
+#: dashboard/forms.py:47 dashboard/forms.py:125
+msgid "السنة الحالية"
+msgstr ""
+
+#: dashboard/forms.py:48 dashboard/forms.py:126
+msgid "مخصص"
+msgstr ""
+
+#: dashboard/forms.py:67
+msgid "تجميع حسب"
+msgstr ""
+
+#: dashboard/forms.py:71
+msgid "الشهر"
+msgstr ""
+
+#: dashboard/forms.py:79
+msgid "نوع الرسم البياني"
+msgstr ""
+
+#: dashboard/forms.py:81
+msgid "أعمدة"
+msgstr ""
+
+#: dashboard/forms.py:82
+msgid "دائري"
+msgstr ""
+
+#: dashboard/forms.py:83
+msgid "خطي"
+msgstr ""
+
+#: dashboard/forms.py:93 evaluation/models.py:59 evaluation/models.py:172
+#: evaluation/templates/evaluation/recommendation_list.html:33
+#: evaluation/templates/evaluation/recommendation_list.html:75
+#: evaluation/templates/evaluation/round_list.html:53
+msgid "اللجنة"
+msgstr ""
+
+#: dashboard/forms.py:100 evaluation/models.py:58
+msgid "نوع الجولة"
+msgstr ""
+
+#: dashboard/forms.py:104 evaluation/models.py:52
+msgid "تقييم اللجنة"
+msgstr ""
+
+#: dashboard/forms.py:105 evaluation/models.py:53
+msgid "التقييم النهائي"
+msgstr ""
+
+#: dashboard/forms.py:113
+#: dashboard/templates/dashboard/evaluation_stats.html:202
+#: evaluation/templates/evaluation/round_detail.html:272
+msgid "المقيّم"
+msgstr ""
+
+#: dashboard/models.py:8 dashboard/templates/dashboard/application_stats.html:7
+#: dashboard/templates/dashboard/application_stats.html:36
+#: templates/base.html:116
+msgid "إحصائيات الطلبات"
+msgstr ""
+
+#: dashboard/models.py:9 dashboard/templates/dashboard/scholarship_stats.html:7
+#: dashboard/templates/dashboard/scholarship_stats.html:52
+#: templates/base.html:126
+msgid "إحصائيات فرص الابتعاث"
+msgstr ""
+
+#: dashboard/models.py:10 dashboard/templates/dashboard/evaluation_stats.html:7
+#: dashboard/templates/dashboard/evaluation_stats.html:45
+#: templates/base.html:121
+msgid "إحصائيات التقييمات"
+msgstr ""
+
+#: dashboard/models.py:11 dashboard/templates/dashboard/index.html:369
+msgid "آخر الطلبات"
+msgstr ""
+
+#: dashboard/models.py:12 dashboard/templates/dashboard/index.html:431
+msgid "آخر فرص الابتعاث"
+msgstr ""
+
+#: dashboard/models.py:13
+msgid "آخر التقييمات"
+msgstr ""
+
+#: dashboard/models.py:14
+msgid "مخطط حالات الطلبات"
+msgstr ""
+
+#: dashboard/models.py:15
+msgid "مخطط تقييمات اللجان"
+msgstr ""
+
+#: dashboard/models.py:18
+msgid "اسم الودجة"
+msgstr ""
+
+#: dashboard/models.py:19
+msgid "نوع الودجة"
+msgstr ""
+
+#: dashboard/models.py:21 dashboard/templates/dashboard/index.html:411
+#: dashboard/views.py:524 evaluation/models.py:14 evaluation/models.py:63
+#: evaluation/templates/evaluation/committee_detail.html:37
+#: evaluation/templates/evaluation/committee_detail.html:98
+#: evaluation/templates/evaluation/committee_list.html:47
+#: evaluation/templates/evaluation/evaluator_dashboard.html:75
+msgid "نشطة"
+msgstr ""
+
+#: dashboard/models.py:23
+msgid "ظهور للأدوار"
+msgstr ""
+
+#: dashboard/models.py:24
+msgid "أدوار المستخدمين الذين سيشاهدون هذه الودجة، مفصولة بفواصل"
+msgstr ""
+
+#: dashboard/models.py:27
+msgid "ودجة لوحة التحكم"
+msgstr ""
+
+#: dashboard/models.py:28
+msgid "ودجات لوحة التحكم"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:5
+#: dashboard/templates/dashboard/admin_dashboard.html:49 templates/base.html:93
+msgid "لوحة تحكم المشرفين"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:50
+msgid ""
+"مرحباً بك في لوحة تحكم المشرفين، يمكنك متابعة إحصائيات النظام وإدارة العمليات "
+"بشكل كامل."
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:61
+msgid "نشر إعلان"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:62
+#: dashboard/templates/dashboard/index.html:64
+msgid "إنشاء لجنة تقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:63
+msgid "إنشاء جولة تقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:65
+msgid "تقارير متقدمة"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:80
+#: dashboard/templates/dashboard/application_stats.html:95
+#: dashboard/templates/dashboard/faculty_dashboard.html:127
+#: dashboard/templates/dashboard/index.html:119
+msgid "إجمالي الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:84
+#: dashboard/templates/dashboard/admin_dashboard.html:101
+#: dashboard/templates/dashboard/student_dashboard.html:189
+#: templates/instructions.html:59 templates/instructions.html:71
+#: templates/instructions.html:83
+msgid "عرض التفاصيل"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:114
+msgid "فرص نشطة"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:118
+#: dashboard/templates/dashboard/faculty_dashboard.html:349
+msgid "عرض الإحصائيات"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:131
+msgid "المستخدمين النشطين"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:135
+msgid "إدارة المستخدمين"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:148
+#: dashboard/templates/dashboard/index.html:199
+msgid "توزيع الطلبات حسب الحالة"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:158
+#: dashboard/templates/dashboard/admin_dashboard.html:179
+#: dashboard/templates/dashboard/admin_dashboard.html:200
+#: dashboard/templates/dashboard/faculty_dashboard.html:171
+#: dashboard/templates/dashboard/faculty_dashboard.html:190
+#: dashboard/templates/dashboard/index.html:210
+#: dashboard/templates/dashboard/index.html:259
+msgid "لا توجد بيانات لعرضها"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:169
+msgid "الطلبات حسب نوع الابتعاث"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:190
+msgid "تطور عدد الطلبات خلال الأشهر الماضية"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:211
+#: dashboard/templates/dashboard/faculty_dashboard.html:199
+msgid "أحدث الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:212
+#: dashboard/templates/dashboard/faculty_dashboard.html:200
+#: dashboard/templates/dashboard/index.html:163
+#: dashboard/templates/dashboard/index.html:220
+#: dashboard/templates/dashboard/index.html:269
+#: dashboard/templates/dashboard/student_dashboard.html:158
+#: dashboard/templates/dashboard/student_dashboard.html:222
+#: dashboard/templates/dashboard/student_dashboard.html:373
+#: evaluation/templates/evaluation/evaluator_dashboard.html:198
+msgid "عرض الكل"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:259
+#: dashboard/templates/dashboard/faculty_dashboard.html:261
+#: dashboard/templates/dashboard/index.html:389
+msgid "لا توجد طلبات حالية"
+msgstr ""
+
+#: dashboard/templates/dashboard/admin_dashboard.html:328
+#: dashboard/templates/dashboard/admin_dashboard.html:371
+#: dashboard/templates/dashboard/application_stats.html:263
+#: dashboard/templates/dashboard/faculty_dashboard.html:418
+#: dashboard/templates/dashboard/index.html:567
+#: dashboard/templates/dashboard/scholarship_stats.html:203
+#: dashboard/templates/dashboard/scholarship_stats.html:352
+msgid "عدد الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:37
+msgid "تحليل بيانات طلبات الابتعاث وعرض المؤشرات الإحصائية"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:41
+#: dashboard/templates/dashboard/evaluation_stats.html:50
+#: dashboard/templates/dashboard/scholarship_stats.html:57
+msgid "العودة للوحة التحكم"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:118
+msgid "المتقدمين (ذكور)"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:120
+msgid "المتقدمات (إناث)"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:122
+#: dashboard/views.py:316
+#: evaluation/templates/evaluation/evaluation_list.html:110
+msgid "غير محدد"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:139
+msgid "توزيع الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:152
+msgid "بيانات الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:159
+msgid "الفئة"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:160
+msgid "العدد"
+msgstr ""
+
+#: dashboard/templates/dashboard/application_stats.html:161
+msgid "النسبة"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:46
+msgid "تحليل بيانات تقييمات الطلبات ومؤشرات أداء اللجان"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:101
+#: evaluation/templates/evaluation/round_detail.html:183
+msgid "إجمالي التقييمات"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:121
+#: evaluation/templates/evaluation/round_detail.html:187
+#: evaluation/templates/evaluation/round_detail.html:211
+msgid "التقييمات المكتملة"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:141
+#: dashboard/templates/dashboard/index.html:219
+msgid "التقييمات المعلقة"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:161
+msgid "نسبة الإنجاز"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:181
+msgid "متوسط درجات المعايير"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:195
+msgid "أكثر المقيّمين نشاطاً"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:203
+#: dashboard/templates/dashboard/evaluation_stats.html:379
+msgid "عدد التقييمات"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:217
+#: dashboard/templates/dashboard/evaluation_stats.html:261
+#: dashboard/templates/dashboard/scholarship_stats.html:228
+msgid "لا توجد بيانات"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:232
+msgid "تفاصيل متوسط الدرجات"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:239
+#: evaluation/models.py:33 evaluation/models.py:120
+#: evaluation/templates/evaluation/evaluation_detail.html:203
+#: templates/instructions.html:317
+msgid "المعيار"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:240
+msgid "المتوسط"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:241
+msgid "المقياس"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:276
+msgid "التقييمات حسب جولة التقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/evaluation_stats.html:331
+msgid "متوسط الدرجة"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:5
+#: dashboard/templates/dashboard/faculty_dashboard.html:87
+#: templates/base.html:105
+msgid "لوحة تحكم عضو هيئة التدريس"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:90
+msgid "الكلية غير محددة"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:95
+#: dashboard/templates/dashboard/index.html:71
+#: dashboard/templates/dashboard/index.html:334
+msgid "استعراض الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:112
+msgid "إجمالي الطلاب"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:148
+msgid "الطلبات المقبولة"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:161
+msgid "توزيع طلبات الابتعاث حسب الحالة"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:180
+msgid "توزيع طلبات الابتعاث حسب النوع"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:273
+#: dashboard/templates/dashboard/index.html:162
+msgid "الموعد النهائي لفرص الابتعاث القادمة"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:302
+#: dashboard/templates/dashboard/index.html:188
+msgid "لا توجد فرص ابتعاث تنتهي قريباً"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:311
+msgid "ملخص حالة الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:326
+#: dashboard/templates/dashboard/student_dashboard.html:310
+msgid "لا توجد طلبات لعرض حالتها"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:335
+#: dashboard/templates/dashboard/index.html:303 templates/base.html:297
 msgid "روابط سريعة"
 msgstr ""
 
-#: templates/base.html:155
+#: dashboard/templates/dashboard/faculty_dashboard.html:340
+#: dashboard/templates/dashboard/index.html:338
+msgid "استعراض طلبات الطلاب"
+msgstr ""
+
+#: dashboard/templates/dashboard/faculty_dashboard.html:346
+#: dashboard/templates/dashboard/index.html:344 templates/home.html:56
+msgid "عرض الإعلانات"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:53
+msgid ""
+"مرحبًا بك في لوحة تحكم نظام الابتعاث الإلكتروني. يمكنك من هنا إدارة ومتابعة "
+"كافة عمليات الابتعاث."
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:58
+msgid "الإجراءات السريعة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:66
+#: dashboard/templates/dashboard/index.html:200
+msgid "إحصائيات متقدمة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:68
+#: dashboard/templates/dashboard/index.html:325
+#: evaluation/templates/evaluation/round_detail.html:210
+msgid "التقييمات المطلوبة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:69
+#: dashboard/templates/dashboard/index.html:328
+msgid "لوحة اللجنة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:74
+msgid "استعراض الفرص"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:90
+msgid "فرص ابتعاث نشطة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:92
+#: dashboard/templates/dashboard/index.html:106
+#: dashboard/templates/dashboard/index.html:121
+#: dashboard/templates/dashboard/index.html:130
+#: dashboard/templates/dashboard/index.html:139
+#: dashboard/templates/dashboard/index.html:148
+msgid "استعراض"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:104
+msgid "إعلانات نشطة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:128
+msgid "تقييمات معلقة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:137
+msgid "طلبات الطلاب في الكلية"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:232
+#: evaluation/templates/evaluation/round_detail.html:300
+msgid "معلق"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:240
+msgid "ليس لديك أي تقييمات معلقة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:249
+msgid "توزيع طلبات الابتعاث في الكلية"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:289
+#: dashboard/templates/dashboard/student_dashboard.html:208
+msgid "لم تقم بتقديم أي طلبات بعد"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:309
+msgid "إضافة فرصة ابتعاث جديدة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:312
+msgid "نشر إعلان جديد"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:318
+msgid "إدارة لجان التقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:321
+msgid "عرض التقارير والإحصائيات"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:331 evaluation/models.py:69
+#: evaluation/templates/evaluation/committee_detail.html:182
+#: evaluation/templates/evaluation/round_assign_applications.html:23
+#: evaluation/templates/evaluation/round_confirm_delete.html:13
+#: evaluation/templates/evaluation/round_detail.html:38
+#: evaluation/templates/evaluation/round_form.html:20
+#: evaluation/templates/evaluation/round_list.html:5
+#: evaluation/templates/evaluation/round_list.html:33 templates/base.html:166
+msgid "جولات التقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:348
+msgid "البحث عن فرص ابتعاث"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:398 evaluation/models.py:20
+#: evaluation/templates/evaluation/committee_add_member.html:14
+#: evaluation/templates/evaluation/committee_confirm_delete.html:13
+#: evaluation/templates/evaluation/committee_detail.html:13
+#: evaluation/templates/evaluation/committee_form.html:20
+#: evaluation/templates/evaluation/committee_list.html:5
+#: evaluation/templates/evaluation/committee_list.html:11
+#: evaluation/templates/evaluation/committee_remove_member.html:13
+#: templates/base.html:158
+msgid "لجان التقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:408
+msgid "الأعضاء:"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:413
+#: evaluation/templates/evaluation/committee_detail.html:39
+#: evaluation/templates/evaluation/committee_detail.html:100
+#: evaluation/templates/evaluation/committee_list.html:49
+#: evaluation/templates/evaluation/evaluator_dashboard.html:77
+msgid "غير نشطة"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:422
+msgid "أنت لست عضواً في أي لجنة تقييم"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:450
+msgid "لا توجد فرص ابتعاث متاحة حالياً"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:459
+msgid "آخر تحديثات الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/index.html:478
+#: dashboard/templates/dashboard/student_dashboard.html:363
+msgid "لا توجد تحديثات حالية"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:53
+msgid "تحليل بيانات فرص الابتعاث والمؤشرات ذات العلاقة"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:96
+msgid "توزيع فرص الابتعاث حسب النوع"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:110
+msgid "توزيع فرص الابتعاث حسب الحالة"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:124
+msgid "أكثر فرص الابتعاث طلباً"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:138
+msgid "معدلات القبول"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:146
+msgid "معدل القبول"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:178
+msgid "لا توجد بيانات كافية"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:195
+msgid "تفاصيل فرص الابتعاث مع عدد الطلبات"
+msgstr ""
+
+#: dashboard/templates/dashboard/scholarship_stats.html:204
+msgid "نسبة من الإجمالي"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:5
+#: dashboard/templates/dashboard/student_dashboard.html:138
+#: templates/base.html:99
+msgid "لوحة تحكم الطالب"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:139
+msgid ""
+"مرحباً بك في لوحة تحكم الطالب، يمكنك متابعة طلباتك واستعراض فرص الابتعاث "
+"المتاحة."
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:146
+msgid "البحث عن فرص"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:209
+msgid "استعرض فرص الابتعاث المتاحة وقم بالتقديم على المناسب منها"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:221
+msgid "فرص الابتعاث القادمة"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:261
+msgid "لا توجد فرص ابتعاث قادمة حالياً"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:262
+msgid "يرجى التحقق لاحقاً من الفرص الجديدة"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:274
+msgid "ملخص حالة طلباتي"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:295
+#, python-format
+msgid ""
+"\n"
+"                                                    طلب واحد\n"
+"                                                "
+msgid_plural ""
+"\n"
+"                                                    %(counter)s طلبات\n"
+"                                                "
+msgstr[0] ""
+msgstr[1] ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:319
+msgid "آخر التحديثات"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:372
+msgid "آخر الإعلانات"
+msgstr ""
+
+#: dashboard/templates/dashboard/student_dashboard.html:388
+msgid "لا توجد إعلانات حالية"
+msgstr ""
+
+#: dashboard/views.py:524
+msgid "مغلقة"
+msgstr ""
+
+#: dashboard/views.py:539
+#: evaluation/templates/evaluation/committee_detail.html:218
+#: evaluation/templates/evaluation/round_detail.html:68
+#: evaluation/templates/evaluation/round_detail.html:146
+#: evaluation/templates/evaluation/round_list.html:85
+msgid "مكتملة"
+msgstr ""
+
+#: dashboard/views.py:539
+msgid "معلقة"
+msgstr ""
+
+#: evaluation/forms.py:53 evaluation/models.py:41
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:13
+#: evaluation/templates/evaluation/criterion_form.html:20
+#: evaluation/templates/evaluation/criterion_list.html:5
+#: evaluation/templates/evaluation/criterion_list.html:11
+#: evaluation/templates/evaluation/evaluate_application.html:257
+#: templates/base.html:174 templates/instructions.html:310
+msgid "معايير التقييم"
+msgstr ""
+
+#: evaluation/forms.py:78
+msgid "الطلبات"
+msgstr ""
+
+#: evaluation/models.py:11
+#: evaluation/templates/evaluation/committee_list.html:29
+msgid "اسم اللجنة"
+msgstr ""
+
+#: evaluation/models.py:13
+msgid "الأعضاء"
+msgstr ""
+
+#: evaluation/models.py:15 evaluation/models.py:179
+#: evaluation/templates/evaluation/committee_list.html:32
+#: evaluation/templates/evaluation/recommendation_list.html:77
+msgid "تاريخ الإنشاء"
+msgstr ""
+
+#: evaluation/models.py:16 evaluation/models.py:180
+msgid "تاريخ التحديث"
+msgstr ""
+
+#: evaluation/models.py:19
+msgid "لجنة تقييم"
+msgstr ""
+
+#: evaluation/models.py:35
+#: evaluation/templates/evaluation/criterion_list.html:32
+#: evaluation/templates/evaluation/evaluation_detail.html:205
+msgid "الوزن"
+msgstr ""
+
+#: evaluation/models.py:35
+msgid "أهمية المعيار (1-10)"
+msgstr ""
+
+#: evaluation/models.py:40
+msgid "معيار تقييم"
+msgstr ""
+
+#: evaluation/models.py:56
+#: evaluation/templates/evaluation/committee_detail.html:195
+#: evaluation/templates/evaluation/round_list.html:51
+msgid "اسم الجولة"
+msgstr ""
+
+#: evaluation/models.py:61
+#: evaluation/templates/evaluation/committee_detail.html:197
+#: evaluation/templates/evaluation/round_list.html:54
+msgid "تاريخ البدء"
+msgstr ""
+
+#: evaluation/models.py:62
+#: evaluation/templates/evaluation/committee_detail.html:198
+#: evaluation/templates/evaluation/evaluator_dashboard.html:145
+#: evaluation/templates/evaluation/round_list.html:55
+msgid "تاريخ الانتهاء"
+msgstr ""
+
+#: evaluation/models.py:64
+msgid "المعايير"
+msgstr ""
+
+#: evaluation/models.py:65
+msgid "الحد الأدنى للمقيمين"
+msgstr ""
+
+#: evaluation/models.py:68
+msgid "جولة تقييم"
+msgstr ""
+
+#: evaluation/models.py:89
+#: evaluation/templates/evaluation/evaluation_list.html:46
+#: evaluation/templates/evaluation/evaluation_list.html:85
+#: evaluation/templates/evaluation/evaluator_dashboard.html:144
+#: evaluation/templates/evaluation/evaluator_dashboard.html:208
+msgid "جولة التقييم"
+msgstr ""
+
+#: evaluation/models.py:91
+msgid "المقيم"
+msgstr ""
+
+#: evaluation/models.py:92
+#: evaluation/templates/evaluation/evaluation_detail.html:105
+#: evaluation/templates/evaluation/evaluation_list.html:86
+msgid "الدرجة الإجمالية"
+msgstr ""
+
+#: evaluation/models.py:93 evaluation/models.py:123 evaluation/models.py:147
+#: evaluation/models.py:175 evaluation/templates/evaluation/vote_list.html:69
+msgid "ملاحظات"
+msgstr ""
+
+#: evaluation/models.py:94
+#: evaluation/templates/evaluation/evaluation_list.html:87
+#: evaluation/templates/evaluation/evaluator_dashboard.html:210
+#: evaluation/templates/evaluation/round_detail.html:275
+msgid "تاريخ التقييم"
+msgstr ""
+
+#: evaluation/models.py:98
+#: evaluation/templates/evaluation/evaluate_application.html:43
+msgid "تقييم طلب"
+msgstr ""
+
+#: evaluation/models.py:99
+#: evaluation/templates/evaluation/evaluation_list.html:11
+msgid "تقييمات الطلبات"
+msgstr ""
+
+#: evaluation/models.py:122
+#: evaluation/templates/evaluation/evaluation_detail.html:204
+#: evaluation/templates/evaluation/evaluator_dashboard.html:209
+#: evaluation/templates/evaluation/round_detail.html:273
+msgid "الدرجة"
+msgstr ""
+
+#: evaluation/models.py:126
+msgid "درجة معيار"
+msgstr ""
+
+#: evaluation/models.py:127
+msgid "درجات المعايير"
+msgstr ""
+
+#: evaluation/models.py:137 evaluation/templates/evaluation/vote_list.html:40
+#: evaluation/templates/evaluation/vote_list.html:84
+msgid "موافق"
+msgstr ""
+
+#: evaluation/models.py:138 evaluation/templates/evaluation/vote_list.html:41
+#: evaluation/templates/evaluation/vote_list.html:86
+msgid "غير موافق"
+msgstr ""
+
+#: evaluation/models.py:139 evaluation/templates/evaluation/vote_list.html:42
+#: evaluation/templates/evaluation/vote_list.html:88
+msgid "ممتنع"
+msgstr ""
+
+#: evaluation/models.py:144 evaluation/templates/evaluation/vote_list.html:33
+#: evaluation/templates/evaluation/vote_list.html:66
+msgid "عضو اللجنة"
+msgstr ""
+
+#: evaluation/models.py:146 evaluation/templates/evaluation/vote_form.html:15
+#: evaluation/templates/evaluation/vote_list.html:67
+msgid "التصويت"
+msgstr ""
+
+#: evaluation/models.py:148 evaluation/templates/evaluation/vote_list.html:68
+msgid "تاريخ التصويت"
+msgstr ""
+
+#: evaluation/models.py:151
+msgid "تصويت"
+msgstr ""
+
+#: evaluation/models.py:152 templates/base.html:184
+msgid "التصويتات"
+msgstr ""
+
+#: evaluation/models.py:163
+#: evaluation/templates/evaluation/recommendation_detail.html:79
+#: evaluation/templates/evaluation/recommendation_list.html:47
+#: evaluation/templates/evaluation/recommendation_list.html:93
+msgid "الموافقة على الطلب"
+msgstr ""
+
+#: evaluation/models.py:164
+#: evaluation/templates/evaluation/recommendation_detail.html:81
+#: evaluation/templates/evaluation/recommendation_list.html:48
+#: evaluation/templates/evaluation/recommendation_list.html:95
+msgid "الموافقة بشروط"
+msgstr ""
+
+#: evaluation/models.py:165
+#: evaluation/templates/evaluation/recommendation_detail.html:83
+#: evaluation/templates/evaluation/recommendation_list.html:49
+#: evaluation/templates/evaluation/recommendation_list.html:97
+msgid "رفض الطلب"
+msgstr ""
+
+#: evaluation/models.py:166
+#: evaluation/templates/evaluation/recommendation_detail.html:85
+#: evaluation/templates/evaluation/recommendation_list.html:50
+#: evaluation/templates/evaluation/recommendation_list.html:99
+msgid "تأجيل القرار"
+msgstr ""
+
+#: evaluation/models.py:167
+#: evaluation/templates/evaluation/recommendation_detail.html:87
+#: evaluation/templates/evaluation/recommendation_list.html:51
+#: evaluation/templates/evaluation/recommendation_list.html:101
+msgid "طلب معلومات إضافية"
+msgstr ""
+
+#: evaluation/models.py:174
+#: evaluation/templates/evaluation/recommendation_list.html:44
+#: evaluation/templates/evaluation/recommendation_list.html:76
+msgid "التوصية"
+msgstr ""
+
+#: evaluation/models.py:176
+msgid "الشروط"
+msgstr ""
+
+#: evaluation/models.py:176
+msgid "في حالة الموافقة بشروط"
+msgstr ""
+
+#: evaluation/models.py:177
+msgid "تم إنشاؤها بواسطة"
+msgstr ""
+
+#: evaluation/models.py:183
+msgid "توصية"
+msgstr ""
+
+#: evaluation/models.py:184 templates/base.html:192
+msgid "التوصيات"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_add_member.html:6
+#: evaluation/templates/evaluation/committee_add_member.html:24
+#: evaluation/templates/evaluation/committee_add_member.html:33
+msgid "إضافة عضو للجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_add_member.html:16
+#: evaluation/templates/evaluation/committee_detail.html:115
+#: evaluation/templates/evaluation/committee_detail.html:169
+msgid "إضافة عضو"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_add_member.html:34
+msgid ""
+"قم باختيار المستخدم الذي ترغب في إضافته كعضو في هذه اللجنة. سيتمكن العضو من "
+"الوصول إلى طلبات الابتعاث المخصصة للجنة وتقديم التقييمات والتوصيات."
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_add_member.html:46
+msgid "إضافة العضو"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_confirm_delete.html:5
+msgid "حذف لجنة تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_confirm_delete.html:29
+msgid "هل أنت متأكد من رغبتك في حذف لجنة التقييم التالية؟"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_confirm_delete.html:33
+#: evaluation/templates/evaluation/committee_detail.html:80
+#: evaluation/templates/evaluation/evaluator_dashboard.html:72
+msgid "عدد الأعضاء:"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_confirm_delete.html:38
+msgid ""
+"تحذير: سيؤدي هذا الإجراء إلى حذف جميع البيانات المرتبطة بهذه اللجنة، بما في "
+"ذلك جولات التقييم والتقييمات المرتبطة بها."
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:43
+#: evaluation/templates/evaluation/committee_detail.html:85
+#: evaluation/templates/evaluation/recommendation_detail.html:126
+msgid "تاريخ الإنشاء:"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:68
+msgid "معلومات اللجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:74
+msgid "لا يوجد وصف للجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:112
+msgid "أعضاء اللجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:154
+msgid "إزالة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:166
+msgid "لا يوجد أعضاء في هذه اللجنة حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:185
+#: evaluation/templates/evaluation/committee_detail.html:251
+#: evaluation/templates/evaluation/round_form.html:22
+#: evaluation/templates/evaluation/round_list.html:39
+#: evaluation/templates/evaluation/round_list.html:180
+msgid "إنشاء جولة جديدة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:196
+#: evaluation/templates/evaluation/round_list.html:52
+msgid "النوع"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:216
+#: evaluation/templates/evaluation/round_detail.html:66
+#: evaluation/templates/evaluation/round_detail.html:144
+#: evaluation/templates/evaluation/round_list.html:80
+msgid "جارية"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:220
+#: evaluation/templates/evaluation/round_detail.html:70
+#: evaluation/templates/evaluation/round_detail.html:148
+#: evaluation/templates/evaluation/round_list.html:90
+msgid "مستقبلية"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_detail.html:248
+msgid "لا توجد جولات تقييم لهذه اللجنة حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_form.html:8
+#: evaluation/templates/evaluation/committee_form.html:36
+msgid "إنشاء لجنة تقييم جديدة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_form.html:10
+#: evaluation/templates/evaluation/committee_form.html:38
+msgid "تعديل لجنة تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_form.html:22
+#: evaluation/templates/evaluation/committee_list.html:17
+#: evaluation/templates/evaluation/committee_list.html:134
+msgid "إنشاء لجنة جديدة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_form.html:51
+msgid "إنشاء اللجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:12
+msgid "قائمة لجان التقييم المسؤولة عن تقييم طلبات الابتعاث."
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:30
+msgid "عدد الأعضاء"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:85
+#: evaluation/templates/evaluation/evaluation_list.html:148
+#: evaluation/templates/evaluation/recommendation_list.html:132
+#: evaluation/templates/evaluation/round_list.html:131
+#: evaluation/templates/evaluation/vote_list.html:116
+msgid "الأولى"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:91
+#: evaluation/templates/evaluation/evaluation_list.html:154
+#: evaluation/templates/evaluation/recommendation_list.html:138
+#: evaluation/templates/evaluation/round_list.html:137
+#: evaluation/templates/evaluation/vote_list.html:122
+msgid "السابقة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:111
+#: evaluation/templates/evaluation/evaluation_list.html:176
+#: evaluation/templates/evaluation/recommendation_list.html:160
+#: evaluation/templates/evaluation/round_list.html:157
+#: evaluation/templates/evaluation/vote_list.html:144
+msgid "التالية"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:117
+#: evaluation/templates/evaluation/evaluation_list.html:182
+#: evaluation/templates/evaluation/recommendation_list.html:166
+#: evaluation/templates/evaluation/round_list.html:163
+#: evaluation/templates/evaluation/vote_list.html:150
+msgid "الأخيرة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_list.html:131
+msgid "لا توجد لجان تقييم حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:5
+msgid "إزالة عضو من اللجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:15
+msgid "إزالة عضو"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:23
+msgid "تأكيد إزالة العضو"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:29
+msgid "هل أنت متأكد من رغبتك في إزالة العضو التالي من اللجنة؟"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:45
+msgid "سيتم إزالته من لجنة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:50
+msgid ""
+"تحذير: لن يتمكن هذا العضو من الوصول إلى طلبات الابتعاث المخصصة لهذه اللجنة "
+"بعد إزالته. ومع ذلك، ستبقى جميع التقييمات السابقة التي قدمها كما هي."
+msgstr ""
+
+#: evaluation/templates/evaluation/committee_remove_member.html:57
+msgid "نعم، قم بإزالة العضو"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:5
+msgid "حذف معيار تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:14
+msgid "حذف معيار"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:28
+msgid "هل أنت متأكد من رغبتك في حذف معيار التقييم التالي؟"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:32
+#: evaluation/templates/evaluation/evaluate_application.html:272
+#: evaluation/templates/evaluation/evaluation_detail.html:230
+msgid "الوزن:"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_confirm_delete.html:37
+msgid ""
+"تحذير: سيؤدي هذا الإجراء إلى حذف هذا المعيار من جميع جولات التقييم التي "
+"تستخدمه. قد يؤثر ذلك على التقييمات الجارية أو المستقبلية."
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_form.html:8
+#: evaluation/templates/evaluation/criterion_form.html:35
+msgid "إضافة معيار تقييم جديد"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_form.html:10
+#: evaluation/templates/evaluation/criterion_form.html:37
+msgid "تعديل معيار تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_form.html:22
+#: evaluation/templates/evaluation/criterion_list.html:17
+#: evaluation/templates/evaluation/criterion_list.html:87
+#: evaluation/templates/evaluation/round_form.html:86
+msgid "إضافة معيار جديد"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_form.html:24
+msgid "تعديل معيار"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_form.html:45
+msgid ""
+"تعديل هذا المعيار سيؤثر على جميع جولات التقييم التي تستخدمه. لن يؤثر ذلك على "
+"التقييمات التي تمت بالفعل."
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_form.html:75
+msgid "إضافة المعيار"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_list.html:12
+msgid "قائمة معايير التقييم المستخدمة في تقييم طلبات الابتعاث."
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_list.html:30
+msgid "اسم المعيار"
+msgstr ""
+
+#: evaluation/templates/evaluation/criterion_list.html:84
+msgid "لا توجد معايير تقييم حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:7
+#: evaluation/templates/evaluation/evaluate_application.html:62
+msgid "تقييم طلب ابتعاث"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:42
+#: evaluation/templates/evaluation/evaluation_detail.html:61
+#: evaluation/templates/evaluation/evaluation_list.html:16
+#: evaluation/templates/evaluation/evaluator_dashboard.html:5
+#: evaluation/templates/evaluation/evaluator_dashboard.html:38
+#: evaluation/templates/evaluation/recommendation_list.html:16
+#: evaluation/templates/evaluation/vote_list.html:16
+msgid "لوحة تحكم المقيِّم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:64
+#: evaluation/templates/evaluation/evaluate_application.html:149
+#: evaluation/templates/evaluation/evaluation_detail.html:72
+#: evaluation/templates/evaluation/evaluation_detail.html:121
+msgid "جولة التقييم:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:70
+#: evaluation/templates/evaluation/evaluation_detail.html:77
+msgid "تم تقديم التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:85
+msgid "معلومات مقدم الطلب"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:119
+msgid "معلومات فرصة الابتعاث"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:122
+msgid "عنوان الفرصة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:127
+#: evaluation/templates/evaluation/evaluation_detail.html:153
+msgid "نوع الابتعاث:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:137
+#: evaluation/templates/evaluation/evaluation_detail.html:161
+#: evaluation/templates/evaluation/recommendation_detail.html:167
+#: evaluation/templates/evaluation/recommendation_form.html:35
+#: evaluation/templates/evaluation/vote_form.html:35
+msgid "حالة الطلب:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:146
+#: evaluation/templates/evaluation/evaluation_detail.html:110
+msgid "معلومات التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:154
+#: evaluation/templates/evaluation/evaluation_detail.html:125
+#: evaluation/templates/evaluation/round_detail.html:126
+msgid "نوع الجولة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:159
+msgid "تاريخ انتهاء الجولة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:168
+msgid "يرجى الاطلاع على جميع المعلومات والمستندات بعناية قبل إجراء التقييم."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:176
+msgid "مستندات الطلب"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:218
+msgid "لا توجد مستندات مرفقة بهذا الطلب."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:229
+msgid "نموذج التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:237
+msgid "خطاب الدوافع المقدم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:247
+msgid "مقترح البحث المقدم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:263
+msgid ""
+"يرجى تقييم الطلب وفقاً للمعايير التالية. درجة التقييم من 0 إلى 10 حيث 0 هي "
+"الأدنى و10 هي الأعلى."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:288
+msgid "التقدير"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:322
+msgid "الانتهاء من التقييم وتقديمه"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:325
+msgid ""
+"عند التأشير على هذا الخيار، سيتم اعتبار التقييم نهائياً ولن يمكن تعديله لاحقاً."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluate_application.html:331
+msgid "حفظ التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:6
+#: evaluation/templates/evaluation/evaluation_detail.html:63
+#: evaluation/templates/evaluation/evaluation_detail.html:69
+msgid "تفاصيل التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:62
+#: evaluation/templates/evaluation/evaluation_list.html:5
+msgid "قائمة التقييمات"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:81
+#: evaluation/templates/evaluation/evaluation_detail.html:259
+msgid "إكمال التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:92
+msgid "ملخص التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:113
+msgid "المقيِّم:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:117
+msgid "تاريخ التقييم:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:132
+#: evaluation/templates/evaluation/evaluation_list.html:60
+#: evaluation/templates/evaluation/evaluation_list.html:116
+msgid "مقدم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:145
+msgid "مقدم الطلب:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:172
+msgid "الملاحظات العامة"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:195
+msgid "تفاصيل درجات التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:234
+msgid "الدرجة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:244
+#: evaluation/templates/evaluation/recommendation_form.html:53
+#: evaluation/templates/evaluation/vote_form.html:53
+msgid "الملاحظات:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_detail.html:256
+msgid "لم يتم تقييم أي معايير بعد"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_list.html:12
+msgid "قائمة بجميع التقييمات التي قمت بها لطلبات الابتعاث."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_list.html:37
+#: evaluation/templates/evaluation/recommendation_list.html:24
+#: evaluation/templates/evaluation/vote_list.html:24
+msgid "تصفية النتائج"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_list.html:84
+#: evaluation/templates/evaluation/evaluator_dashboard.html:143
+#: evaluation/templates/evaluation/evaluator_dashboard.html:207
+msgid "مقدم الطلب"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_list.html:196
+msgid "لا توجد تقييمات حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_list.html:197
+msgid "ستظهر هنا قائمة بالتقييمات التي قمت بها لطلبات الابتعاث."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluation_list.html:199
+msgid "العودة إلى لوحة تحكم المقيِّم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:39
+msgid ""
+"مرحبًا بك في لوحة تحكم المقيِّم الخاصة بك، يمكنك متابعة التقييمات المطلوبة منك "
+"وتنفيذها من هنا."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:62
+msgid "اللجان التي أنا عضو فيها"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:86
+msgid "أنت لست عضوًا في أي لجنة تقييم حاليًا."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:97
+msgid "جولات التقييم النشطة"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:110
+msgid "تنتهي في:"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:120
+msgid "لا توجد جولات تقييم نشطة حالياً."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:133
+msgid "التقييمات المطلوبة منك"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:134
+#: evaluation/templates/evaluation/evaluator_dashboard.html:172
+msgid "تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:183
+msgid "مبروك! ليس لديك تقييمات معلقة حالياً."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:184
+msgid "ستظهر هنا أي تقييمات مطلوبة منك لاحقاً."
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:197
+msgid "آخر التقييمات المكتملة"
+msgstr ""
+
+#: evaluation/templates/evaluation/evaluator_dashboard.html:247
+msgid "لم تكمل أي تقييمات بعد."
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:5
+#: evaluation/templates/evaluation/recommendation_detail.html:37
+#: evaluation/templates/evaluation/recommendation_detail.html:43
+msgid "تفاصيل التوصية"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:36
+#: evaluation/templates/evaluation/recommendation_list.html:5
+#: evaluation/templates/evaluation/recommendation_list.html:11
+msgid "قائمة التوصيات"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:45
+msgid "طلب:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:46
+msgid "لجنة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:72
+msgid "بيانات التوصية"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:76
+#: evaluation/templates/evaluation/recommendation_form.html:48
+msgid "التوصية:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:94
+msgid "ملاحظات:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:103
+#: evaluation/templates/evaluation/recommendation_form.html:58
+msgid "الشروط:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:117
+msgid "معلومات التوصية"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:121
+msgid "تم إنشاؤها بواسطة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:136
+#: evaluation/templates/evaluation/round_detail.html:119
+msgid "اللجنة:"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_detail.html:175
+msgid "عرض الطلب"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_form.html:6
+#: evaluation/templates/evaluation/recommendation_form.html:23
+msgid "تقديم توصية على طلب ابتعاث"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_form.html:15
+msgid "تقديم توصية"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_form.html:59
+msgid "في حالة اختيار الموافقة بشروط"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_form.html:65
+msgid "تقديم التوصية"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_list.html:12
+msgid "قائمة التوصيات على طلبات الابتعاث من اللجان المختلفة."
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_list.html:30
+#: evaluation/templates/evaluation/vote_list.html:30
+msgid "اسم المتقدم"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_list.html:180
+msgid "لا توجد توصيات حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/recommendation_list.html:181
+msgid "لم يتم تقديم أي توصيات على طلبات الابتعاث حتى الآن."
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:6
+#: evaluation/templates/evaluation/round_assign_applications.html:25
+#: evaluation/templates/evaluation/round_assign_applications.html:33
+#: evaluation/templates/evaluation/round_detail.html:321
+msgid "تخصيص طلبات للتقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:42
+msgid "تخصيص طلبات للتقييم في جولة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:43
+msgid "سيتم تخصيص الطلبات المحددة لكل عضو في لجنة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:44
+msgid "يوجد حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:44
+msgid "عضو في اللجنة. سيحتاج كل عضو إلى تقييم الطلبات المحددة."
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:53
+msgid "اختر الطلبات التي ترغب في تخصيصها للتقييم:"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:61
+msgid "تحديد/إلغاء تحديد الكل"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:84
+msgid ""
+"لا توجد طلبات متاحة للتخصيص. قد تكون جميع الطلبات مخصصة بالفعل لهذه الجولة."
+msgstr ""
+
+#: evaluation/templates/evaluation/round_assign_applications.html:98
+msgid "تخصيص الطلبات المحددة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_confirm_delete.html:5
+msgid "حذف جولة تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_confirm_delete.html:29
+msgid "هل أنت متأكد من رغبتك في حذف جولة التقييم التالية؟"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_confirm_delete.html:40
+msgid ""
+"تحذير: سيؤدي هذا الإجراء إلى حذف جميع التقييمات المرتبطة بهذه الجولة. هذا "
+"الإجراء لا يمكن التراجع عنه."
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:86
+msgid "تخصيص طلبات"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:110
+msgid "معلومات الجولة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:131
+msgid "تاريخ البدء:"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:136
+msgid "تاريخ الانتهاء:"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:154
+msgid "الحد الأدنى للمقيمين:"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:159
+msgid "معايير التقييم:"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:177
+msgid "إحصائيات التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:191
+msgid "نسبة الإكمال"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:196
+msgid "تقدم التقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:204
+msgid "حالة تقييم الطلبات"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:212
+msgid "التقدم"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:256
+#: templates/base.html:149
+msgid "التقييمات"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:259
+msgid "تخصيص طلبات جديدة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:298
+msgid "مكتمل"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_detail.html:318
+msgid "لا توجد تقييمات في هذه الجولة حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_form.html:8
+#: evaluation/templates/evaluation/round_form.html:36
+msgid "إنشاء جولة تقييم جديدة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_form.html:10
+#: evaluation/templates/evaluation/round_form.html:38
+msgid "تعديل جولة تقييم"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_form.html:46
+msgid ""
+"تعديل هذه الجولة قد يؤثر على التقييمات الجارية. الرجاء التأكد من صحة "
+"البيانات قبل الحفظ."
+msgstr ""
+
+#: evaluation/templates/evaluation/round_form.html:117
+msgid "إنشاء الجولة"
+msgstr ""
+
+#: evaluation/templates/evaluation/round_list.html:34
+msgid "قائمة جولات تقييم طلبات الابتعاث."
+msgstr ""
+
+#: evaluation/templates/evaluation/round_list.html:177
+msgid "لا توجد جولات تقييم حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_form.html:6
+#: evaluation/templates/evaluation/vote_form.html:23
+msgid "التصويت على طلب ابتعاث"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_form.html:48
+msgid "التصويت:"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_form.html:59
+msgid "تأكيد التصويت"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_list.html:5
+#: evaluation/templates/evaluation/vote_list.html:11
+msgid "قائمة التصويتات"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_list.html:12
+msgid "قائمة التصويتات على طلبات الابتعاث من أعضاء اللجان."
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_list.html:34
+msgid "اسم العضو"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_list.html:37
+msgid "نتيجة التصويت"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_list.html:164
+msgid "لا توجد تصويتات حالياً"
+msgstr ""
+
+#: evaluation/templates/evaluation/vote_list.html:165
+msgid "لم يتم تسجيل أي تصويتات على طلبات الابتعاث حتى الآن."
+msgstr ""
+
+#: evaluation/views.py:68
+msgid "تم إنشاء اللجنة بنجاح"
+msgstr ""
+
+#: evaluation/views.py:89
+msgid "تم تحديث اللجنة بنجاح"
+msgstr ""
+
+#: evaluation/views.py:109
+msgid "تم حذف اللجنة بنجاح"
+msgstr ""
+
+#: evaluation/views.py:128
+msgid "هذا المستخدم عضو بالفعل في اللجنة"
+msgstr ""
+
+#: evaluation/views.py:131
+msgid "تمت إضافة العضو بنجاح"
+msgstr ""
+
+#: evaluation/views.py:155
+msgid "تمت إزالة العضو بنجاح"
+msgstr ""
+
+#: evaluation/views.py:185
+msgid "تم إنشاء المعيار بنجاح"
+msgstr ""
+
+#: evaluation/views.py:206
+msgid "تم تحديث المعيار بنجاح"
+msgstr ""
+
+#: evaluation/views.py:226
+msgid "تم حذف المعيار بنجاح"
+msgstr ""
+
+#: evaluation/views.py:299
+msgid "تم إنشاء جولة التقييم بنجاح"
+msgstr ""
+
+#: evaluation/views.py:320
+msgid "تم تحديث جولة التقييم بنجاح"
+msgstr ""
+
+#: evaluation/views.py:340
+msgid "تم حذف جولة التقييم بنجاح"
+msgstr ""
+
+#: evaluation/views.py:489
+msgid "يجب تقييم جميع المعايير قبل تقديم التقييم"
+msgstr ""
+
+#: evaluation/views.py:492
+msgid "تم تقديم التقييم بنجاح"
+msgstr ""
+
+#: evaluation/views.py:494
+msgid "تم حفظ التقييم كمسودة"
+msgstr ""
+
+#: evaluation/views.py:595
+msgid "يجب أن تكون عضواً في لجنة للتصويت"
+msgstr ""
+
+#: evaluation/views.py:608
+msgid "تم تسجيل تصويتك بنجاح"
+msgstr ""
+
+#: evaluation/views.py:684
+msgid "يجب أن تكون عضواً في لجنة لتقديم توصية"
+msgstr ""
+
+#: evaluation/views.py:695
+msgid "تم تقديم التوصية بنجاح"
+msgstr ""
+
+#: scholarship_system/settings/base.py:145
+msgid "العربية"
+msgstr ""
+
+#: scholarship_system/settings/base.py:146
+msgid "الإنجليزية"
+msgstr ""
+
+#: templates/base.html:10 templates/base.html:44 templates/home.html:12
+msgid "جامعة البترا"
+msgstr ""
+
+#: templates/base.html:86
+msgid "الصفحة الرئيسية"
+msgstr "Home"
+
+#: templates/base.html:144
+msgid "لوحة تحكم المقيّم"
+msgstr ""
+
+#: templates/base.html:204 templates/base.html:301
+#: templates/instructions.html:5 templates/instructions.html:42
+msgid "التعليمات والإرشادات"
+msgstr ""
+
+#: templates/base.html:294
+msgid "نظام متكامل لإدارة عمليات الابتعاث في جامعة البترا."
+msgstr ""
+
+#: templates/base.html:302 templates/base.html:306
+msgid "اتصل بنا"
+msgstr ""
+
+#: templates/base.html:308
 msgid "شارع الأردن، عمان - الأردن"
 msgstr ""
 
-#: templates/base.html:164
+#: templates/base.html:317
 msgid "جامعة البترا. جميع الحقوق محفوظة."
 msgstr ""
 
@@ -554,20 +3823,426 @@ msgstr ""
 msgid "قدم طلب الابتعاث إلكترونياً وتابع حالة طلبك."
 msgstr ""
 
-#: templates/home.html:40
-msgid "تقديم طلب"
+#: templates/home.html:43
+msgid "تسجيل الدخول للتقديم"
 msgstr ""
 
-#: templates/home.html:50
-msgid "الدعم والمساعدة"
+#: templates/home.html:55
+msgid "تابع أحدث الإعلانات والأخبار المتعلقة بالابتعاث."
 msgstr ""
 
-#: templates/home.html:51
-msgid "احصل على المساعدة وتعرف على تعليمات وإرشادات الابتعاث."
+#: templates/instructions.html:44
+msgid ""
+"تعرف على كيفية استخدام نظام الابتعاث الإلكتروني والإجراءات اللازمة للتقديم "
+"والمتابعة"
 msgstr ""
 
-#: templates/home.html:52
-msgid "التعليمات"
+#: templates/instructions.html:57
+msgid "للطلبة"
+msgstr ""
+
+#: templates/instructions.html:58
+msgid "معلومات وإرشادات للطلبة الراغبين بالتقدم لفرص الابتعاث"
+msgstr ""
+
+#: templates/instructions.html:69
+msgid "لأعضاء هيئة التدريس"
+msgstr ""
+
+#: templates/instructions.html:70
+msgid "معلومات وإرشادات لأعضاء هيئة التدريس الراغبين بالتقدم لفرص الابتعاث"
+msgstr ""
+
+#: templates/instructions.html:81
+msgid "عملية التقييم"
+msgstr ""
+
+#: templates/instructions.html:82
+msgid "معلومات حول عملية تقييم الطلبات ومعايير الاختيار"
+msgstr ""
+
+#: templates/instructions.html:91
+msgid "إرشادات عامة"
+msgstr ""
+
+#: templates/instructions.html:96
+msgid ""
+"نظام الابتعاث الإلكتروني في جامعة البترا هو منصة متكاملة تهدف إلى تسهيل "
+"عملية التقديم والتقييم لفرص الابتعاث المتاحة. يرجى الاطلاع على التعليمات "
+"التالية بعناية قبل البدء باستخدام النظام:"
+msgstr ""
+
+#: templates/instructions.html:101
+msgid ""
+"يجب التسجيل في النظام وإنشاء حساب قبل التمكن من التقديم على فرص الابتعاث."
+msgstr ""
+
+#: templates/instructions.html:105
+msgid "تأكد من تحديث بياناتك الشخصية والأكاديمية بشكل مستمر."
+msgstr ""
+
+#: templates/instructions.html:109
+msgid "احرص على متابعة الإعلانات الجديدة والمواعيد النهائية للتقديم."
+msgstr ""
+
+#: templates/instructions.html:113
+msgid ""
+"جميع الوثائق المطلوبة يجب أن تكون بصيغة PDF وبحجم لا يتجاوز 5 ميجابايت لكل "
+"ملف."
+msgstr ""
+
+#: templates/instructions.html:117
+msgid ""
+"يمكنك حفظ طلبك كمسودة والعودة لاستكماله لاحقاً قبل الموعد النهائي للتقديم."
+msgstr ""
+
+#: templates/instructions.html:128
+msgid "إرشادات للطلبة"
+msgstr ""
+
+#: templates/instructions.html:134 templates/instructions.html:201
+msgid "شروط الأهلية للتقدم"
+msgstr ""
+
+#: templates/instructions.html:140
+msgid "أن يكون المتقدم طالباً مسجلاً في جامعة البترا ومنتظماً في الدراسة."
+msgstr ""
+
+#: templates/instructions.html:141
+msgid "ألا يقل المعدل التراكمي عن 3.00 من 4.00 أو ما يعادله."
+msgstr ""
+
+#: templates/instructions.html:142
+msgid ""
+"أن يكون قد أنهى بنجاح ما لا يقل عن 60 ساعة معتمدة في برنامج البكالوريوس."
+msgstr ""
+
+#: templates/instructions.html:143
+msgid "أن يكون متقناً للغة الإنجليزية أو لغة الدراسة في الجامعة المستهدفة."
+msgstr ""
+
+#: templates/instructions.html:144
+msgid "ألا يكون قد صدر بحقه أي عقوبة تأديبية خلال فترة دراسته في الجامعة."
+msgstr ""
+
+#: templates/instructions.html:145 templates/instructions.html:212
+msgid "أن يستوفي أي شروط إضافية محددة في إعلان فرصة الابتعاث."
+msgstr ""
+
+#: templates/instructions.html:153 templates/instructions.html:220
+msgid "الوثائق المطلوبة"
+msgstr ""
+
+#: templates/instructions.html:159
+msgid "نسخة محدثة من كشف العلامات الرسمي."
+msgstr ""
+
+#: templates/instructions.html:160
+msgid "السيرة الذاتية باللغة العربية والإنجليزية."
+msgstr ""
+
+#: templates/instructions.html:161
+msgid "رسالة تحفيزية توضح أسباب التقدم للابتعاث وخطة الدراسة المستقبلية."
+msgstr ""
+
+#: templates/instructions.html:162
+msgid "شهادات إتقان اللغة الإنجليزية (TOEFL أو IELTS) إن وجدت."
+msgstr ""
+
+#: templates/instructions.html:163
+msgid "صورة عن جواز السفر ساري المفعول."
+msgstr ""
+
+#: templates/instructions.html:164
+msgid "رسالتي توصية من أعضاء هيئة التدريس في الكلية."
+msgstr ""
+
+#: templates/instructions.html:165
+msgid "أي وثائق إضافية تدعم الطلب (شهادات، جوائز، أبحاث، إلخ)."
+msgstr ""
+
+#: templates/instructions.html:173 templates/instructions.html:240
+msgid "خطوات التقديم"
+msgstr ""
+
+#: templates/instructions.html:179 templates/instructions.html:246
+msgid "تسجيل الدخول إلى النظام باستخدام حساب الجامعة."
+msgstr ""
+
+#: templates/instructions.html:180
+msgid "الانتقال إلى صفحة فرص الابتعاث واختيار الفرصة المناسبة."
+msgstr ""
+
+#: templates/instructions.html:181
+msgid "النقر على زر 'التقديم' والبدء بتعبئة نموذج الطلب."
+msgstr ""
+
+#: templates/instructions.html:182
+msgid "تحميل جميع الوثائق المطلوبة بالصيغة المحددة."
+msgstr ""
+
+#: templates/instructions.html:183 templates/instructions.html:251
+msgid "مراجعة جميع البيانات والتأكد من صحتها قبل الإرسال."
+msgstr ""
+
+#: templates/instructions.html:184 templates/instructions.html:252
+msgid "النقر على زر 'إرسال الطلب' لتقديمه بشكل نهائي."
+msgstr ""
+
+#: templates/instructions.html:185
+msgid "متابعة حالة الطلب من خلال صفحة 'طلباتي'."
+msgstr ""
+
+#: templates/instructions.html:195
+msgid "إرشادات لأعضاء هيئة التدريس"
+msgstr ""
+
+#: templates/instructions.html:207
+msgid "أن يكون المتقدم عضو هيئة تدريس معيناً في جامعة البترا بعقد دائم."
+msgstr ""
+
+#: templates/instructions.html:208
+msgid "أن يكون قد أمضى على الأقل سنتين في خدمة الجامعة."
+msgstr ""
+
+#: templates/instructions.html:209
+msgid "أن يكون التخصص المتقدم له متوافقاً مع احتياجات الكلية والقسم."
+msgstr ""
+
+#: templates/instructions.html:210
+msgid "أن يكون حاصلاً على تقدير 'جيد جداً' على الأقل في آخر تقييمين أداء."
+msgstr ""
+
+#: templates/instructions.html:211
+msgid "ألا يكون قد صدر بحقه أي عقوبة تأديبية خلال فترة عمله في الجامعة."
+msgstr ""
+
+#: templates/instructions.html:226
+msgid "السيرة الذاتية المحدثة باللغة العربية والإنجليزية."
+msgstr ""
+
+#: templates/instructions.html:227
+msgid "خطة بحثية أو دراسية توضح الأهداف المرجوة من الابتعاث."
+msgstr ""
+
+#: templates/instructions.html:228
+msgid "قائمة المنشورات العلمية والبحثية."
+msgstr ""
+
+#: templates/instructions.html:229
+msgid "خطاب تأييد من رئيس القسم وعميد الكلية."
+msgstr ""
+
+#: templates/instructions.html:230
+msgid "نسخة من آخر تقييمين أداء."
+msgstr ""
+
+#: templates/instructions.html:231
+msgid "شهادات إتقان اللغة إذا كانت الدراسة بغير اللغة العربية."
+msgstr ""
+
+#: templates/instructions.html:232
+msgid "نسخة من قبول الجامعة المستضيفة (إن وجد)."
+msgstr ""
+
+#: templates/instructions.html:247
+msgid "الانتقال إلى صفحة فرص الابتعاث المخصصة لأعضاء هيئة التدريس."
+msgstr ""
+
+#: templates/instructions.html:248
+msgid "اختيار الفرصة المناسبة والنقر على زر 'التقديم'."
+msgstr ""
+
+#: templates/instructions.html:249
+msgid "تعبئة نموذج الطلب وتحميل جميع الوثائق المطلوبة."
+msgstr ""
+
+#: templates/instructions.html:250
+msgid "إرفاق خطاب التأييد من رئيس القسم وعميد الكلية."
+msgstr ""
+
+#: templates/instructions.html:262
+msgid "عملية التقييم والاختيار"
+msgstr ""
+
+#: templates/instructions.html:266
+msgid "مراحل التقييم"
+msgstr ""
+
+#: templates/instructions.html:272
+msgid "الفحص الأولي"
+msgstr ""
+
+#: templates/instructions.html:273
+msgid "التحقق من استيفاء الشروط والمستندات المطلوبة"
+msgstr ""
+
+#: templates/instructions.html:281
+msgid "التقييم الفني"
+msgstr ""
+
+#: templates/instructions.html:282
+msgid "تقييم المؤهلات العلمية والخبرات والإنجازات"
+msgstr ""
+
+#: templates/instructions.html:290 templates/instructions.html:344
+msgid "المقابلة الشخصية"
+msgstr ""
+
+#: templates/instructions.html:291
+msgid "مقابلة المرشحين المؤهلين من قبل لجنة الابتعاث"
+msgstr ""
+
+#: templates/instructions.html:299
+msgid "القرار النهائي"
+msgstr ""
+
+#: templates/instructions.html:300
+msgid "إصدار قرارات الترشيح النهائية وإبلاغ المقبولين"
+msgstr ""
+
+#: templates/instructions.html:311
+msgid ""
+"تعتمد عملية التقييم على مجموعة من المعايير المتوازنة، وتختلف الأوزان النسبية "
+"حسب نوع المنحة وطبيعة البرنامج:"
+msgstr ""
+
+#: templates/instructions.html:319
+msgid "الوزن النسبي"
+msgstr ""
+
+#: templates/instructions.html:324
+msgid "التحصيل الأكاديمي"
+msgstr ""
+
+#: templates/instructions.html:325
+msgid "المعدل التراكمي، التقديرات، الجوائز الأكاديمية"
+msgstr ""
+
+#: templates/instructions.html:329
+msgid "البحث العلمي"
+msgstr ""
+
+#: templates/instructions.html:330
+msgid "المنشورات، المشاركات البحثية، المشاريع البحثية"
+msgstr ""
+
+#: templates/instructions.html:334
+msgid "الكفاءة اللغوية"
+msgstr ""
+
+#: templates/instructions.html:335
+msgid "مستوى إتقان لغة الدراسة (الإنجليزية أو غيرها)"
+msgstr ""
+
+#: templates/instructions.html:339
+msgid "الخبرات والمهارات"
+msgstr ""
+
+#: templates/instructions.html:340
+msgid "الأنشطة اللاصفية، التطوع، المهارات القيادية"
+msgstr ""
+
+#: templates/instructions.html:345
+msgid "الدافعية، الثقة بالنفس، مهارات التواصل، الرؤية المستقبلية"
+msgstr ""
+
+#: templates/instructions.html:357
+msgid "الأسئلة الشائعة"
+msgstr ""
+
+#: templates/instructions.html:363
+msgid "هل يمكنني التقديم على أكثر من فرصة ابتعاث في نفس الوقت؟"
+msgstr ""
+
+#: templates/instructions.html:368
+msgid ""
+"نعم، يمكنك التقديم على أكثر من فرصة ابتعاث في نفس الوقت، ولكن يجب أن تكون "
+"مستوفياً لشروط كل فرصة على حدة. في حال تم قبولك في أكثر من فرصة، سيطلب منك "
+"اختيار واحدة فقط للمتابعة."
+msgstr ""
+
+#: templates/instructions.html:375
+msgid "متى سيتم إبلاغي بنتيجة طلبي؟"
+msgstr ""
+
+#: templates/instructions.html:380
+msgid ""
+"تختلف فترة المراجعة حسب نوع المنحة وعدد المتقدمين، ولكن بشكل عام سيتم إبلاغك "
+"بنتيجة الفحص الأولي خلال 2-3 أسابيع من انتهاء فترة التقديم. أما النتائج "
+"النهائية فتصدر عادة خلال 4-6 أسابيع من المقابلات الشخصية. يمكنك متابعة حالة "
+"طلبك من خلال صفحة 'طلباتي' في النظام."
+msgstr ""
+
+#: templates/instructions.html:387
+msgid "هل يمكنني تعديل طلبي بعد إرساله؟"
+msgstr ""
+
+#: templates/instructions.html:392
+msgid ""
+"بمجرد إرسال الطلب بشكل نهائي، لا يمكن تعديله مباشرة. ومع ذلك، إذا كنت بحاجة "
+"إلى تحديث معلومات مهمة أو تقديم وثائق إضافية، يمكنك التواصل مع مكتب الابتعاث "
+"من خلال خاصية 'التعليقات' في صفحة تفاصيل الطلب، أو إرسال بريد إلكتروني إلى "
+"scholarship@uop.edu.jo مع ذكر رقم الطلب."
+msgstr ""
+
+#: templates/instructions.html:399
+msgid "ما هي التزامات المبتعث بعد انتهاء فترة الابتعاث؟"
+msgstr ""
+
+#: templates/instructions.html:404
+msgid ""
+"يلتزم المبتعث بالعمل في جامعة البترا لفترة لا تقل عن ضعف مدة الابتعاث. كما "
+"يتوجب عليه تقديم تقارير دورية عن إنجازاته وأبحاثه خلال السنة الأولى من "
+"عودته. وتختلف الالتزامات حسب نوع المنحة وشروط الجهة الممولة، وتكون مفصلة في "
+"عقد الابتعاث الذي يوقعه المبتعث قبل سفره."
+msgstr ""
+
+#: templates/instructions.html:411
+msgid "هل تغطي المنحة جميع النفقات الدراسية والمعيشية؟"
+msgstr ""
+
+#: templates/instructions.html:416
+msgid ""
+"تختلف التغطية المالية حسب نوع المنحة والجهة الممولة. بعض المنح تغطي الرسوم "
+"الدراسية فقط، بينما تغطي منح أخرى الرسوم الدراسية ونفقات المعيشة وتذاكر "
+"السفر والتأمين الصحي. يمكنك الاطلاع على تفاصيل التغطية المالية لكل منحة في "
+"صفحة تفاصيل فرصة الابتعاث."
+msgstr ""
+
+#: templates/instructions.html:425
+msgid "للاستفسارات والدعم"
+msgstr ""
+
+#: templates/instructions.html:431
+msgid "التواصل عبر البريد الإلكتروني"
+msgstr ""
+
+#: templates/instructions.html:432
+msgid ""
+"لأي استفسارات أو مشاكل تقنية تتعلق بنظام الابتعاث، يرجى التواصل معنا عبر:"
+msgstr ""
+
+#: templates/instructions.html:434
+msgid "سيتم الرد على استفساراتكم خلال يومي عمل."
+msgstr ""
+
+#: templates/instructions.html:441
+msgid "الاتصال المباشر"
+msgstr ""
+
+#: templates/instructions.html:442
+msgid ""
+"يمكنكم الاتصال بمكتب الابتعاث خلال ساعات الدوام الرسمية (9:00 صباحاً - 3:00 "
+"مساءً):"
+msgstr ""
+
+#: templates/instructions.html:443
+msgid "تحويلة"
+msgstr ""
+
+#: templates/instructions.html:444
+msgid "أيام العمل: من الأحد إلى الخميس"
 msgstr ""
 
 #: venv/lib/python3.13/site-packages/django/contrib/messages/apps.py:16

@@ -145,9 +145,30 @@ def announcement_list(request):
 
 def announcement_detail(request, pk):
     """عرض تفاصيل إعلان معين"""
-    announcement = get_object_or_404(Announcement, pk=pk, is_active=True)
-    context = {'announcement': announcement}
-    return render(request, 'announcements/announcement_detail.html', context)
+    try:
+        # First try to get the announcement regardless of its active status
+        announcement = Announcement.objects.get(pk=pk)
+
+        # Check if it's inactive
+        if not announcement.is_active:
+            # If user is staff or has proper permissions, show it anyway
+            if request.user.is_staff or request.user.has_perm('announcements.view_announcement'):
+                messages.warning(request, _("هذا الإعلان غير نشط حالياً."))
+                context = {'announcement': announcement}
+                return render(request, 'announcements/announcement_detail.html', context)
+            else:
+                # For regular users, show message and redirect
+                messages.warning(request, _("هذا الإعلان غير نشط حالياً ولا يمكن عرضه."))
+                return redirect('announcements:announcement_list')
+
+        # If active, show normally
+        context = {'announcement': announcement}
+        return render(request, 'announcements/announcement_detail.html', context)
+
+    except Announcement.DoesNotExist:
+        # If announcement doesn't exist at all
+        messages.error(request, _("الإعلان المطلوب غير موجود."))
+        return redirect('announcements:announcement_list')
 
 @login_required
 @permission_required('announcements.add_announcement', raise_exception=True)

@@ -1,0 +1,477 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "التعليمات والإرشادات" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .instructions-section {
+        margin-bottom: 2.5rem;
+    }
+    .instructions-section h3 {
+        color: #0d6efd;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    .instruction-icon {
+        font-size: 2.5rem;
+        color: #0d6efd;
+        margin-bottom: 1rem;
+    }
+    .instruction-card {
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .instruction-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-10 text-center">
+            <h1 class="display-5 fw-bold mb-3">{% trans "التعليمات والإرشادات" %}</h1>
+            <p class="lead">
+                {% trans "تعرف على كيفية استخدام نظام الابتعاث الإلكتروني والإجراءات اللازمة للتقديم والمتابعة" %}
+            </p>
+        </div>
+    </div>
+
+    <!-- أقسام التعليمات الرئيسية -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="card instruction-card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="instruction-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3 class="h5">{% trans "للطلبة" %}</h3>
+                    <p>{% trans "معلومات وإرشادات للطلبة الراغبين بالتقدم لفرص الابتعاث" %}</p>
+                    <a href="#students-section" class="btn btn-outline-primary">{% trans "عرض التفاصيل" %}</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card instruction-card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="instruction-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3 class="h5">{% trans "لأعضاء هيئة التدريس" %}</h3>
+                    <p>{% trans "معلومات وإرشادات لأعضاء هيئة التدريس الراغبين بالتقدم لفرص الابتعاث" %}</p>
+                    <a href="#faculty-section" class="btn btn-outline-primary">{% trans "عرض التفاصيل" %}</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card instruction-card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="instruction-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <h3 class="h5">{% trans "عملية التقييم" %}</h3>
+                    <p>{% trans "معلومات حول عملية تقييم الطلبات ومعايير الاختيار" %}</p>
+                    <a href="#evaluation-section" class="btn btn-outline-primary">{% trans "عرض التفاصيل" %}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إرشادات عامة -->
+    <div class="instructions-section">
+        <h2 class="mb-4">{% trans "إرشادات عامة" %}</h2>
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>{% trans "نظام الابتعاث الإلكتروني في جامعة البترا هو منصة متكاملة تهدف إلى تسهيل عملية التقديم والتقييم لفرص الابتعاث المتاحة. يرجى الاطلاع على التعليمات التالية بعناية قبل البدء باستخدام النظام:" %}</p>
+                        
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-2"></i> 
+                                {% trans "يجب التسجيل في النظام وإنشاء حساب قبل التمكن من التقديم على فرص الابتعاث." %}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-2"></i> 
+                                {% trans "تأكد من تحديث بياناتك الشخصية والأكاديمية بشكل مستمر." %}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-2"></i> 
+                                {% trans "احرص على متابعة الإعلانات الجديدة والمواعيد النهائية للتقديم." %}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-2"></i> 
+                                {% trans "جميع الوثائق المطلوبة يجب أن تكون بصيغة PDF وبحجم لا يتجاوز 5 ميجابايت لكل ملف." %}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-2"></i> 
+                                {% trans "يمكنك حفظ طلبك كمسودة والعودة لاستكماله لاحقاً قبل الموعد النهائي للتقديم." %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إرشادات للطلبة -->
+    <div id="students-section" class="instructions-section">
+        <h2 class="mb-4">{% trans "إرشادات للطلبة" %}</h2>
+        
+        <div class="accordion mb-4" id="studentAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        {% trans "شروط الأهلية للتقدم" %}
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#studentAccordion">
+                    <div class="accordion-body">
+                        <ul>
+                            <li>{% trans "أن يكون المتقدم طالباً مسجلاً في جامعة البترا ومنتظماً في الدراسة." %}</li>
+                            <li>{% trans "ألا يقل المعدل التراكمي عن 3.00 من 4.00 أو ما يعادله." %}</li>
+                            <li>{% trans "أن يكون قد أنهى بنجاح ما لا يقل عن 60 ساعة معتمدة في برنامج البكالوريوس." %}</li>
+                            <li>{% trans "أن يكون متقناً للغة الإنجليزية أو لغة الدراسة في الجامعة المستهدفة." %}</li>
+                            <li>{% trans "ألا يكون قد صدر بحقه أي عقوبة تأديبية خلال فترة دراسته في الجامعة." %}</li>
+                            <li>{% trans "أن يستوفي أي شروط إضافية محددة في إعلان فرصة الابتعاث." %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        {% trans "الوثائق المطلوبة" %}
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#studentAccordion">
+                    <div class="accordion-body">
+                        <ul>
+                            <li>{% trans "نسخة محدثة من كشف العلامات الرسمي." %}</li>
+                            <li>{% trans "السيرة الذاتية باللغة العربية والإنجليزية." %}</li>
+                            <li>{% trans "رسالة تحفيزية توضح أسباب التقدم للابتعاث وخطة الدراسة المستقبلية." %}</li>
+                            <li>{% trans "شهادات إتقان اللغة الإنجليزية (TOEFL أو IELTS) إن وجدت." %}</li>
+                            <li>{% trans "صورة عن جواز السفر ساري المفعول." %}</li>
+                            <li>{% trans "رسالتي توصية من أعضاء هيئة التدريس في الكلية." %}</li>
+                            <li>{% trans "أي وثائق إضافية تدعم الطلب (شهادات، جوائز، أبحاث، إلخ)." %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingThree">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                        {% trans "خطوات التقديم" %}
+                    </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#studentAccordion">
+                    <div class="accordion-body">
+                        <ol>
+                            <li>{% trans "تسجيل الدخول إلى النظام باستخدام حساب الجامعة." %}</li>
+                            <li>{% trans "الانتقال إلى صفحة فرص الابتعاث واختيار الفرصة المناسبة." %}</li>
+                            <li>{% trans "النقر على زر 'التقديم' والبدء بتعبئة نموذج الطلب." %}</li>
+                            <li>{% trans "تحميل جميع الوثائق المطلوبة بالصيغة المحددة." %}</li>
+                            <li>{% trans "مراجعة جميع البيانات والتأكد من صحتها قبل الإرسال." %}</li>
+                            <li>{% trans "النقر على زر 'إرسال الطلب' لتقديمه بشكل نهائي." %}</li>
+                            <li>{% trans "متابعة حالة الطلب من خلال صفحة 'طلباتي'." %}</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إرشادات لأعضاء هيئة التدريس -->
+    <div id="faculty-section" class="instructions-section">
+        <h2 class="mb-4">{% trans "إرشادات لأعضاء هيئة التدريس" %}</h2>
+        
+        <div class="accordion mb-4" id="facultyAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFour">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="true" aria-controls="collapseFour">
+                        {% trans "شروط الأهلية للتقدم" %}
+                    </button>
+                </h2>
+                <div id="collapseFour" class="accordion-collapse collapse show" aria-labelledby="headingFour" data-bs-parent="#facultyAccordion">
+                    <div class="accordion-body">
+                        <ul>
+                            <li>{% trans "أن يكون المتقدم عضو هيئة تدريس معيناً في جامعة البترا بعقد دائم." %}</li>
+                            <li>{% trans "أن يكون قد أمضى على الأقل سنتين في خدمة الجامعة." %}</li>
+                            <li>{% trans "أن يكون التخصص المتقدم له متوافقاً مع احتياجات الكلية والقسم." %}</li>
+                            <li>{% trans "أن يكون حاصلاً على تقدير 'جيد جداً' على الأقل في آخر تقييمين أداء." %}</li>
+                            <li>{% trans "ألا يكون قد صدر بحقه أي عقوبة تأديبية خلال فترة عمله في الجامعة." %}</li>
+                            <li>{% trans "أن يستوفي أي شروط إضافية محددة في إعلان فرصة الابتعاث." %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFive">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                        {% trans "الوثائق المطلوبة" %}
+                    </button>
+                </h2>
+                <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#facultyAccordion">
+                    <div class="accordion-body">
+                        <ul>
+                            <li>{% trans "السيرة الذاتية المحدثة باللغة العربية والإنجليزية." %}</li>
+                            <li>{% trans "خطة بحثية أو دراسية توضح الأهداف المرجوة من الابتعاث." %}</li>
+                            <li>{% trans "قائمة المنشورات العلمية والبحثية." %}</li>
+                            <li>{% trans "خطاب تأييد من رئيس القسم وعميد الكلية." %}</li>
+                            <li>{% trans "نسخة من آخر تقييمين أداء." %}</li>
+                            <li>{% trans "شهادات إتقان اللغة إذا كانت الدراسة بغير اللغة العربية." %}</li>
+                            <li>{% trans "نسخة من قبول الجامعة المستضيفة (إن وجد)." %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSix">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                        {% trans "خطوات التقديم" %}
+                    </button>
+                </h2>
+                <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#facultyAccordion">
+                    <div class="accordion-body">
+                        <ol>
+                            <li>{% trans "تسجيل الدخول إلى النظام باستخدام حساب الجامعة." %}</li>
+                            <li>{% trans "الانتقال إلى صفحة فرص الابتعاث المخصصة لأعضاء هيئة التدريس." %}</li>
+                            <li>{% trans "اختيار الفرصة المناسبة والنقر على زر 'التقديم'." %}</li>
+                            <li>{% trans "تعبئة نموذج الطلب وتحميل جميع الوثائق المطلوبة." %}</li>
+                            <li>{% trans "إرفاق خطاب التأييد من رئيس القسم وعميد الكلية." %}</li>
+                            <li>{% trans "مراجعة جميع البيانات والتأكد من صحتها قبل الإرسال." %}</li>
+                            <li>{% trans "النقر على زر 'إرسال الطلب' لتقديمه بشكل نهائي." %}</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- عملية التقييم والاختيار -->
+    <div id="evaluation-section" class="instructions-section">
+        <h2 class="mb-4">{% trans "عملية التقييم والاختيار" %}</h2>
+        
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">{% trans "مراحل التقييم" %}</h5>
+                <div class="row g-4 mt-2">
+                    <div class="col-md-3">
+                        <div class="card h-100 bg-light border-0">
+                            <div class="card-body text-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">1</div>
+                                <h6>{% trans "الفحص الأولي" %}</h6>
+                                <p class="small">{% trans "التحقق من استيفاء الشروط والمستندات المطلوبة" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 bg-light border-0">
+                            <div class="card-body text-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">2</div>
+                                <h6>{% trans "التقييم الفني" %}</h6>
+                                <p class="small">{% trans "تقييم المؤهلات العلمية والخبرات والإنجازات" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 bg-light border-0">
+                            <div class="card-body text-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">3</div>
+                                <h6>{% trans "المقابلة الشخصية" %}</h6>
+                                <p class="small">{% trans "مقابلة المرشحين المؤهلين من قبل لجنة الابتعاث" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 bg-light border-0">
+                            <div class="card-body text-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">4</div>
+                                <h6>{% trans "القرار النهائي" %}</h6>
+                                <p class="small">{% trans "إصدار قرارات الترشيح النهائية وإبلاغ المقبولين" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">{% trans "معايير التقييم" %}</h5>
+                <p>{% trans "تعتمد عملية التقييم على مجموعة من المعايير المتوازنة، وتختلف الأوزان النسبية حسب نوع المنحة وطبيعة البرنامج:" %}</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "المعيار" %}</th>
+                                <th>{% trans "الوصف" %}</th>
+                                <th>{% trans "الوزن النسبي" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{% trans "التحصيل الأكاديمي" %}</td>
+                                <td>{% trans "المعدل التراكمي، التقديرات، الجوائز الأكاديمية" %}</td>
+                                <td>30%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "البحث العلمي" %}</td>
+                                <td>{% trans "المنشورات، المشاركات البحثية، المشاريع البحثية" %}</td>
+                                <td>25%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "الكفاءة اللغوية" %}</td>
+                                <td>{% trans "مستوى إتقان لغة الدراسة (الإنجليزية أو غيرها)" %}</td>
+                                <td>15%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "الخبرات والمهارات" %}</td>
+                                <td>{% trans "الأنشطة اللاصفية، التطوع، المهارات القيادية" %}</td>
+                                <td>15%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "المقابلة الشخصية" %}</td>
+                                <td>{% trans "الدافعية، الثقة بالنفس، مهارات التواصل، الرؤية المستقبلية" %}</td>
+                                <td>15%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الأسئلة الشائعة -->
+    <div class="instructions-section">
+        <h2 class="mb-4">{% trans "الأسئلة الشائعة" %}</h2>
+        
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faqOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseOne" aria-expanded="false" aria-controls="faqCollapseOne">
+                        {% trans "هل يمكنني التقديم على أكثر من فرصة ابتعاث في نفس الوقت؟" %}
+                    </button>
+                </h2>
+                <div id="faqCollapseOne" class="accordion-collapse collapse" aria-labelledby="faqOne" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        {% trans "نعم، يمكنك التقديم على أكثر من فرصة ابتعاث في نفس الوقت، ولكن يجب أن تكون مستوفياً لشروط كل فرصة على حدة. في حال تم قبولك في أكثر من فرصة، سيطلب منك اختيار واحدة فقط للمتابعة." %}
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faqTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseTwo" aria-expanded="false" aria-controls="faqCollapseTwo">
+                        {% trans "متى سيتم إبلاغي بنتيجة طلبي؟" %}
+                    </button>
+                </h2>
+                <div id="faqCollapseTwo" class="accordion-collapse collapse" aria-labelledby="faqTwo" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        {% trans "تختلف فترة المراجعة حسب نوع المنحة وعدد المتقدمين، ولكن بشكل عام سيتم إبلاغك بنتيجة الفحص الأولي خلال 2-3 أسابيع من انتهاء فترة التقديم. أما النتائج النهائية فتصدر عادة خلال 4-6 أسابيع من المقابلات الشخصية. يمكنك متابعة حالة طلبك من خلال صفحة 'طلباتي' في النظام." %}
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faqThree">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseThree" aria-expanded="false" aria-controls="faqCollapseThree">
+                        {% trans "هل يمكنني تعديل طلبي بعد إرساله؟" %}
+                    </button>
+                </h2>
+                <div id="faqCollapseThree" class="accordion-collapse collapse" aria-labelledby="faqThree" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        {% trans "بمجرد إرسال الطلب بشكل نهائي، لا يمكن تعديله مباشرة. ومع ذلك، إذا كنت بحاجة إلى تحديث معلومات مهمة أو تقديم وثائق إضافية، يمكنك التواصل مع مكتب الابتعاث من خلال خاصية 'التعليقات' في صفحة تفاصيل الطلب، أو إرسال بريد إلكتروني إلى scholarship@uop.edu.jo مع ذكر رقم الطلب." %}
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faqFour">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseFour" aria-expanded="false" aria-controls="faqCollapseFour">
+                        {% trans "ما هي التزامات المبتعث بعد انتهاء فترة الابتعاث؟" %}
+                    </button>
+                </h2>
+                <div id="faqCollapseFour" class="accordion-collapse collapse" aria-labelledby="faqFour" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        {% trans "يلتزم المبتعث بالعمل في جامعة البترا لفترة لا تقل عن ضعف مدة الابتعاث. كما يتوجب عليه تقديم تقارير دورية عن إنجازاته وأبحاثه خلال السنة الأولى من عودته. وتختلف الالتزامات حسب نوع المنحة وشروط الجهة الممولة، وتكون مفصلة في عقد الابتعاث الذي يوقعه المبتعث قبل سفره." %}
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faqFive">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseFive" aria-expanded="false" aria-controls="faqCollapseFive">
+                        {% trans "هل تغطي المنحة جميع النفقات الدراسية والمعيشية؟" %}
+                    </button>
+                </h2>
+                <div id="faqCollapseFive" class="accordion-collapse collapse" aria-labelledby="faqFive" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        {% trans "تختلف التغطية المالية حسب نوع المنحة والجهة الممولة. بعض المنح تغطي الرسوم الدراسية فقط، بينما تغطي منح أخرى الرسوم الدراسية ونفقات المعيشة وتذاكر السفر والتأمين الصحي. يمكنك الاطلاع على تفاصيل التغطية المالية لكل منحة في صفحة تفاصيل فرصة الابتعاث." %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات الاتصال -->
+    <div class="instructions-section">
+        <h2 class="mb-4">{% trans "للاستفسارات والدعم" %}</h2>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-envelope text-primary me-2"></i> {% trans "التواصل عبر البريد الإلكتروني" %}</h5>
+                        <p>{% trans "لأي استفسارات أو مشاكل تقنية تتعلق بنظام الابتعاث، يرجى التواصل معنا عبر:" %}</p>
+                        <p><strong>scholarship@uop.edu.jo</strong></p>
+                        <p class="text-muted small">{% trans "سيتم الرد على استفساراتكم خلال يومي عمل." %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-phone-alt text-primary me-2"></i> {% trans "الاتصال المباشر" %}</h5>
+                        <p>{% trans "يمكنكم الاتصال بمكتب الابتعاث خلال ساعات الدوام الرسمية (9:00 صباحاً - 3:00 مساءً):" %}</p>
+                        <p><strong>06-1234567</strong> {% trans "تحويلة" %} 1234</p>
+                        <p class="text-muted small">{% trans "أيام العمل: من الأحد إلى الخميس" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Script to smooth scroll to sections when clicking on links
+    document.addEventListener('DOMContentLoaded', function() {
+        const links = document.querySelectorAll('a[href^="#"]');
+        
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

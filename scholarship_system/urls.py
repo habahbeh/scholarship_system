@@ -18,12 +18,13 @@ urlpatterns += i18n_patterns(
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('', home_view, name='home'),
+    path('', include('core.urls')),  # تضمين URLs الخاصة بتطبيق core
     path('', include('announcements.urls')),
     path('', include('applications.urls')),
     path('evaluation/', include('evaluation.urls')),
     path('dashboard/', include('dashboard.urls')),
     # ستضاف المزيد من التطبيقات لاحقاً
-    prefix_default_language=False
+    prefix_default_language=True
 )
 
 # إضافة URLs للوسائط والملفات الثابتة في وضع التطوير

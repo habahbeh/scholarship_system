@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ announcement.title }} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'announcements:announcement_list' %}">{% trans "الإعلانات" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ announcement.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h1 class="card-title mb-0">{{ announcement.title }}</h1>
+                        {% if announcement.is_active %}
+                            <span class="badge bg-success rounded-pill px-3 py-2">{% trans "نشط" %}</span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill px-3 py-2">{% trans "غير نشط" %}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4 text-muted">
+                        <i class="far fa-calendar-alt me-2"></i> {% trans "تاريخ النشر:" %} {{ announcement.publication_date|date:"Y-m-d" }}
+                    </div>
+                    
+                    <div class="card-text mt-4 announcement-content">
+                        {{ announcement.content|linebreaks }}
+                    </div>
+                    
+                    {% if perms.announcements.change_announcement or perms.announcements.delete_announcement %}
+                    <div class="mt-5 pt-3 border-top">
+                        <div class="d-flex">
+                            {% if perms.announcements.change_announcement %}
+                            <a href="{% url 'announcements:announcement_edit' announcement.id %}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
+                            </a>
+                            {% endif %}
+                            
+                            {% if perms.announcements.delete_announcement %}
+                            <a href="{% url 'announcements:announcement_delete' announcement.id %}" class="btn btn-outline-danger">
+                                <i class="fas fa-trash-alt me-1"></i> {% trans "حذف" %}
+                            </a>
+                            {% endif %}
+                            
+                            <a href="{% url 'announcements:announcement_list' %}" class="btn btn-outline-secondary ms-auto">
+                                <i class="fas fa-arrow-right me-1"></i> {% trans "العودة للقائمة" %}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
