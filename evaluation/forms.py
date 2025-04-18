@@ -45,6 +45,30 @@ class CriterionForm(forms.ModelForm):
         }
 
 
+# class EvaluationRoundForm(forms.ModelForm):
+#     """نموذج إنشاء/تعديل جولة تقييم"""
+#     criteria = forms.ModelMultipleChoiceField(
+#         queryset=EvaluationCriterion.objects.filter(is_active=True),
+#         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+#         label=_("معايير التقييم"),
+#         required=True
+#     )
+#
+#     class Meta:
+#         model = EvaluationRound
+#         fields = ['name', 'description', 'round_type', 'committee',
+#                   'start_date', 'end_date', 'is_active', 'criteria', 'min_evaluators']
+#         widgets = {
+#             'name': forms.TextInput(attrs={'class': 'form-control'}),
+#             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+#             'round_type': forms.Select(attrs={'class': 'form-select'}),
+#             'committee': forms.Select(attrs={'class': 'form-select'}),
+#             'start_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+#             'end_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+#             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'min_evaluators': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+#         }
+
 class EvaluationRoundForm(forms.ModelForm):
     """نموذج إنشاء/تعديل جولة تقييم"""
     criteria = forms.ModelMultipleChoiceField(
@@ -52,6 +76,17 @@ class EvaluationRoundForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         label=_("معايير التقييم"),
         required=True
+    )
+
+    # Add these fields to explicitly handle date conversion
+    start_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S'],
+    )
+
+    end_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S'],
     )
 
     class Meta:
@@ -63,12 +98,21 @@ class EvaluationRoundForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'round_type': forms.Select(attrs={'class': 'form-select'}),
             'committee': forms.Select(attrs={'class': 'form-select'}),
-            'start_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'end_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'min_evaluators': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        # Ensure both dates are provided and end_date is after start_date
+        if start_date and end_date:
+            if end_date <= start_date:
+                self.add_error('end_date', _("تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء"))
+
+        return cleaned_data
 
 class RoundAssignApplicationsForm(forms.Form):
     """نموذج تعيين طلبات للتقييم في جولة معينة"""

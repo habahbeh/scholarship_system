@@ -39,6 +39,22 @@ class ApplicationAdmin(admin.ModelAdmin):
     readonly_fields = ('application_date', 'last_update')
     inlines = [DocumentInline, ApplicationLogInline]
 
+    # Enhancement 1: Add fieldsets for better organization
+    fieldsets = (
+        (_('معلومات أساسية'), {
+            'fields': ('scholarship', 'applicant', 'status', 'application_date', 'last_update')
+        }),
+        (_('محتوى الطلب'), {
+            'fields': ('motivation_letter', 'research_proposal', 'comments')
+        }),
+        (_('القبول'), {
+            'fields': ('acceptance_letter', 'acceptance_university')
+        }),
+    )
+
+    # Enhancement 2: Add autocomplete_fields for better performance with large datasets
+    autocomplete_fields = ['scholarship', 'applicant', 'status']
+
     def save_model(self, request, obj, form, change):
         """تسجيل تغييرات الحالة في سجل الطلب"""
         if change and 'status' in form.changed_data:
@@ -61,6 +77,8 @@ class DocumentAdmin(admin.ModelAdmin):
     list_filter = ('is_required', 'upload_date')
     search_fields = ('name', 'description', 'application__id', 'application__applicant__username')
     date_hierarchy = 'upload_date'
+    # Enhancement: Add autocomplete for application field
+    autocomplete_fields = ['application']
 
 
 @admin.register(ApplicationLog)

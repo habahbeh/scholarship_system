@@ -59,7 +59,8 @@ class EvaluationRound(models.Model):
     committee = models.ForeignKey(Committee, verbose_name=_("اللجنة"), on_delete=models.CASCADE,
                                   related_name="evaluation_rounds")
     start_date = models.DateTimeField(_("تاريخ البدء"), default=timezone.now)
-    end_date = models.DateTimeField(_("تاريخ الانتهاء"))
+    end_date = models.DateTimeField(_("تاريخ الانتهاء"),)
+
     is_active = models.BooleanField(_("نشطة"), default=True)
     criteria = models.ManyToManyField(EvaluationCriterion, verbose_name=_("المعايير"), related_name="evaluation_rounds")
     min_evaluators = models.PositiveIntegerField(_("الحد الأدنى للمقيمين"), default=1)
@@ -72,13 +73,28 @@ class EvaluationRound(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_round_type_display()})"
 
+    # @property
+    # def is_in_progress(self):
+    #     now = timezone.now()
+    #     return self.start_date <= now <= self.end_date
+    #
+    # @property
+    # def is_completed(self):
+    #     return timezone.now() > self.end_date
+
     @property
     def is_in_progress(self):
         now = timezone.now()
+        # Check if dates exist before comparing
+        if self.start_date is None or self.end_date is None:
+            return False
         return self.start_date <= now <= self.end_date
 
     @property
     def is_completed(self):
+        # Check if end_date exists before comparing
+        if self.end_date is None:
+            return False
         return timezone.now() > self.end_date
 
 

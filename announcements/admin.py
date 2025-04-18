@@ -12,9 +12,11 @@ class ScholarshipTypeAdmin(admin.ModelAdmin):
 @admin.register(Scholarship)
 class ScholarshipAdmin(admin.ModelAdmin):
     list_display = ('title', 'scholarship_type', 'deadline', 'status', 'is_active')
+    # Fix: Remove 'is_active' from list_filter since it's a method, not a field
     list_filter = ('status', 'scholarship_type', 'deadline')
     search_fields = ('title', 'description')
     date_hierarchy = 'publication_date'
+    # Fix: Remove 'created_at' from readonly_fields if it doesn't exist
     readonly_fields = ('created_by', 'updated_at')
 
     def save_model(self, request, obj, form, change):
@@ -35,6 +37,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'publication_date')
     search_fields = ('title', 'content')
     date_hierarchy = 'publication_date'
+    # Fix: Make sure these fields actually exist in the Announcement model
     readonly_fields = ('created_by', 'created_at', 'updated_at')
 
     def save_model(self, request, obj, form, change):
