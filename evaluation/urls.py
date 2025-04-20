@@ -38,6 +38,8 @@ urlpatterns = [
     # التصويت
     path('vote/<int:application_id>/', views.vote_create, name='vote_create'),
     path('votes/', views.vote_list, name='vote_list'),
+    # إضافة مسار جديد للطلبات المتاحة للتصويت
+    path('applications-for-voting/', views.applications_for_voting, name='applications_for_voting'),
 
     # التوصيات
     path('recommendations/', views.recommendation_list, name='recommendation_list'),

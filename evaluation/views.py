@@ -18,6 +18,7 @@ from .forms import (
     RoundAssignApplicationsForm, ApplicationEvaluationForm, CriterionScoreForm,
     VoteForm, RecommendationForm
 )
+from django.conf import settings
 
 # ============ لجان التقييم ============
 
@@ -702,3 +703,215 @@ def recommendation_create(request, application_id):
         'application': application,
     }
     return render(request, 'evaluation/recommendation_form.html', context)
+
+# تعديل دالة العرض في ملف evaluation/views.py
+
+@login_required
+def applications_for_voting(request):
+    """عرض قائمة الطلبات المتاحة للتصويت لعضو اللجنة"""
+    # التحقق من أن المستخدم عضو في لجنة
+    user_committees = Committee.objects.filter(members=request.user)
+
+    if not user_committees.exists():
+        messages.error(request, _("يجب أن تكون عضواً في لجنة للوصول إلى هذه الصفحة"))
+        return redirect('dashboard:index')
+
+    # الحصول على جميع الطلبات بغض النظر عن الحالة
+    applications = Application.objects.all()
+
+    # استبعاد الطلبات التي صوت عليها المستخدم بالفعل
+    voted_applications = Vote.objects.filter(committee_member=request.user).values_list('application_id', flat=True)
+    applications = applications.exclude(id__in=voted_applications)
+
+    total_applications = applications.count()
+
+    # تطبيق البحث إذا كان موجوداً
+    search_query = request.GET.get('search', '').strip()
+
+    if search_query:
+        # حفظ الاستعلام الأصلي للعرض
+        original_query = search_query
+
+        # البحث البسيط - بحث في الحقول المهمة
+        applications = applications.filter(
+            Q(applicant__first_name__icontains=search_query) |
+            Q(applicant__last_name__icontains=search_query) |
+            Q(applicant__email__icontains=search_query) |
+            Q(scholarship__title__icontains=search_query) |
+            Q(scholarship__description__icontains=search_query)
+        )
+    else:
+        original_query = ''
+
+    # ترقيم الصفحات
+    paginator = Paginator(applications, 10)
+    page = request.GET.get('page')
+    try:
+        applications_page = paginator.page(page)
+    except PageNotAnInteger:
+        applications_page = paginator.page(1)
+    except EmptyPage:
+        applications_page = paginator.page(paginator.num_pages)
+
+    context = {
+        'applications': applications_page,
+        'search_query': original_query,
+        'total_count': applications.count(),
+        'total_applications': total_applications
+    }
+    return render(request, 'evaluation/applications_for_voting.html', context)
+
+# @login_required
+# def applications_for_voting(request):
+#     """عرض قائمة الطلبات المتاحة للتصويت لعضو اللجنة"""
+#     # التحقق من أن المستخدم عضو في لجنة
+#     user_committees = Committee.objects.filter(members=request.user)
+#
+#     if not user_committees.exists():
+#         messages.error(request, _("يجب أن تكون عضواً في لجنة للوصول إلى هذه الصفحة"))
+#         return redirect('dashboard:index')
+#
+#     # الحصول على جميع الطلبات التي وصلت إلى مرحلة التقييم
+#     evaluation_status = ApplicationStatus.objects.filter(order=3).first()  # مرحلة التقييم عادة لها ترتيب 3
+#
+#     # استخدام جميع الطلبات إذا لم يتم العثور على حالة التقييم
+#     if not evaluation_status:
+#         applications = Application.objects.all()
+#     else:
+#         applications = Application.objects.filter(status=evaluation_status)
+#
+#     # استبعاد الطلبات التي صوت عليها المستخدم بالفعل
+#     voted_applications = Vote.objects.filter(committee_member=request.user).values_list('application_id', flat=True)
+#     applications = applications.exclude(id__in=voted_applications)
+#
+#     # تطبيق البحث إذا كان موجوداً
+#     search_query = request.GET.get('search', '')
+#     if search_query:
+#         # تحسين البحث للتعامل مع النص العربي
+#         applications = applications.filter(
+#             Q(applicant__first_name__icontains=search_query) |
+#             Q(applicant__last_name__icontains=search_query) |
+#             Q(scholarship__title__icontains=search_query) |
+#             Q(id__icontains=search_query) |
+#             # إضافة حقول أخرى قد تكون مفيدة في البحث
+#             Q(scholarship__description__icontains=search_query) |
+#             Q(scholarship__scholarship_type__name__icontains=search_query)
+#         )
+#
+#         # طباعة نتائج البحث للتصحيح (في بيئة التطوير فقط)
+#         if settings.DEBUG:
+#             print(f"Search query: {search_query}")
+#             print(f"Found {applications.count()} applications matching the search")
+#             for app in applications:
+#                 print(f"App ID: {app.id}, Title: {app.scholarship.title}")
+#
+#     # ترقيم الصفحات
+#     paginator = Paginator(applications, 10)
+#     page = request.GET.get('page')
+#     try:
+#         applications_page = paginator.page(page)
+#     except PageNotAnInteger:
+#         applications_page = paginator.page(1)
+#     except EmptyPage:
+#         applications_page = paginator.page(paginator.num_pages)
+#
+#     context = {
+#         'applications': applications_page,
+#         'search_query': search_query,
+#         'total_count': applications.count(),  # إضافة إجمالي عدد النتائج
+#     }
+#     return render(request, 'evaluation/applications_for_voting.html', context)
+
+
+
+
+# 222222
+# @login_required
+# def applications_for_voting(request):
+#     """عرض قائمة الطلبات المتاحة للتصويت لعضو اللجنة"""
+#     # التحقق من أن المستخدم عضو في لجنة
+#     user_committees = Committee.objects.filter(members=request.user)
+#
+#     if not user_committees.exists():
+#         messages.error(request, _("يجب أن تكون عضواً في لجنة للوصول إلى هذه الصفحة"))
+#         return redirect('dashboard:index')
+#
+#     # الحصول على جميع الطلبات التي وصلت إلى مرحلة التقييم
+#     evaluation_status = ApplicationStatus.objects.filter(order=3).first()  # مرحلة التقييم عادة لها ترتيب 3
+#
+#     if not evaluation_status:
+#         applications = Application.objects.all()
+#     else:
+#         applications = Application.objects.filter(status=evaluation_status)
+#
+#     # استبعاد الطلبات التي صوت عليها المستخدم بالفعل
+#     voted_applications = Vote.objects.filter(committee_member=request.user).values_list('application_id', flat=True)
+#     applications = applications.exclude(id__in=voted_applications)
+#
+#     # تطبيق البحث إذا كان موجوداً
+#     original_search_query = request.GET.get('search', '')
+#     search_query = original_search_query
+#
+#     # للتشخيص فقط - طباعة جميع الطلبات المتاحة
+#     print("جميع الطلبات المتاحة قبل البحث:")
+#     for app in applications:
+#         print(f"ID: {app.id}, عنوان المنحة: {app.scholarship.title}")
+#
+#     if search_query:
+#         # OPTION 1: البحث العادي (المطابقة الكاملة)
+#         # تحسين البحث للتعامل مع النص العربي
+#         search_results = applications.filter(
+#             Q(applicant__first_name__icontains=search_query) |
+#             Q(applicant__last_name__icontains=search_query) |
+#             Q(scholarship__title__icontains=search_query) |
+#             Q(id__icontains=search_query) |
+#             Q(scholarship__description__icontains=search_query) |
+#             Q(scholarship__scholarship_type__name__icontains=search_query)
+#         )
+#
+#         # إذا لم يكن هناك نتائج، جرب البحث الجزئي
+#         if not search_results.exists():
+#             print("لا توجد نتائج للبحث الكامل. جاري تجربة البحث الجزئي...")
+#
+#             # تقسيم مصطلح البحث إلى كلمات
+#             search_terms = search_query.split()
+#             query = Q()
+#
+#             # البحث عن كل كلمة على حدة
+#             for term in search_terms:
+#                 if len(term) > 2:  # تجاهل الكلمات القصيرة جداً
+#                     term_query = (
+#                         Q(scholarship__title__icontains=term) |
+#                         Q(scholarship__description__icontains=term) |
+#                         Q(scholarship__scholarship_type__name__icontains=term) |
+#                         Q(applicant__first_name__icontains=term) |
+#                         Q(applicant__last_name__icontains=term)
+#                     )
+#                     query |= term_query
+#
+#             if query:
+#                 search_results = applications.filter(query).distinct()
+#
+#                 # للتشخيص
+#                 print(f"نتائج البحث الجزئي لـ '{search_query}':")
+#                 for app in search_results:
+#                     print(f"ID: {app.id}, عنوان المنحة: {app.scholarship.title}")
+#
+#         applications = search_results
+#
+#     # ترقيم الصفحات
+#     paginator = Paginator(applications, 10)
+#     page = request.GET.get('page')
+#     try:
+#         applications_page = paginator.page(page)
+#     except PageNotAnInteger:
+#         applications_page = paginator.page(1)
+#     except EmptyPage:
+#         applications_page = paginator.page(paginator.num_pages)
+#
+#     context = {
+#         'applications': applications_page,
+#         'search_query': original_search_query,
+#         'total_count': applications.count(),
+#     }
+#     return render(request, 'evaluation/applications_for_voting.html', context)

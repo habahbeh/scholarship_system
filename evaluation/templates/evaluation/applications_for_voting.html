@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "الطلبات المتاحة للتصويت" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">{% trans "الطلبات المتاحة للتصويت" %}</h1>
+            <p class="text-muted">{% trans "قائمة بطلبات الابتعاث التي يمكنك التصويت عليها كعضو لجنة تقييم." %}</p>
+            {% if search_query %}
+            <div class="alert alert-info">
+                <i class="fas fa-search me-2"></i>
+                {% trans "نتائج البحث عن: " %} <strong>"{{ search_query }}"</strong>
+                <span class="ms-2">({{ total_count }} {% trans "نتيجة" %})</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-tachometer-alt me-2"></i> {% trans "لوحة تحكم المقيِّم" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- مرشحات البحث -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{% trans "بحث" %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="{% trans 'البحث باسم المتقدم أو فرصة الابتعاث...' %}" value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        {% trans "بحث" %}
+                    </button>
+                </div>
+            </form>
+            {% if search_query %}
+            <div class="mt-2">
+                <a href="{% url 'evaluation:applications_for_voting' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> {% trans "إلغاء البحث" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- قائمة الطلبات -->
+    <div class="card shadow-sm border-0">
+        {% if applications %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "رقم الطلب" %}</th>
+                        <th>{% trans "المتقدم" %}</th>
+                        <th>{% trans "فرصة الابتعاث" %}</th>
+                        <th>{% trans "تاريخ التقديم" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "الإجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in applications %}
+                    <tr>
+                        <td>#{{ application.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if application.applicant.profile.profile_picture %}
+                                <img src="{{ application.applicant.profile.profile_picture.url }}" alt="{{ application.applicant.get_full_name }}" class="rounded-circle me-2" width="40" height="40">
+                                {% else %}
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-0">{{ application.applicant.get_full_name }}</h6>
+                                    <small class="text-muted">{{ application.applicant.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'announcements:scholarship_detail' application.scholarship.id %}" class="text-decoration-none" target="_blank">
+                                {{ application.scholarship.title|truncatechars:40 }}
+                            </a>
+                        </td>
+                        <td>{{ application.application_date|date:"Y-m-d" }}</td>
+                        <td>
+                            <span class="badge bg-{{ application.status.order|default:"1"|add:"-1"|yesno:"warning,primary,success,danger,secondary" }}">
+                                {{ application.status.name }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'عرض التفاصيل' %}">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'evaluation:vote_create' application.id %}" class="btn btn-sm btn-success" title="{% trans 'تصويت' %}">
+                                    <i class="fas fa-vote-yea"></i> {% trans "تصويت" %}
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ترقيم الصفحات -->
+        {% if applications.has_other_pages %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if applications.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="fas fa-angle-double-right me-1"></i>
+                            {% trans "الأولى" %}
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ applications.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="fas fa-angle-right me-1"></i>
+                            {% trans "السابقة" %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in applications.paginator.page_range %}
+                    {% if applications.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > applications.number|add:'-3' and num < applications.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if applications.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ applications.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            {% trans "التالية" %}
+                            <i class="fas fa-angle-left me-1"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ applications.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            {% trans "الأخيرة" %}
+                            <i class="fas fa-angle-double-left me-1"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card-body text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-vote-yea fa-4x text-muted mb-4"></i>
+                {% if search_query %}
+                <h5 class="mb-3">{% trans "لا توجد نتائج مطابقة للبحث" %}</h5>
+                <p class="text-muted">{% trans "حاول استخدام كلمات بحث مختلفة أو تصفح جميع الطلبات المتاحة." %}</p>
+                <a href="{% url 'evaluation:applications_for_voting' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-list me-2"></i> {% trans "عرض جميع الطلبات" %}
+                </a>
+                {% else %}
+                <h5 class="mb-3">{% trans "لا توجد طلبات متاحة للتصويت حالياً" %}</h5>
+                <p class="text-muted">{% trans "لقد قمت بالتصويت على جميع الطلبات المتاحة حالياً." %}</p>
+                <a href="{% url 'evaluation:evaluator_dashboard' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-tachometer-alt me-2"></i> {% trans "العودة إلى لوحة تحكم المقيّم" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
