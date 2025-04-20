@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "تقرير الطلبات الموافق عليها من اللجنة العليا" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .print-only {
+            display: block !important;
+        }
+        
+        body {
+            font-size: 12pt;
+        }
+        
+        .container {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+    }
+    
+    .print-only {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- العنوان ومسار التنقل -->
+    <div class="row mb-4 no-print">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'applications:admin_applications_list' %}">{% trans "إدارة الطلبات" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "تقرير الطلبات الموافق عليها من اللجنة العليا" %}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-2">{% trans "تقرير الطلبات الموافق عليها من اللجنة العليا" %}</h1>
+            <p class="text-muted">{% trans "تقرير بجميع طلبات الابتعاث الموافق عليها من اللجنة العليا" %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="?print=true" target="_blank" class="btn btn-primary me-2">
+                <i class="fas fa-file-pdf me-1"></i> {% trans "طباعة PDF" %}
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="fas fa-print me-1"></i> {% trans "طباعة" %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- ترويسة التقرير للطباعة فقط -->
+    <div class="print-only text-center mb-4">
+        <img src="{% static 'images/petra_logo.png' %}" alt="{% trans 'جامعة البترا' %}" height="80" class="mb-3">
+        <h2>{% trans "جامعة البترا" %}</h2>
+        <h3>{% trans "نظام الابتعاث الإلكتروني" %}</h3>
+        <h4>{% trans "تقرير الطلبات الموافق عليها من اللجنة العليا" %}</h4>
+        <p>{% trans "تاريخ إنشاء التقرير:" %} {{ date|date:"Y-m-d" }}</p>
+    </div>
+    
+    <!-- جدول الطلبات -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center no-print">
+            <h5 class="mb-0">{% trans "الطلبات الموافق عليها من اللجنة العليا" %}</h5>
+            <span class="badge bg-primary rounded-pill">{{ applications.count }}</span>
+        </div>
+        <div class="card-body">
+            {% if applications %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">{% trans "الرقم" %}</th>
+                            <th width="20%">{% trans "المتقدم" %}</th>
+                            <th width="25%">{% trans "فرصة الابتعاث" %}</th>
+                            <th width="15%">{% trans "تاريخ التقديم" %}</th>
+                            <th width="15%">{% trans "الحالة" %}</th>
+                            <th width="20%" class="no-print">{% trans "الإجراءات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for application in applications %}
+                        <tr>
+                            <td>#{{ application.id }}</td>
+                            <td>
+                                <div class="fw-bold">{{ application.applicant.get_full_name }}</div>
+                                <div class="small text-muted">{{ application.applicant.email }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ application.scholarship.title }}</div>
+                                <div class="small text-muted">{{ application.scholarship.scholarship_type.name }}</div>
+                            </td>
+                            <td>{{ application.application_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <span class="badge bg-success px-3 py-2">
+                                    {{ application.status.name }}
+                                </span>
+                            </td>
+                            <td class="no-print">
+                                <div class="btn-group">
+                                    <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'عرض التفاصيل' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="{% url 'applications:faculty_council_approval' application.id %}" class="btn btn-sm btn-success" title="{% trans 'موافقة مجلس الكلية' %}">
+                                        <i class="fas fa-stamp"></i> {% trans "موافقة مجلس الكلية" %}
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h5>{% trans "لا توجد طلبات موافق عليها من اللجنة العليا حالياً" %}</h5>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- توقيعات للطباعة فقط -->
+    <div class="print-only mt-5">
+        <div class="row">
+            <div class="col-4 text-center">
+                <h5>{% trans "رئيس قسم الابتعاث" %}</h5>
+                <div style="height: 80px;"></div>
+                <p>____________________</p>
+            </div>
+            <div class="col-4 text-center">
+                <h5>{% trans "رئيس اللجنة العليا" %}</h5>
+                <div style="height: 80px;"></div>
+                <p>____________________</p>
+            </div>
+            <div class="col-4 text-center">
+                <h5>{% trans "نائب الرئيس للشؤون الأكاديمية" %}</h5>
+                <div style="height: 80px;"></div>
+                <p>____________________</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

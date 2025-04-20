@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "تقرير كامل للطلب" %} - {% trans "نظام الابتعاث الإلكتروني" %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .print-only {
+            display: block !important;
+        }
+        
+        body {
+            font-size: 12pt;
+        }
+        
+        .container {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+    }
+    
+    .print-only {
+        display: none;
+    }
+    
+    .attachment-container {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- العنوان ومسار التنقل -->
+    <div class="row mb-4 no-print">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">{% trans "لوحة التحكم" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'applications:admin_applications_list' %}">{% trans "إدارة الطلبات" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "تقرير كامل للطلب" %} #{{ application.id }}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-2">{% trans "تقرير كامل للطلب" %} #{{ application.id }}</h1>
+            <p class="text-muted">{% trans "تقرير شامل لطلب الابتعاث مع جميع المرفقات والموافقات" %}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="?print=true" target="_blank" class="btn btn-primary me-2">
+                <i class="fas fa-file-pdf me-1"></i> {% trans "طباعة PDF" %}
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="fas fa-print me-1"></i> {% trans "طباعة" %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- ترويسة التقرير للطباعة فقط -->
+    <div class="print-only text-center mb-4">
+        <img src="{% static 'images/petra_logo.png' %}" alt="{% trans 'جامعة البترا' %}" height="80" class="mb-3">
+        <h2>{% trans "جامعة البترا" %}</h2>
+        <h3>{% trans "نظام الابتعاث الإلكتروني" %}</h3>
+        <h4>{% trans "تقرير كامل لطلب الابتعاث" %} #{{ application.id }}</h4>
+        <p>{% trans "تاريخ إنشاء التقرير:" %} {{ date|date:"Y-m-d" }}</p>
+    </div>
+    
+    <!-- بيانات الطلب -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "بيانات الطلب" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="section-title">{% trans "معلومات الطلب" %}</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-light" style="width: 30%;">{% trans "رقم الطلب" %}</th>
+                                    <td>#{{ application.id }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "فرصة الابتعاث" %}</th>
+                                    <td>{{ application.scholarship.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "تاريخ التقديم" %}</th>
+                                    <td>{{ application.application_date|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "آخر تحديث" %}</th>
+                                    <td>{{ application.last_update|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "الحالة" %}</th>
+                                    <td>
+                                        <span class="badge bg-success px-3 py-2">
+                                            {{ application.status.name }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="section-title">{% trans "معلومات المتقدم" %}</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-light" style="width: 30%;">{% trans "الاسم الكامل" %}</th>
+                                    <td>{{ application.applicant.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "البريد الإلكتروني" %}</th>
+                                    <td>{{ application.applicant.email }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "الكلية/القسم" %}</th>
+                                    <td>{{ application.applicant.profile.faculty|default:"-" }} / {{ application.applicant.profile.department|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "الرتبة الأكاديمية" %}</th>
+                                    <td>{{ application.applicant.profile.get_academic_rank_display|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">{% trans "رقم الهاتف" %}</th>
+                                    <td>{{ application.applicant.profile.phone_number|default:"-" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <h5 class="section-title mt-4">{% trans "خطاب الدوافع" %}</h5>
+            <div class="p-3 border rounded bg-light">
+                {{ application.motivation_letter|linebreaks }}
+            </div>
+            
+            {% if application.research_proposal %}
+            <h5 class="section-title mt-4">{% trans "مقترح البحث" %}</h5>
+            <div class="p-3 border rounded bg-light">
+                {{ application.research_proposal|linebreaks }}
+            </div>
+            {% endif %}
+            
+            <h5 class="section-title mt-4">{% trans "خطاب القبول" %}</h5>
+            <div class="p-3 border rounded bg-light">
+                {% if application.acceptance_letter %}
+                <p><i class="fas fa-check-circle text-success me-2"></i> {% trans "نعم، لدي قبول مبدئي" %}</p>
+                <p><strong>{% trans "الجامعة:" %}</strong> {{ application.acceptance_university }}</p>
+                {% else %}
+                <p><i class="fas fa-times-circle text-danger me-2"></i> {% trans "لا يوجد قبول مبدئي" %}</p>
+                {% endif %}
+            </div>
+            
+            {% if application.comments %}
+            <h5 class="section-title mt-4">{% trans "ملاحظات إضافية" %}</h5>
+            <div class="p-3 border rounded bg-light">
+                {{ application.comments|linebreaks }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- المستندات المرفقة -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "المستندات المرفقة بالطلب" %}</h5>
+        </div>
+        <div class="card-body">
+            {% if application.documents.all %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "اسم المستند" %}</th>
+                            <th>{% trans "الوصف" %}</th>
+                            <th>{% trans "تاريخ الرفع" %}</th>
+                            <th class="no-print">{% trans "عرض" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in application.documents.all %}
+                        <tr>
+                            <td>{{ document.name }}</td>
+                            <td>{{ document.description|default:"-" }}</td>
+                            <td>{{ document.upload_date|date:"Y-m-d" }}</td>
+                            <td class="no-print">
+                                <a href="{{ document.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-pdf me-1"></i> {% trans "عرض" %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {% trans "لا توجد مستندات مرفقة بهذا الطلب." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- مرفقات الموافقات -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "الموافقات" %}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- موافقة اللجنة العليا -->
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "موافقة اللجنة العليا" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            {% with higher_committee_attachment=attachments|dictsortreversed:"upload_date"|selectattr:"approval_type","equalto","higher_committee"|first %}
+                            {% if higher_committee_attachment %}
+                            <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ higher_committee_attachment.upload_date|date:"Y-m-d" }}</p>
+                            <p class="no-print">
+                                <a href="{{ higher_committee_attachment.attachment.url }}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-file-pdf me-1"></i> {% trans "عرض الموافقة" %}
+                                </a>
+                            </p>
+                            {% if higher_committee_attachment.notes %}
+                            <p><strong>{% trans "ملاحظات:" %}</strong> {{ higher_committee_attachment.notes }}</p>
+                            {% endif %}
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% trans "لا يوجد مرفق" %}
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- موافقة مجلس الكلية -->
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "موافقة مجلس الكلية" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            {% with faculty_council_attachment=attachments|dictsortreversed:"upload_date"|selectattr:"approval_type","equalto","faculty_council"|first %}
+                            {% if faculty_council_attachment %}
+                            <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ faculty_council_attachment.upload_date|date:"Y-m-d" }}</p>
+                            <p class="no-print">
+                                <a href="{{ faculty_council_attachment.attachment.url }}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-file-pdf me-1"></i> {% trans "عرض الموافقة" %}
+                                </a>
+                            </p>
+                            {% if faculty_council_attachment.notes %}
+                            <p><strong>{% trans "ملاحظات:" %}</strong> {{ faculty_council_attachment.notes }}</p>
+                            {% endif %}
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% trans "لا يوجد مرفق" %}
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- موافقة رئيس الجامعة -->
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">{% trans "موافقة رئيس الجامعة" %}</h6>
+                        </div>
+                        <div class="card-body">
+                            {% with president_attachment=attachments|dictsortreversed:"upload_date"|selectattr:"approval_type","equalto","president"|first %}
+                            {% if president_attachment %}
+                            <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ president_attachment.upload_date|date:"Y-m-d" }}</p>
+                            <p class="no-print">
+                                <a href="{{ president_attachment.attachment.url }}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-file-pdf me-1"></i> {% trans "عرض الموافقة" %}
+                                </a>
+                            </p>
+                            {% if president_attachment.notes %}
+                            <p><strong>{% trans "ملاحظات:" %}</strong> {{ president_attachment.notes }}</p>
+                            {% endif %}
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% trans "لا يوجد مرفق" %}
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- سجل التغييرات -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% trans "سجل التغييرات" %}</h5>
+        </div>
+        <div class="card-body">
+            {% if application.logs.all %}
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "التاريخ" %}</th>
+                            <th>{% trans "من حالة" %}</th>
+                            <th>{% trans "إلى حالة" %}</th>
+                            <th>{% trans "بواسطة" %}</th>
+                            <th>{% trans "ملاحظات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in application.logs.all|dictsortreversed:"created_at" %}
+                        <tr>
+                            <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ log.from_status.name|default:"-" }}</td>
+                            <td>{{ log.to_status.name }}</td>
+                            <td>{{ log.created_by.get_full_name }}</td>
+                            <td>{{ log.comment|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {% trans "لا يوجد سجل للتغييرات على هذا الطلب." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- توقيعات للطباعة فقط -->
+    <div class="print-only mt-5">
+        <div class="row">
+            <div class="col-4 text-center">
+                <h5>{% trans "رئيس قسم الابتعاث" %}</h5>
+                <div style="height: 80px;"></div>
+                <p>____________________</p>
+            </div>
+            <div class="col-4 text-center">
+                <h5>{% trans "عميد الكلية" %}</h5>
+                <div style="height: 80px;"></div>
+                <p>____________________</p>
+            </div>
+            <div class="col-4 text-center">
+                <h5>{% trans "رئيس الجامعة" %}</h5>
+                <div style="height: 80px;"></div>
+                <p>____________________</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
