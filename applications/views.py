@@ -19,7 +19,7 @@ from .forms import (
 )
 
 
-# --- New Workflow Views ---
+# --- New Workflow Views ---check_requirements
 
 @login_required
 @permission_required('applications.view_application')
@@ -62,7 +62,7 @@ def admin_applications_list(request):
 
 
 @login_required
-@permission_required('applications.change_application')
+@permission_required('applications.change_application', raise_exception=True)
 def check_requirements(request, application_id):
     """مطابقة الشروط للطلب"""
     application = get_object_or_404(Application, pk=application_id)
@@ -114,7 +114,7 @@ def check_requirements(request, application_id):
 
 
 @login_required
-@permission_required('applications.change_application')
+@permission_required('applications.change_application', raise_exception=True)
 def higher_committee_approval(request, application_id):
     """موافقة اللجنة العليا"""
     application = get_object_or_404(Application, pk=application_id)
@@ -176,7 +176,7 @@ def higher_committee_approval(request, application_id):
 
 
 @login_required
-@permission_required('applications.change_application')
+@permission_required('applications.change_application', raise_exception=True)
 def faculty_council_approval(request, application_id):
     """موافقة مجلس الكلية"""
     application = get_object_or_404(Application, pk=application_id)
@@ -238,7 +238,7 @@ def faculty_council_approval(request, application_id):
 
 
 @login_required
-@permission_required('applications.change_application')
+@permission_required('applications.change_application', raise_exception=True)
 def president_approval(request, application_id):
     """موافقة رئيس الجامعة"""
     application = get_object_or_404(Application, pk=application_id)
