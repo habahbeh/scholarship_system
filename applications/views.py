@@ -124,11 +124,8 @@ def higher_committee_approval(request, application_id):
         messages.error(request, _("لا يمكن تقديم موافقة اللجنة العليا لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
 
-    print("request.method",request.method)
     if request.method == 'POST':
         form = HigherCommitteeApprovalForm(request.POST, request.FILES)
-        print('hi 1')
-        print('#'*50)
         if form.is_valid():
             is_approved = form.cleaned_data['is_approved']
             notes = form.cleaned_data['notes']
@@ -171,14 +168,9 @@ def higher_committee_approval(request, application_id):
         # تهيئة النموذج
         form = HigherCommitteeApprovalForm()
 
-    # عرض نسخة HTML من النموذج مباشرةً
-    from django.template.loader import render_to_string
-    form_html = form.as_p()  # استخدام as_p لعرض النموذج كفقرات
-
     context = {
         'form': form,
         'application': application,
-        'raw_form_html': form_html  # إضافة هذا إلى السياق
     }
 
     return render(request, 'applications/higher_committee_approval.html', context)
@@ -194,6 +186,12 @@ def faculty_council_approval(request, application_id):
     if application.status.order != 5:
         messages.error(request, _("لا يمكن تقديم موافقة مجلس الكلية لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
+
+    # الحصول على مرفقات اللجنة العليا
+    higher_committee_attachments = ApprovalAttachment.objects.filter(
+        application=application,
+        approval_type='higher_committee'
+    )
 
     if request.method == 'POST':
         form = FacultyCouncilApprovalForm(request.POST, request.FILES)
@@ -242,9 +240,9 @@ def faculty_council_approval(request, application_id):
     context = {
         'form': form,
         'application': application,
+        'higher_committee_attachments': higher_committee_attachments
     }
     return render(request, 'applications/faculty_council_approval.html', context)
-
 
 @login_required
 @permission_required('applications.change_application', raise_exception=True)
@@ -256,6 +254,17 @@ def president_approval(request, application_id):
     if application.status.order != 7:
         messages.error(request, _("لا يمكن تقديم موافقة رئيس الجامعة لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
+
+    # الحصول على مرفقات اللجنة العليا ومجلس الكلية
+    higher_committee_attachments = ApprovalAttachment.objects.filter(
+        application=application,
+        approval_type='higher_committee'
+    )
+
+    faculty_council_attachments = ApprovalAttachment.objects.filter(
+        application=application,
+        approval_type='faculty_council'
+    )
 
     if request.method == 'POST':
         form = PresidentApprovalForm(request.POST, request.FILES)
@@ -304,9 +313,10 @@ def president_approval(request, application_id):
     context = {
         'form': form,
         'application': application,
+        'higher_committee_attachments': higher_committee_attachments,
+        'faculty_council_attachments': faculty_council_attachments
     }
     return render(request, 'applications/president_approval.html', context)
-
 
 # --- Report Views ---
 

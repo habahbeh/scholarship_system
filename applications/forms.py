@@ -42,22 +42,27 @@ class RequirementsCheckForm(forms.Form):
 
 class HigherCommitteeApprovalForm(forms.Form):
     """نموذج موافقة اللجنة العليا"""
+    APPROVAL_CHOICES = [
+        ('yes', _('موافق')),
+        ('no', _('غير موافق')),
+    ]
+
     is_approved = forms.ChoiceField(
-        label=_("قرار اللجنة العليا"),
-        choices=[
-            ('yes', _("موافق")),
-            ('no', _("غير موافق")),
-        ],
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+        label=_('قرار اللجنة العليا'),
+        choices=APPROVAL_CHOICES,
+        widget=forms.RadioSelect(),
+        required=True
     )
+
     attachment = forms.FileField(
-        label=_("مرفق الموافقة"),
+        label=_('مرفق الموافقة'),
         required=False,
-        widget=forms.FileInput(attrs={'class': 'form-control'})
+        help_text=_('مطلوب فقط في حالة الموافقة')
     )
+
     notes = forms.CharField(
-        label=_("ملاحظات"),
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        label=_('ملاحظات'),
+        widget=forms.Textarea(attrs={'rows': 3}),
         required=False
     )
 
@@ -67,29 +72,34 @@ class HigherCommitteeApprovalForm(forms.Form):
         attachment = cleaned_data.get('attachment')
 
         if is_approved == 'yes' and not attachment:
-            raise forms.ValidationError(_("يجب إرفاق مستند الموافقة"))
+            self.add_error('attachment', _('يجب إرفاق مستند الموافقة في حالة الموافقة'))
 
         return cleaned_data
 
 
 class FacultyCouncilApprovalForm(forms.Form):
     """نموذج موافقة مجلس الكلية"""
+    APPROVAL_CHOICES = [
+        ('yes', _('موافق')),
+        ('no', _('غير موافق')),
+    ]
+
     is_approved = forms.ChoiceField(
-        label=_("قرار مجلس الكلية"),
-        choices=[
-            ('yes', _("موافق")),
-            ('no', _("غير موافق")),
-        ],
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+        label=_('قرار مجلس الكلية'),
+        choices=APPROVAL_CHOICES,
+        widget=forms.RadioSelect(),
+        required=True
     )
+
     attachment = forms.FileField(
-        label=_("مرفق الموافقة"),
+        label=_('مرفق الموافقة'),
         required=False,
-        widget=forms.FileInput(attrs={'class': 'form-control'})
+        help_text=_('مطلوب فقط في حالة الموافقة')
     )
+
     notes = forms.CharField(
-        label=_("ملاحظات"),
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        label=_('ملاحظات'),
+        widget=forms.Textarea(attrs={'rows': 3}),
         required=False
     )
 
@@ -99,29 +109,34 @@ class FacultyCouncilApprovalForm(forms.Form):
         attachment = cleaned_data.get('attachment')
 
         if is_approved == 'yes' and not attachment:
-            raise forms.ValidationError(_("يجب إرفاق مستند الموافقة"))
+            self.add_error('attachment', _('يجب إرفاق مستند الموافقة في حالة الموافقة'))
 
         return cleaned_data
 
 
 class PresidentApprovalForm(forms.Form):
     """نموذج موافقة رئيس الجامعة"""
+    APPROVAL_CHOICES = [
+        ('yes', _('موافق')),
+        ('no', _('غير موافق')),
+    ]
+
     is_approved = forms.ChoiceField(
-        label=_("قرار رئيس الجامعة"),
-        choices=[
-            ('yes', _("موافق")),
-            ('no', _("غير موافق")),
-        ],
-        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+        label=_('قرار رئيس الجامعة'),
+        choices=APPROVAL_CHOICES,
+        widget=forms.RadioSelect(),
+        required=True
     )
+
     attachment = forms.FileField(
-        label=_("مرفق الموافقة"),
+        label=_('مرفق الموافقة'),
         required=False,
-        widget=forms.FileInput(attrs={'class': 'form-control'})
+        help_text=_('مطلوب فقط في حالة الموافقة')
     )
+
     notes = forms.CharField(
-        label=_("ملاحظات"),
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        label=_('ملاحظات'),
+        widget=forms.Textarea(attrs={'rows': 3}),
         required=False
     )
 
@@ -131,10 +146,9 @@ class PresidentApprovalForm(forms.Form):
         attachment = cleaned_data.get('attachment')
 
         if is_approved == 'yes' and not attachment:
-            raise forms.ValidationError(_("يجب إرفاق مستند الموافقة"))
+            self.add_error('attachment', _('يجب إرفاق مستند الموافقة في حالة الموافقة'))
 
         return cleaned_data
-
 
 # Standard application forms
 class ApplicationForm(forms.ModelForm):
