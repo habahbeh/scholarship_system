@@ -61,12 +61,20 @@
             {% trans "فرص الابتعاث" %}
         </a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'announcements:announcement_list' %}">
-            {% trans "الإعلانات" %}
-        </a>
-    </li>
 
+{#    <li class="nav-item">#}
+{#        <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'announcements:announcement_list' %}">#}
+{#            {% trans "الإعلانات" %}#}
+{#        </a>#}
+{#    </li>#}
+
+{% if user.is_staff or perms.applications.view_application %}
+<li class="nav-item">
+    <a class="nav-link {% if 'applications' in request.path and 'my-applications' not in request.path %}active{% endif %}" href="{% url 'applications:admin_applications_list' %}">
+        {% trans "إدارة الطلبات" %}
+    </a>
+</li>
+{% endif %}
     {% if user.is_authenticated %}
     <li class="nav-item">
         <a class="nav-link {% if 'my-applications' in request.path %}active{% endif %}" href="{% url 'applications:my_applications' %}">
@@ -127,6 +135,7 @@
                 </a>
             </li>
             {% endif %}
+
         </ul>
     </li>
 

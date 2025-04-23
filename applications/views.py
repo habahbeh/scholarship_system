@@ -124,8 +124,11 @@ def higher_committee_approval(request, application_id):
         messages.error(request, _("لا يمكن تقديم موافقة اللجنة العليا لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
 
+    print("request.method",request.method)
     if request.method == 'POST':
         form = HigherCommitteeApprovalForm(request.POST, request.FILES)
+        print('hi 1')
+        print('#'*50)
         if form.is_valid():
             is_approved = form.cleaned_data['is_approved']
             notes = form.cleaned_data['notes']
@@ -168,10 +171,16 @@ def higher_committee_approval(request, application_id):
         # تهيئة النموذج
         form = HigherCommitteeApprovalForm()
 
+    # عرض نسخة HTML من النموذج مباشرةً
+    from django.template.loader import render_to_string
+    form_html = form.as_p()  # استخدام as_p لعرض النموذج كفقرات
+
     context = {
         'form': form,
         'application': application,
+        'raw_form_html': form_html  # إضافة هذا إلى السياق
     }
+
     return render(request, 'applications/higher_committee_approval.html', context)
 
 

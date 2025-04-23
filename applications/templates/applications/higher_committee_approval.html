@@ -90,33 +90,57 @@
         
         <div class="col-md-4">
             <!-- نموذج موافقة اللجنة العليا -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{% trans "موافقة اللجنة العليا" %}</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <i class="fas fa-info-circle me-2"></i>
-                        {% trans "يرجى إدخال قرار اللجنة العليا بخصوص هذا الطلب. في حالة الموافقة، يجب إرفاق مستند الموافقة." %}
+            <!-- نموذج موافقة اللجنة العليا -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">{% trans "موافقة اللجنة العليا" %}</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            {% trans "يرجى إدخال قرار اللجنة العليا بخصوص هذا الطلب. في حالة الموافقة، يجب إرفاق مستند الموافقة." %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- استبدال طريقة عرض النموذج -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">{% trans "قرار اللجنة العليا:" %}</label>
+                <div class="ms-3 mb-3">
+                    <div class="form-check mb-2">
+                        <input type="radio" name="is_approved" value="yes" class="form-check-input" id="is_approved_yes" required>
+                        <label class="form-check-label" for="is_approved_yes">{% trans "موافق" %}</label>
                     </div>
-                    
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        {{ form|crispy }}
-                        
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-check-circle me-2"></i> {% trans "تسجيل قرار اللجنة العليا" %}
-                            </button>
-                            
-                            <a href="{% url 'applications:admin_applications_list' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-2"></i> {% trans "إلغاء" %}
-                            </a>
-                        </div>
-                    </form>
+                    <div class="form-check">
+                        <input type="radio" name="is_approved" value="no" class="form-check-input" id="is_approved_no" required>
+                        <label class="form-check-label" for="is_approved_no">{% trans "غير موافق" %}</label>
+                    </div>
                 </div>
             </div>
+
+            <div class="mb-4" id="attachment_group">
+                <label for="id_attachment" class="form-label fw-bold">{% trans "مرفق الموافقة:" %}</label>
+                <input type="file" name="attachment" class="form-control" id="id_attachment">
+            </div>
+
+            <div class="mb-4">
+                <label for="id_notes" class="form-label fw-bold">{% trans "ملاحظات:" %}</label>
+                <textarea name="notes" class="form-control" id="id_notes" rows="3"></textarea>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check-circle me-2"></i> {% trans "تسجيل قرار اللجنة العليا" %}
+                </button>
+
+                <a href="{% url 'applications:admin_applications_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i> {% trans "إلغاء" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -125,26 +149,24 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // إظهار/إخفاء حقل مرفق الموافقة حسب اختيار الموافقة
-        const approvalRadios = document.querySelectorAll('input[name="is_approved"]');
-        const attachmentGroup = document.getElementById('div_id_attachment').parentElement;
-        
+        const approvalYes = document.getElementById('is_approved_yes');
+        const approvalNo = document.getElementById('is_approved_no');
+        const attachmentGroup = document.getElementById('attachment_group');
+
         function updateAttachmentVisibility() {
-            const isApproved = document.querySelector('input[name="is_approved"]:checked')?.value;
-            if (isApproved === 'yes') {
+            if (approvalYes.checked) {
                 attachmentGroup.style.display = 'block';
             } else {
                 attachmentGroup.style.display = 'none';
             }
         }
-        
+
         // تنفيذ عند تحميل الصفحة
         updateAttachmentVisibility();
-        
-        // تنفيذ عند تغيير اختيار الموافقة
-        approvalRadios.forEach(radio => {
-            radio.addEventListener('change', updateAttachmentVisibility);
-        });
+
+        // تنفيذ عند تغيير الاختيار
+        approvalYes.addEventListener('change', updateAttachmentVisibility);
+        approvalNo.addEventListener('change', updateAttachmentVisibility);
     });
 </script>
 {% endblock %}
