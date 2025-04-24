@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8f9fa" />
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#0066cc">هيكلية نظام الابتعاث الإلكتروني</text>
+  
+  <!-- System Architecture Box -->
+  <rect x="50" y="80" width="700" height="480" rx="10" fill="#ffffff" stroke="#dddddd" stroke-width="2" />
+  
+  <!-- Layers -->
+  <!-- Presentation Layer -->
+  <rect x="100" y="120" width="600" height="80" rx="5" fill="#e3f2fd" stroke="#90caf9" stroke-width="2" />
+  <text x="400" y="155" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#0d47a1">واجهة المستخدم (Bootstrap + HTML/CSS/JS)</text>
+  <text x="400" y="180" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#0d47a1">واجهات تفاعلية للأدوار المختلفة + دعم العربية/الإنجليزية</text>
+  
+  <!-- Application Layer -->
+  <rect x="100" y="220" width="600" height="120" rx="5" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="2" />
+  <text x="400" y="245" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#1b5e20">Django Framework</text>
+  
+  <!-- Django Components -->
+  <rect x="130" y="260" width="170" height="60" rx="5" fill="#c8e6c9" stroke="#81c784" stroke-width="1" />
+  <text x="215" y="290" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#1b5e20">نظام التوثيق والصلاحيات</text>
+  
+  <rect x="320" y="260" width="170" height="60" rx="5" fill="#c8e6c9" stroke="#81c784" stroke-width="1" />
+  <text x="405" y="290" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#1b5e20">نظام القوالب والنماذج</text>
+  
+  <rect x="510" y="260" width="170" height="60" rx="5" fill="#c8e6c9" stroke="#81c784" stroke-width="1" />
+  <text x="595" y="290" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#1b5e20">الواجهات البرمجية (APIs)</text>
+  
+  <!-- Business Logic Layer -->
+  <rect x="100" y="360" width="600" height="100" rx="5" fill="#fff3e0" stroke="#ffcc80" stroke-width="2" />
+  <text x="400" y="385" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#e65100">منطق الأعمال</text>
+  
+  <!-- Business Modules -->
+  <rect x="130" y="395" width="110" height="50" rx="5" fill="#ffe0b2" stroke="#ffb74d" stroke-width="1" />
+  <text x="185" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#e65100">إدارة الطلبات</text>
+  
+  <rect x="255" y="395" width="110" height="50" rx="5" fill="#ffe0b2" stroke="#ffb74d" stroke-width="1" />
+  <text x="310" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#e65100">لجان التقييم</text>
+  
+  <rect x="380" y="395" width="110" height="50" rx="5" fill="#ffe0b2" stroke="#ffb74d" stroke-width="1" />
+  <text x="435" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#e65100">الإدارة المالية</text>
+  
+  <rect x="505" y="395" width="110" height="50" rx="5" fill="#ffe0b2" stroke="#ffb74d" stroke-width="1" />
+  <text x="560" y="425" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#e65100">متابعة المبتعثين</text>
+  
+  <!-- Data Layer -->
+  <rect x="100" y="480" width="600" height="60" rx="5" fill="#e0f7fa" stroke="#80deea" stroke-width="2" />
+  <text x="400" y="510" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#006064">قاعدة البيانات MySQL</text>
+</svg>
