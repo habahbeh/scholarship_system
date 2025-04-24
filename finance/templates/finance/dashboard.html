@@ -1,0 +1,173 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="dashboard-container">
+    <h2>{% trans "لوحة معلومات الشؤون المالية" %}</h2>
+    
+    <div class="dashboard-summary">
+        <div class="summary-card">
+            <div class="card-title">{% trans "إجمالي الميزانيات" %}</div>
+            <div class="card-value">{{ total_budget_amount|floatformat:2 }} {% trans "ريال" %}</div>
+            <div class="card-footer">{{ total_budgets }} {% trans "ميزانية" %}</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
+            <div class="card-value">{{ total_expense_amount|floatformat:2 }} {% trans "ريال" %}</div>
+            <div class="card-footer">{{ total_expenses }} {% trans "مصروف" %}</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="card-title">{% trans "المبلغ المتبقي" %}</div>
+            <div class="card-value">{{ total_remaining_amount|floatformat:2 }} {% trans "ريال" %}</div>
+            <div class="card-footer">{% trans "نسبة الصرف:" %} {{ spent_percentage|floatformat:1 }}%</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="card-title">{% trans "المصروفات قيد المراجعة" %}</div>
+            <div class="card-value">{{ pending_expenses }}</div>
+            <div class="card-footer">
+                <a href="{% url 'finance:expense_list' %}?status=pending">{% trans "عرض الكل" %}</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-charts">
+        <div class="chart-container">
+            <h3>{% trans "توزيع الميزانية" %}</h3>
+            <canvas id="budgetPieChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>{% trans "المصروفات الشهرية" %}</h3>
+            <canvas id="monthlyExpensesChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>{% trans "المصروفات حسب الفئة" %}</h3>
+            <canvas id="categoryExpensesChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>{% trans "حالة الميزانيات" %}</h3>
+            <canvas id="budgetStatusChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="dashboard-alerts">
+        <h3>{% trans "ميزانيات تقترب من النفاد" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "المبتعث" %}</th>
+                    <th>{% trans "إجمالي الميزانية" %}</th>
+                    <th>{% trans "المتبقي" %}</th>
+                    <th>{% trans "نسبة الصرف" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for budget in critical_budgets %}
+                <tr>
+                    <td>{{ budget.applicant }}</td>
+                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ budget.spent_percentage }}%">
+                                {{ budget.spent_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-sm btn-info">
+                            {% trans "عرض" %}
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">{% trans "لا توجد ميزانيات حرجة حالياً" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="dashboard-recent">
+        <h3>{% trans "أحدث المصروفات" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "المبتعث" %}</th>
+                    <th>{% trans "الفئة" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in latest_expenses %}
+                <tr>
+                    <td>{{ expense.budget.application.applicant.get_full_name }}</td>
+                    <td>{{ expense.category.name }}</td>
+                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ expense.date|date }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if expense.status == 'approved' %}badge-success
+                            {% elif expense.status == 'rejected' %}badge-danger
+                            {% else %}badge-warning{% endif %}">
+                            {{ expense.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-sm btn-info">
+                            {% trans "عرض" %}
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">{% trans "لا توجد مصروفات حديثة" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // طلب بيانات الرسوم البيانية من API
+    fetch('{% url "finance:api_budget_summary" %}')
+        .then(response => response.json())
+        .then(data => {
+            createBudgetPieChart(data);
+        });
+        
+    fetch('{% url "finance:api_expense_categories" %}')
+        .then(response => response.json())
+        .then(data => {
+            createCategoryExpensesChart(data);
+        });
+        
+    fetch('{% url "finance:api_monthly_expenses" %}')
+        .then(response => response.json())
+        .then(data => {
+            createMonthlyExpensesChart(data);
+        });
+        
+    fetch('{% url "finance:api_budget_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            createBudgetStatusChart(data);
+        });
+});
+</script>
+{% endblock %}
+{% endblock %}

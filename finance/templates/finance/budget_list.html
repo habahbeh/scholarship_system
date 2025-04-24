@@ -1,0 +1,126 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="budget-list-container">
+    <div class="page-header">
+        <h2>{% trans "قائمة الميزانيات" %}</h2>
+        {% if perms.finance.add_scholarshipbudget %}
+        <div class="header-actions">
+            <p>{% trans "يمكنك إضافة ميزانية جديدة من خلال صفحة تفاصيل طلب الابتعاث المعتمد" %}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="filter-section">
+        <form method="get" class="filter-form">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+                        {{ filter_form.status }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.start_date.id_for_label }}">{{ filter_form.start_date.label }}</label>
+                        {{ filter_form.start_date }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.end_date.id_for_label }}">{{ filter_form.end_date.label }}</label>
+                        {{ filter_form.end_date }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.search.id_for_label }}">{{ filter_form.search.label }}</label>
+                        {{ filter_form.search }}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.min_amount.id_for_label }}">{{ filter_form.min_amount.label }}</label>
+                        {{ filter_form.min_amount }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.max_amount.id_for_label }}">{{ filter_form.max_amount.label }}</label>
+                        {{ filter_form.max_amount }}
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">{% trans "تطبيق الفلاتر" %}</button>
+                    <a href="{% url 'finance:budget_list' %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="budget-list">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "المبتعث" %}</th>
+                    <th>{% trans "المنحة" %}</th>
+                    <th>{% trans "المبلغ الإجمالي" %}</th>
+                    <th>{% trans "المبلغ المصروف" %}</th>
+                    <th>{% trans "المبلغ المتبقي" %}</th>
+                    <th>{% trans "نسبة الصرف" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for budget in budgets %}
+                <tr>
+                    <td>{{ budget.application.applicant.get_full_name }}</td>
+                    <td>{{ budget.application.scholarship.title }}</td>
+                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}" 
+                                 role="progressbar" style="width: {{ budget.spent_percentage }}%">
+                                {{ budget.spent_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge 
+                              {% if budget.status == 'active' %}badge-success
+                              {% elif budget.status == 'suspended' %}badge-warning
+                              {% else %}badge-secondary{% endif %}">
+                            {{ budget.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            {% if perms.finance.change_scholarshipbudget %}
+                            <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-sm btn-primary">
+                                {% trans "تعديل" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">{% trans "لا توجد ميزانيات متاحة" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% include "finance/includes/pagination.html" with page_obj=budgets %}
+    </div>
+</div>
+{% endblock %}

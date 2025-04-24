@@ -1,0 +1,123 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="expense-list-container">
+    <div class="page-header">
+        <h2>{% trans "قائمة المصروفات" %}</h2>
+    </div>
+    
+    <div class="filter-section">
+        <form method="get" class="filter-form">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+                        {{ filter_form.status }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.category.id_for_label }}">{{ filter_form.category.label }}</label>
+                        {{ filter_form.category }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.start_date.id_for_label }}">{{ filter_form.start_date.label }}</label>
+                        {{ filter_form.start_date }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.end_date.id_for_label }}">{{ filter_form.end_date.label }}</label>
+                        {{ filter_form.end_date }}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.min_amount.id_for_label }}">{{ filter_form.min_amount.label }}</label>
+                        {{ filter_form.min_amount }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.max_amount.id_for_label }}">{{ filter_form.max_amount.label }}</label>
+                        {{ filter_form.max_amount }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="{{ filter_form.search.id_for_label }}">{{ filter_form.search.label }}</label>
+                        {{ filter_form.search }}
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">{% trans "تطبيق الفلاتر" %}</button>
+                    <a href="{% url 'finance:expense_list' %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="expense-list">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "المبتعث" %}</th>
+                    <th>{% trans "الفئة" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                    <th>{% trans "الوصف" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.budget.application.applicant.get_full_name }}</td>
+                    <td>{{ expense.category.name }}</td>
+                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ expense.date }}</td>
+                    <td>{{ expense.description|truncatechars:50 }}</td>
+                    <td>
+                        <span class="badge 
+                              {% if expense.status == 'approved' %}badge-success
+                              {% elif expense.status == 'rejected' %}badge-danger
+                              {% else %}badge-warning{% endif %}">
+                            {{ expense.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            {% if perms.finance.change_expense and expense.status == 'pending' %}
+                            <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-sm btn-primary">
+                                {% trans "تعديل" %}
+                            </a>
+                            {% endif %}
+                            {% if perms.finance.change_expense and expense.status == 'pending' %}
+                            <a href="{% url 'finance:approve_expense' expense.id %}" class="btn btn-sm btn-success">
+                                {% trans "موافقة/رفض" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">{% trans "لا توجد مصروفات متاحة" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        {% include "finance/includes/pagination.html" with page_obj=expenses %}
+    </div>
+</div>
+{% endblock %}

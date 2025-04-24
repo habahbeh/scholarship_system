@@ -1,0 +1,217 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="budget-form-container">
+    <div class="page-header">
+        <h2>
+            {% if is_update %}
+            {% trans "تعديل ميزانية" %}
+            {% else %}
+            {% trans "إنشاء ميزانية جديدة" %}
+            {% endif %}
+        </h2>
+    </div>
+    
+    {% if not is_update %}
+    <div class="applicant-info">
+        <h3>{% trans "معلومات المبتعث" %}</h3>
+        <div class="info-card">
+            <table class="table">
+                <tr>
+                    <th>{% trans "الاسم" %}:</th>
+                    <td>{{ application.applicant.get_full_name }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans "المنحة" %}:</th>
+                    <td>{{ application.scholarship.title }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans "الجامعة" %}:</th>
+                    <td>{{ application.university }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans "التخصص" %}:</th>
+                    <td>{{ application.major }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <form method="post" class="budget-form">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>{% trans "معلومات الميزانية الأساسية" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.total_amount.id_for_label }}" class="form-label">{{ form.total_amount.label }}</label>
+                            {{ form.total_amount }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">{{ form.start_date.label }}</label>
+                            {{ form.start_date }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">{{ form.end_date.label }}</label>
+                            {{ form.end_date }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3>{% trans "توزيع الميزانية" %}</h3>
+                <p class="text-muted">{% trans "يجب أن يساوي مجموع البنود إجمالي الميزانية" %}</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.tuition_fees.id_for_label }}" class="form-label">{{ form.tuition_fees.label }}</label>
+                            {{ form.tuition_fees }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.monthly_stipend.id_for_label }}" class="form-label">{{ form.monthly_stipend.label }}</label>
+                            {{ form.monthly_stipend }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.travel_allowance.id_for_label }}" class="form-label">{{ form.travel_allowance.label }}</label>
+                            {{ form.travel_allowance }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.health_insurance.id_for_label }}" class="form-label">{{ form.health_insurance.label }}</label>
+                            {{ form.health_insurance }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.books_allowance.id_for_label }}" class="form-label">{{ form.books_allowance.label }}</label>
+                            {{ form.books_allowance }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.research_allowance.id_for_label }}" class="form-label">{{ form.research_allowance.label }}</label>
+                            {{ form.research_allowance }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.conference_allowance.id_for_label }}" class="form-label">{{ form.conference_allowance.label }}</label>
+                            {{ form.conference_allowance }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.other_expenses.id_for_label }}" class="form-label">{{ form.other_expenses.label }}</label>
+                            {{ form.other_expenses }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3>{% trans "ملاحظات إضافية" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary">
+                {% if is_update %}
+                {% trans "حفظ التعديلات" %}
+                {% else %}
+                {% trans "إنشاء الميزانية" %}
+                {% endif %}
+            </button>
+            <a href="{% if is_update %}{% url 'finance:budget_detail' budget.id %}{% else %}{% url 'applications:application_detail' application.id %}{% endif %}" class="btn btn-secondary">
+                {% trans "إلغاء" %}
+            </a>
+        </div>
+    </form>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // حساب مجموع البنود وتحديث إجمالي الميزانية
+    const calculateTotal = () => {
+        const tuitionFees = parseFloat(document.getElementById('{{ form.tuition_fees.id_for_label }}').value) || 0;
+        const monthlyStipend = parseFloat(document.getElementById('{{ form.monthly_stipend.id_for_label }}').value) || 0;
+        const travelAllowance = parseFloat(document.getElementById('{{ form.travel_allowance.id_for_label }}').value) || 0;
+        const healthInsurance = parseFloat(document.getElementById('{{ form.health_insurance.id_for_label }}').value) || 0;
+        const booksAllowance = parseFloat(document.getElementById('{{ form.books_allowance.id_for_label }}').value) || 0;
+        const researchAllowance = parseFloat(document.getElementById('{{ form.research_allowance.id_for_label }}').value) || 0;
+        const conferenceAllowance = parseFloat(document.getElementById('{{ form.conference_allowance.id_for_label }}').value) || 0;
+        const otherExpenses = parseFloat(document.getElementById('{{ form.other_expenses.id_for_label }}').value) || 0;
+        
+        const total = tuitionFees + monthlyStipend + travelAllowance + healthInsurance + 
+                      booksAllowance + researchAllowance + conferenceAllowance + otherExpenses;
+        
+        document.getElementById('{{ form.total_amount.id_for_label }}').value = total.toFixed(2);
+    };
+    
+    // تحديث المجموع عند تغيير قيمة أي بند
+    const fields = [
+        '{{ form.tuition_fees.id_for_label }}',
+        '{{ form.monthly_stipend.id_for_label }}',
+        '{{ form.travel_allowance.id_for_label }}',
+        '{{ form.health_insurance.id_for_label }}',
+        '{{ form.books_allowance.id_for_label }}',
+        '{{ form.research_allowance.id_for_label }}',
+        '{{ form.conference_allowance.id_for_label }}',
+        '{{ form.other_expenses.id_for_label }}'
+    ];
+    
+    fields.forEach(field => {
+        document.getElementById(field).addEventListener('change', calculateTotal);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

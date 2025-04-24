@@ -1,0 +1,69 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="finance-welcome">
+    <h2>{% trans "نظام الشؤون المالية للمبتعثين" %}</h2>
+    
+    <div class="finance-stats">
+        <div class="stats-card">
+            <h3>{% trans "الميزانيات" %}</h3>
+            <p class="stats-number">{{ total_budgets }}</p>
+            <p class="stats-label">{% trans "ميزانية نشطة:" %} {{ active_budgets }}</p>
+        </div>
+        
+        <div class="stats-card">
+            <h3>{% trans "المصروفات" %}</h3>
+            <p class="stats-number">{{ total_expenses }}</p>
+            <p class="stats-label">{% trans "قيد المراجعة:" %} {{ pending_expenses }}</p>
+        </div>
+        
+        <div class="stats-card">
+            <h3>{% trans "إجمالي الميزانيات" %}</h3>
+            <p class="stats-number">{{ total_budget_amount|floatformat:2 }}</p>
+            <p class="stats-label">{% trans "ريال سعودي" %}</p>
+        </div>
+        
+        <div class="stats-card">
+            <h3>{% trans "إجمالي المصروفات" %}</h3>
+            <p class="stats-number">{{ total_expense_amount|floatformat:2 }}</p>
+            <p class="stats-label">{% trans "ريال سعودي" %}</p>
+        </div>
+    </div>
+    
+    <div class="finance-latest">
+        <div class="latest-budgets">
+            <h3>{% trans "أحدث الميزانيات" %}</h3>
+            <ul>
+                {% for budget in latest_budgets %}
+                <li>
+                    <a href="{% url 'finance:budget_detail' budget.id %}">
+                        {{ budget.application.applicant.get_full_name }} - {{ budget.total_amount }} {% trans "ريال" %}
+                    </a>
+                    <span class="budget-date">{{ budget.created_at|date }}</span>
+                </li>
+                {% empty %}
+                <li>{% trans "لا توجد ميزانيات حتى الآن" %}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="latest-expenses">
+            <h3>{% trans "أحدث المصروفات" %}</h3>
+            <ul>
+                {% for expense in latest_expenses %}
+                <li>
+                    <a href="{% url 'finance:expense_detail' expense.id %}">
+                        {{ expense.budget.application.applicant.get_full_name }} - {{ expense.amount }} {% trans "ريال" %}
+                    </a>
+                    <span class="expense-category">{{ expense.category.name }}</span>
+                    <span class="expense-date">{{ expense.date|date }}</span>
+                </li>
+                {% empty %}
+                <li>{% trans "لا توجد مصروفات حتى الآن" %}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

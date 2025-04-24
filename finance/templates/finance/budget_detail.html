@@ -1,0 +1,392 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="budget-detail-container">
+    <div class="page-header">
+        <h2>{% trans "تفاصيل ميزانية" %}</h2>
+        <div class="header-actions">
+            {% if perms.finance.change_scholarshipbudget %}
+            <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-primary">
+                {% trans "تعديل الميزانية" %}
+            </a>
+            {% endif %}
+            {% if perms.finance.delete_scholarshipbudget %}
+            <a href="{% url 'finance:delete_budget' budget.id %}" class="btn btn-danger">
+                {% trans "حذف الميزانية" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="budget-info">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات المبتعث" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "الاسم" %}:</th>
+                            <td>{{ budget.application.applicant.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المنحة" %}:</th>
+                            <td>{{ budget.application.scholarship.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "الجامعة" %}:</th>
+                            <td>{{ budget.application.university }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "التخصص" %}:</th>
+                            <td>{{ budget.application.major }}</td>
+                        </tr>
+                    </table>
+                    <a href="{% url 'applications:application_detail' budget.application.id %}" class="btn btn-sm btn-secondary">
+                        {% trans "عرض طلب الابتعاث" %}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات الميزانية" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "المبلغ الإجمالي" %}:</th>
+                            <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "تاريخ البداية" %}:</th>
+                            <td>{{ budget.start_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "تاريخ النهاية" %}:</th>
+                            <td>{{ budget.end_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "حالة الميزانية" %}:</th>
+                            <td>
+                                <span class="badge 
+                                    {% if budget.status == 'active' %}badge-success
+                                    {% elif budget.status == 'suspended' %}badge-warning
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ budget.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="budget-summary">
+            <h3>{% trans "ملخص الميزانية" %}</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <div class="card-title">{% trans "المبلغ المصروف" %}</div>
+                        <div class="card-value">{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <div class="card-title">{% trans "المبلغ المتبقي" %}</div>
+                        <div class="card-value">{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <div class="card-title">{% trans "نسبة الصرف" %}</div>
+                        <div class="card-value">
+                            <div class="progress">
+                                <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}" 
+                                     role="progressbar" style="width: {{ budget.spent_percentage }}%">
+                                    {{ budget.spent_percentage|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="budget-categories">
+            <h3>{% trans "توزيع الميزانية" %}</h3>
+            <div class="row">
+                <div class="col-md-8">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{% trans "الفئة" %}</th>
+                                <th>{% trans "المبلغ" %}</th>
+                                <th>{% trans "النسبة" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{% trans "الرسوم الدراسية" %}</td>
+                                <td>{{ budget.tuition_fees|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.tuition_fees|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "المخصص الشهري" %}</td>
+                                <td>{{ budget.monthly_stipend|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.monthly_stipend|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "بدل السفر" %}</td>
+                                <td>{{ budget.travel_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.travel_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "التأمين الصحي" %}</td>
+                                <td>{{ budget.health_insurance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.health_insurance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "بدل الكتب" %}</td>
+                                <td>{{ budget.books_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.books_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "بدل البحث العلمي" %}</td>
+                                <td>{{ budget.research_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.research_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "بدل المؤتمرات" %}</td>
+                                <td>{{ budget.conference_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.conference_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                            <tr>
+                                <td>{% trans "مصاريف أخرى" %}</td>
+                                <td>{{ budget.other_expenses|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.other_expenses|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="budgetCategoriesPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="budget-expenses">
+        <div class="section-header">
+            <h3>{% trans "المصروفات" %}</h3>
+            {% if perms.finance.add_expense and budget.status == 'active' %}
+            <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-primary">
+                {% trans "إضافة مصروف جديد" %}
+            </a>
+            {% endif %}
+        </div>
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "الفئة" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                    <th>{% trans "الوصف" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.category.name }}</td>
+                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ expense.date }}</td>
+                    <td>{{ expense.description|truncatechars:50 }}</td>
+                    <td>
+                        <span class="badge 
+                              {% if expense.status == 'approved' %}badge-success
+                              {% elif expense.status == 'rejected' %}badge-danger
+                              {% else %}badge-warning{% endif %}">
+                            {{ expense.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            {% if perms.finance.change_expense and expense.status == 'pending' %}
+                            <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-sm btn-primary">
+                                {% trans "تعديل" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">{% trans "لا توجد مصروفات مسجلة لهذه الميزانية" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="budget-adjustments">
+        <div class="section-header">
+            <h3>{% trans "تعديلات الميزانية" %}</h3>
+            {% if perms.finance.add_budgetadjustment and budget.status == 'active' %}
+            <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-primary">
+                {% trans "إضافة تعديل جديد" %}
+            </a>
+            {% endif %}
+        </div>
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "نوع التعديل" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                    <th>{% trans "السبب" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adjustment in adjustments %}
+                <tr>
+                    <td>
+                        <span class="badge 
+                              {% if adjustment.adjustment_type == 'increase' %}badge-success
+                              {% else %}badge-danger{% endif %}">
+                            {{ adjustment.get_adjustment_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ adjustment.date }}</td>
+                    <td>{{ adjustment.reason|truncatechars:50 }}</td>
+                    <td>
+                        <span class="badge 
+                              {% if adjustment.status == 'approved' %}badge-success
+                              {% elif adjustment.status == 'rejected' %}badge-danger
+                              {% else %}badge-warning{% endif %}">
+                            {{ adjustment.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:adjustment_detail' adjustment.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            {% if perms.finance.change_budgetadjustment and adjustment.status == 'pending' %}
+                            <a href="{% url 'finance:approve_adjustment' adjustment.id %}" class="btn btn-sm btn-primary">
+                                {% trans "موافقة/رفض" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">{% trans "لا توجد تعديلات مسجلة لهذه الميزانية" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="budget-logs">
+        <h3>{% trans "سجل العمليات" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "العملية" %}</th>
+                    <th>{% trans "الوصف" %}</th>
+                    <th>{% trans "بواسطة" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>
+                        <span class="badge 
+                              {% if log.action_type == 'create' %}badge-primary
+                              {% elif log.action_type == 'update' %}badge-info
+                              {% elif log.action_type == 'delete' %}badge-danger
+                              {% elif log.action_type == 'approve' %}badge-success
+                              {% else %}badge-secondary{% endif %}">
+                            {{ log.get_action_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ log.description }}</td>
+                    <td>{{ log.created_by.get_full_name }}</td>
+                    <td>{{ log.created_at }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">{% trans "لا توجد سجلات عمليات لهذه الميزانية" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // توزيع الميزانية - رسم بياني
+    var ctx = document.getElementById('budgetCategoriesPieChart').getContext('2d');
+    var budgetCategoriesPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [
+                '{% trans "الرسوم الدراسية" %}',
+                '{% trans "المخصص الشهري" %}',
+                '{% trans "بدل السفر" %}',
+                '{% trans "التأمين الصحي" %}',
+                '{% trans "بدل الكتب" %}',
+                '{% trans "بدل البحث العلمي" %}',
+                '{% trans "بدل المؤتمرات" %}',
+                '{% trans "مصاريف أخرى" %}'
+            ],
+            datasets: [{
+                data: [
+                    {{ budget.tuition_fees }},
+                    {{ budget.monthly_stipend }},
+                    {{ budget.travel_allowance }},
+                    {{ budget.health_insurance }},
+                    {{ budget.books_allowance }},
+                    {{ budget.research_allowance }},
+                    {{ budget.conference_allowance }},
+                    {{ budget.other_expenses }}
+                ],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF',
+                    '#FF9F40',
+                    '#C9CBCF',
+                    '#7C7F9E'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

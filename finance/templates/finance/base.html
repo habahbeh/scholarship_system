@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "نظام الشؤون المالية" %}{% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'finance/css/finance.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="finance-container">
+    <div class="finance-sidebar">
+        <h3>{% trans "الشؤون المالية" %}</h3>
+        <ul class="finance-menu">
+            <li><a href="{% url 'finance:home' %}">{% trans "الرئيسية" %}</a></li>
+            <li><a href="{% url 'finance:dashboard' %}">{% trans "لوحة المعلومات" %}</a></li>
+            <li><a href="{% url 'finance:budget_list' %}">{% trans "الميزانيات" %}</a></li>
+            <li><a href="{% url 'finance:expense_list' %}">{% trans "المصروفات" %}</a></li>
+            <li><a href="{% url 'finance:category_list' %}">{% trans "فئات المصروفات" %}</a></li>
+            <li><a href="{% url 'finance:report_list' %}">{% trans "التقارير المالية" %}</a></li>
+        </ul>
+    </div>
+    <div class="finance-content">
+        {% block finance_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="{% static 'finance/js/charts.js' %}"></script>
+{% endblock %}

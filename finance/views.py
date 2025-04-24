@@ -1080,3 +1080,738 @@ def export_report_excel(request, report_id):
     response['Content-Disposition'] = f'attachment; filename="{report_name}.xlsx"'
 
     return response
+
+# استكمال وظائف توليد بيانات التقارير
+
+def generate_budget_summary_data(filters):
+    """توليد بيانات تقرير ملخص الميزانية"""
+    start_date = filters.get('start_date')
+    end_date = filters.get('end_date')
+
+    # إنشاء استعلام أساسي
+    budgets_query = ScholarshipBudget.objects.all()
+
+    # تطبيق الفلاتر
+    if start_date:
+        budgets_query = budgets_query.filter(start_date__gte=start_date)
+    if end_date:
+        budgets_query = budgets_query.filter(end_date__lte=end_date)
+
+    # حساب الإجماليات
+    total_budget = budgets_query.aggregate(total=Sum('total_amount'))['total'] or 0
+
+    # حساب المصروفات لكل ميزانية
+    budgets_data = []
+    for budget in budgets_query:
+        spent_amount = budget.get_spent_amount()
+        remaining_amount = budget.get_remaining_amount()
+        spent_percentage = budget.get_spent_percentage()
+
+        budgets_data.append({
+            'id': budget.id,
+            'applicant': budget.application.applicant.get_full_name(),
+            'scholarship': budget.application.scholarship.title,
+            'total_amount': budget.total_amount,
+            'spent_amount': spent_amount,
+            'remaining_amount': remaining_amount,
+            'spent_percentage': spent_percentage,
+            'start_date': budget.start_date,
+            'end_date': budget.end_date,
+            'status': budget.get_status_display(),
+        })
+
+    # إجماليات عامة
+    total_spent = sum(item['spent_amount'] for item in budgets_data)
+    total_remaining = sum(item['remaining_amount'] for item in budgets_data)
+
+    # بيانات لرسم بياني دائري
+    pie_chart_data = [
+        {'name': _('المبلغ المصروف'), 'value': total_spent},
+        {'name': _('المبلغ المتبقي'), 'value': total_remaining},
+    ]
+
+    return {
+        'budgets': budgets_data,
+        'total_budget': total_budget,
+        'total_spent': total_spent,
+        'total_remaining': total_remaining,
+        'pie_chart_data': pie_chart_data,
+        'filters': filters,
+    }
+
+def generate_expense_summary_data(filters):
+    """توليد بيانات تقرير ملخص المصروفات"""
+    status = filters.get('status')
+    category = filters.get('category')
+    start_date = filters.get('start_date')
+    end_date = filters.get('end_date')
+
+    # إنشاء استعلام أساسي
+    expenses_query = Expense.objects.all()
+
+    # تطبيق الفلاتر
+    if status:
+        expenses_query = expenses_query.filter(status=status)
+    if category:
+        expenses_query = expenses_query.filter(category_id=category)
+    if start_date:
+        expenses_query = expenses_query.filter(date__gte=start_date)
+    if end_date:
+        expenses_query = expenses_query.filter(date__lte=end_date)
+
+    # حساب الإجماليات
+    total_amount = expenses_query.aggregate(total=Sum('amount'))['total'] or 0
+
+    # جمع البيانات عن المصروفات
+    expenses_data = []
+    for expense in expenses_query.select_related('budget__application__applicant', 'category'):
+        expenses_data.append({
+            'id': expense.id,
+            'applicant': expense.budget.application.applicant.get_full_name(),
+            'category': expense.category.name,
+            'amount': expense.amount,
+            'date': expense.date,
+            'status': expense.get_status_display(),
+            'description': expense.description,
+        })
+
+    # تجميع المصروفات حسب الفئة
+    expenses_by_category = expenses_query.values('category__name').annotate(
+        total=Sum('amount')
+    ).order_by('-total')
+
+    # تجميع المصروفات حسب الحالة
+    expenses_by_status = expenses_query.values('status').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('status')
+
+    # تحويل المصروفات حسب الحالة إلى تنسيق مناسب للرسم البياني
+    status_chart_data = []
+    for item in expenses_by_status:
+        status_display = dict(Expense.STATUS_CHOICES).get(item['status'])
+        status_chart_data.append({
+            'name': status_display,
+            'value': float(item['total']),
+            'count': item['count'],
+        })
+
+    return {
+        'expenses': expenses_data,
+        'total_amount': total_amount,
+        'expenses_by_category': expenses_by_category,
+        'status_chart_data': status_chart_data,
+        'filters': filters,
+    }
+
+def generate_monthly_expenses_data(filters):
+    """توليد بيانات تقرير المصروفات الشهرية"""
+    year = int(filters.get('year', timezone.now().year))
+
+    # الحصول على المصروفات في العام المحدد
+    expenses = Expense.objects.filter(
+        date__year=year,
+        status='approved'
+    ).annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        total=Sum('amount')
+    ).order_by('month')
+
+    # تجهيز بيانات شهرية كاملة (مع إضافة الأشهر بدون مصروفات)
+    monthly_data = []
+    for month in range(1, 13):
+        month_date = datetime.date(year, month, 1)
+        month_name = month_date.strftime('%B')  # اسم الشهر
+
+        # البحث عن المصروفات في هذا الشهر
+        month_expense = next(
+            (item for item in expenses if item['month'].month == month),
+            {'total': 0}
+        )
+
+        monthly_data.append({
+            'month': month_name,
+            'month_number': month,
+            'total': month_expense['total'],
+        })
+
+    # حساب إجمالي المصروفات للعام
+    total_year_expenses = sum(item['total'] for item in monthly_data)
+
+    # حساب المتوسط الشهري
+    monthly_average = total_year_expenses / 12 if total_year_expenses > 0 else 0
+
+    return {
+        'monthly_data': monthly_data,
+        'total_year_expenses': total_year_expenses,
+        'monthly_average': monthly_average,
+        'year': year,
+    }
+
+def generate_category_expenses_data(filters):
+    """توليد بيانات تقرير المصروفات حسب الفئة"""
+    start_date = filters.get('start_date')
+    end_date = filters.get('end_date')
+
+    # إنشاء استعلام أساسي
+    expenses_query = Expense.objects.filter(status='approved')
+
+    # تطبيق الفلاتر
+    if start_date:
+        expenses_query = expenses_query.filter(date__gte=start_date)
+    if end_date:
+        expenses_query = expenses_query.filter(date__lte=end_date)
+
+    # تجميع المصروفات حسب الفئة
+    category_data = expenses_query.values('category__name').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-total')
+
+    # حساب الإجمالي
+    total_amount = sum(item['total'] for item in category_data)
+
+    # إضافة النسبة المئوية لكل فئة
+    for item in category_data:
+        item['percentage'] = (item['total'] / total_amount * 100) if total_amount > 0 else 0
+
+    # تحويل البيانات لتنسيق مناسب للرسم البياني
+    chart_data = [
+        {
+            'name': item['category__name'],
+            'value': float(item['total']),
+            'percentage': float(item['percentage']),
+        }
+        for item in category_data
+    ]
+
+    return {
+        'category_data': category_data,
+        'total_amount': total_amount,
+        'chart_data': chart_data,
+        'filters': filters,
+    }
+
+def generate_budget_comparison_data(filters):
+    """توليد بيانات تقرير مقارنة الميزانيات"""
+    # الحصول على جميع الميزانيات النشطة
+    budgets = ScholarshipBudget.objects.filter(status='active')
+
+    comparison_data = []
+    for budget in budgets:
+        # حساب مبالغ الميزانية والمصروفات لكل فئة
+        tuition_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='رسوم دراسية',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        monthly_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='مخصص شهري',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        travel_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='سفر',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        health_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='تأمين صحي',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        books_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='كتب',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        research_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='بحث',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        conference_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='مؤتمر',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        other_expenses = Expense.objects.filter(
+            budget=budget,
+            category__name__icontains='أخرى',
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        comparison_data.append({
+            'id': budget.id,
+            'applicant': budget.application.applicant.get_full_name(),
+            'tuition': {
+                'budget': budget.tuition_fees,
+                'spent': tuition_expenses,
+                'remaining': budget.tuition_fees - tuition_expenses,
+                'percentage': (tuition_expenses / budget.tuition_fees * 100) if budget.tuition_fees > 0 else 0,
+            },
+            'monthly': {
+                'budget': budget.monthly_stipend,
+                'spent': monthly_expenses,
+                'remaining': budget.monthly_stipend - monthly_expenses,
+                'percentage': (monthly_expenses / budget.monthly_stipend * 100) if budget.monthly_stipend > 0 else 0,
+            },
+            'travel': {
+                'budget': budget.travel_allowance,
+                'spent': travel_expenses,
+                'remaining': budget.travel_allowance - travel_expenses,
+                'percentage': (travel_expenses / budget.travel_allowance * 100) if budget.travel_allowance > 0 else 0,
+            },
+            'health': {
+                'budget': budget.health_insurance,
+                'spent': health_expenses,
+                'remaining': budget.health_insurance - health_expenses,
+                'percentage': (health_expenses / budget.health_insurance * 100) if budget.health_insurance > 0 else 0,
+            },
+            'books': {
+                'budget': budget.books_allowance,
+                'spent': books_expenses,
+                'remaining': budget.books_allowance - books_expenses,
+                'percentage': (books_expenses / budget.books_allowance * 100) if budget.books_allowance > 0 else 0,
+            },
+            'research': {
+                'budget': budget.research_allowance,
+                'spent': research_expenses,
+                'remaining': budget.research_allowance - research_expenses,
+                'percentage': (research_expenses / budget.research_allowance * 100) if budget.research_allowance > 0 else 0,
+            },
+            'conference': {
+                'budget': budget.conference_allowance,
+                'spent': conference_expenses,
+                'remaining': budget.conference_allowance - conference_expenses,
+                'percentage': (conference_expenses / budget.conference_allowance * 100) if budget.conference_allowance > 0 else 0,
+            },
+            'other': {
+                'budget': budget.other_expenses,
+                'spent': other_expenses,
+                'remaining': budget.other_expenses - other_expenses,
+                'percentage': (other_expenses / budget.other_expenses * 100) if budget.other_expenses > 0 else 0,
+            },
+        })
+
+    return {
+        'comparison_data': comparison_data,
+        'categories': [
+            {'key': 'tuition', 'name': _('الرسوم الدراسية')},
+            {'key': 'monthly', 'name': _('المخصص الشهري')},
+            {'key': 'travel', 'name': _('بدل السفر')},
+            {'key': 'health', 'name': _('التأمين الصحي')},
+            {'key': 'books', 'name': _('بدل الكتب')},
+            {'key': 'research', 'name': _('بدل البحث العلمي')},
+            {'key': 'conference', 'name': _('بدل المؤتمرات')},
+            {'key': 'other', 'name': _('مصاريف أخرى')},
+        ],
+    }
+
+# وظائف تصدير التقارير إلى Excel
+
+def export_budget_summary_excel(worksheet, data, header_format, cell_format, date_format, money_format):
+    """تصدير تقرير ملخص الميزانية إلى Excel"""
+    # كتابة العناوين
+    headers = [
+        _("المتقدم"), _("المنحة"), _("المبلغ الإجمالي"), _("المبلغ المصروف"),
+        _("المبلغ المتبقي"), _("نسبة الصرف"), _("تاريخ البداية"), _("تاريخ النهاية"), _("الحالة")
+    ]
+
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header, header_format)
+        worksheet.set_column(col, col, 18)  # تعيين عرض العمود
+
+    # كتابة البيانات
+    for row, budget in enumerate(data['budgets']):
+        worksheet.write(row + 1, 0, budget['applicant'], cell_format)
+        worksheet.write(row + 1, 1, budget['scholarship'], cell_format)
+        worksheet.write(row + 1, 2, budget['total_amount'], money_format)
+        worksheet.write(row + 1, 3, budget['spent_amount'], money_format)
+        worksheet.write(row + 1, 4, budget['remaining_amount'], money_format)
+        worksheet.write(row + 1, 5, f"{budget['spent_percentage']:.2f}%", cell_format)
+        worksheet.write(row + 1, 6, budget['start_date'], date_format)
+        worksheet.write(row + 1, 7, budget['end_date'], date_format)
+        worksheet.write(row + 1, 8, budget['status'], cell_format)
+
+    # كتابة الإجماليات
+    row_total = len(data['budgets']) + 2
+    worksheet.write(row_total, 0, _("الإجمالي"), header_format)
+    worksheet.write(row_total, 2, data['total_budget'], money_format)
+    worksheet.write(row_total, 3, data['total_spent'], money_format)
+    worksheet.write(row_total, 4, data['total_remaining'], money_format)
+
+
+def export_expense_summary_excel(worksheet, data, header_format, cell_format, date_format, money_format):
+    """تصدير تقرير ملخص المصروفات إلى Excel"""
+    # كتابة العناوين
+    headers = [
+        _("المتقدم"), _("الفئة"), _("المبلغ"), _("التاريخ"), _("الحالة"), _("الوصف")
+    ]
+
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header, header_format)
+        worksheet.set_column(col, col, 18)  # تعيين عرض العمود
+
+    # وصف أطول للوصف
+    worksheet.set_column(5, 5, 40)
+
+    # كتابة البيانات
+    for row, expense in enumerate(data['expenses']):
+        worksheet.write(row + 1, 0, expense['applicant'], cell_format)
+        worksheet.write(row + 1, 1, expense['category'], cell_format)
+        worksheet.write(row + 1, 2, expense['amount'], money_format)
+        worksheet.write(row + 1, 3, expense['date'], date_format)
+        worksheet.write(row + 1, 4, expense['status'], cell_format)
+        worksheet.write(row + 1, 5, expense['description'], cell_format)
+
+    # كتابة الإجماليات
+    row_total = len(data['expenses']) + 2
+    worksheet.write(row_total, 0, _("الإجمالي"), header_format)
+    worksheet.write(row_total, 2, data['total_amount'], money_format)
+
+    # كتابة المصروفات حسب الفئة
+    row_category = row_total + 2
+    worksheet.write(row_category, 0, _("المصروفات حسب الفئة"), header_format)
+    worksheet.write(row_category, 1, _("المبلغ"), header_format)
+
+    for i, category in enumerate(data['expenses_by_category']):
+        worksheet.write(row_category + i + 1, 0, category['category__name'], cell_format)
+        worksheet.write(row_category + i + 1, 1, category['total'], money_format)
+
+
+def export_monthly_expenses_excel(worksheet, data, header_format, cell_format, money_format):
+    """تصدير تقرير المصروفات الشهرية إلى Excel"""
+    # كتابة العناوين
+    headers = [_("الشهر"), _("المبلغ")]
+
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header, header_format)
+        worksheet.set_column(col, col, 18)  # تعيين عرض العمود
+
+    # كتابة البيانات
+    for row, month_data in enumerate(data['monthly_data']):
+        worksheet.write(row + 1, 0, month_data['month'], cell_format)
+        worksheet.write(row + 1, 1, month_data['total'], money_format)
+
+    # كتابة الإجماليات
+    row_total = len(data['monthly_data']) + 2
+    worksheet.write(row_total, 0, _("الإجمالي السنوي"), header_format)
+    worksheet.write(row_total, 1, data['total_year_expenses'], money_format)
+
+    worksheet.write(row_total + 1, 0, _("المتوسط الشهري"), header_format)
+    worksheet.write(row_total + 1, 1, data['monthly_average'], money_format)
+
+
+def export_category_expenses_excel(worksheet, data, header_format, cell_format, money_format):
+    """تصدير تقرير المصروفات حسب الفئة إلى Excel"""
+    # كتابة العناوين
+    headers = [_("الفئة"), _("المبلغ"), _("عدد المصروفات"), _("النسبة المئوية")]
+
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header, header_format)
+        worksheet.set_column(col, col, 18)  # تعيين عرض العمود
+
+    # كتابة البيانات
+    for row, category in enumerate(data['category_data']):
+        worksheet.write(row + 1, 0, category['category__name'], cell_format)
+        worksheet.write(row + 1, 1, category['total'], money_format)
+        worksheet.write(row + 1, 2, category['count'], cell_format)
+        worksheet.write(row + 1, 3, f"{category['percentage']:.2f}%", cell_format)
+
+    # كتابة الإجمالي
+    row_total = len(data['category_data']) + 2
+    worksheet.write(row_total, 0, _("الإجمالي"), header_format)
+    worksheet.write(row_total, 1, data['total_amount'], money_format)
+
+
+def export_budget_comparison_excel(worksheet, data, header_format, cell_format, money_format):
+    """تصدير تقرير مقارنة الميزانيات إلى Excel"""
+    # كتابة اسم المتقدم في العمود الأول
+    worksheet.write(0, 0, _("المتقدم"), header_format)
+    worksheet.set_column(0, 0, 20)  # تعيين عرض العمود
+
+    # كتابة أسماء الفئات كعناوين أعمدة
+    for col, category in enumerate(data['categories']):
+        worksheet.write(0, col + 1, category['name'], header_format)
+        worksheet.set_column(col + 1, col + 1, 18)  # تعيين عرض العمود
+
+    # كتابة بيانات كل متقدم
+    for row, budget in enumerate(data['comparison_data']):
+        worksheet.write(row + 1, 0, budget['applicant'], cell_format)
+
+        # كتابة قيم كل فئة
+        for col, category in enumerate(data['categories']):
+            key = category['key']
+            value = f"{budget[key]['spent']} / {budget[key]['budget']} ({budget[key]['percentage']:.1f}%)"
+            worksheet.write(row + 1, col + 1, value, cell_format)
+
+
+# إضافة وظائف التقارير المحددة مسبقاً
+
+@login_required
+@permission_required('finance.view_financialreport', raise_exception=True)
+def budget_summary_report(request):
+    """تقرير ملخص الميزانية"""
+    if request.method == 'POST':
+        form = DateRangeForm(request.POST)
+        if form.is_valid():
+            filters = {
+                'start_date': form.cleaned_data['start_date'],
+                'end_date': form.cleaned_data['end_date'],
+            }
+            report_data = generate_budget_summary_data(filters)
+        else:
+            report_data = generate_budget_summary_data({})
+    else:
+        form = DateRangeForm()
+        report_data = generate_budget_summary_data({})
+
+    context = {
+        'form': form,
+        'report_data': report_data,
+        'report_type': 'budget_summary',
+        'report_title': _('تقرير ملخص الميزانية'),
+    }
+    return render(request, 'finance/reports/budget_summary.html', context)
+
+
+@login_required
+@permission_required('finance.view_financialreport', raise_exception=True)
+def expense_summary_report(request):
+    """تقرير ملخص المصروفات"""
+    if request.method == 'POST':
+        form = ExpenseFilterForm(request.POST)
+        if form.is_valid():
+            filters = {
+                'status': form.cleaned_data['status'],
+                'category': form.cleaned_data['category'].id if form.cleaned_data['category'] else None,
+                'start_date': form.cleaned_data['start_date'],
+                'end_date': form.cleaned_data['end_date'],
+            }
+            report_data = generate_expense_summary_data(filters)
+        else:
+            report_data = generate_expense_summary_data({})
+    else:
+        form = ExpenseFilterForm()
+        report_data = generate_expense_summary_data({})
+
+    context = {
+        'form': form,
+        'report_data': report_data,
+        'report_type': 'expense_summary',
+        'report_title': _('تقرير ملخص المصروفات'),
+    }
+    return render(request, 'finance/reports/expense_summary.html', context)
+
+
+@login_required
+@permission_required('finance.view_financialreport', raise_exception=True)
+def monthly_expenses_report(request):
+    """تقرير المصروفات الشهرية"""
+    years = list(range(timezone.now().year - 5, timezone.now().year + 1))
+
+    if request.method == 'POST':
+        year = request.POST.get('year', timezone.now().year)
+        filters = {'year': year}
+        report_data = generate_monthly_expenses_data(filters)
+    else:
+        year = timezone.now().year
+        filters = {'year': year}
+        report_data = generate_monthly_expenses_data(filters)
+
+    context = {
+        'years': years,
+        'selected_year': int(year),
+        'report_data': report_data,
+        'report_type': 'monthly_expenses',
+        'report_title': _('تقرير المصروفات الشهرية'),
+    }
+    return render(request, 'finance/reports/monthly_expenses.html', context)
+
+
+@login_required
+@permission_required('finance.view_financialreport', raise_exception=True)
+def category_expenses_report(request):
+    """تقرير المصروفات حسب الفئة"""
+    if request.method == 'POST':
+        form = DateRangeForm(request.POST)
+        if form.is_valid():
+            filters = {
+                'start_date': form.cleaned_data['start_date'],
+                'end_date': form.cleaned_data['end_date'],
+            }
+            report_data = generate_category_expenses_data(filters)
+        else:
+            report_data = generate_category_expenses_data({})
+    else:
+        form = DateRangeForm()
+        report_data = generate_category_expenses_data({})
+
+    context = {
+        'form': form,
+        'report_data': report_data,
+        'report_type': 'category_expenses',
+        'report_title': _('تقرير المصروفات حسب الفئة'),
+    }
+    return render(request, 'finance/reports/category_expenses.html', context)
+
+
+# لوحة القيادة المالية
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def finance_dashboard(request):
+    """لوحة معلومات الشؤون المالية"""
+    # إحصائيات عامة
+    total_budgets = ScholarshipBudget.objects.count()
+    active_budgets = ScholarshipBudget.objects.filter(status='active').count()
+    total_expenses = Expense.objects.count()
+    pending_expenses = Expense.objects.filter(status='pending').count()
+
+    # إجمالي الميزانيات والمصروفات
+    total_budget_amount = ScholarshipBudget.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    total_expense_amount = Expense.objects.filter(status='approved').aggregate(total=Sum('amount'))['total'] or 0
+    total_remaining_amount = total_budget_amount - total_expense_amount
+
+    # حساب المصروفات الشهرية للسنة الحالية
+    current_year = timezone.now().year
+    monthly_expenses = generate_monthly_expenses_data({'year': current_year})
+
+    # الحصول على أحدث المصروفات
+    latest_expenses = Expense.objects.all().order_by('-date')[:10]
+
+    # الحصول على الميزانيات التي تقترب من النفاد
+    critical_budgets = []
+    for budget in ScholarshipBudget.objects.filter(status='active'):
+        spent_percentage = budget.get_spent_percentage()
+        if spent_percentage > 80:  # أكثر من 80% تم استهلاكه
+            critical_budgets.append({
+                'id': budget.id,
+                'applicant': budget.application.applicant.get_full_name(),
+                'total_amount': budget.total_amount,
+                'remaining_amount': budget.get_remaining_amount(),
+                'spent_percentage': spent_percentage,
+            })
+
+    context = {
+        'total_budgets': total_budgets,
+        'active_budgets': active_budgets,
+        'total_expenses': total_expenses,
+        'pending_expenses': pending_expenses,
+        'total_budget_amount': total_budget_amount,
+        'total_expense_amount': total_expense_amount,
+        'total_remaining_amount': total_remaining_amount,
+        'spent_percentage': (total_expense_amount / total_budget_amount * 100) if total_budget_amount > 0 else 0,
+        'monthly_expenses': monthly_expenses,
+        'latest_expenses': latest_expenses,
+        'critical_budgets': critical_budgets,
+    }
+    return render(request, 'finance/dashboard.html', context)
+
+
+# API للرسوم البيانية
+
+@login_required
+def api_budget_summary(request):
+    """API لبيانات ملخص الميزانية"""
+    # حساب إجماليات الميزانية والمصروفات
+    total_budget = ScholarshipBudget.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    total_spent = Expense.objects.filter(status='approved').aggregate(total=Sum('amount'))['total'] or 0
+    total_remaining = total_budget - total_spent
+
+    # بيانات الرسم البياني
+    pie_data = [
+        {'name': _('المبلغ المصروف'), 'value': float(total_spent)},
+        {'name': _('المبلغ المتبقي'), 'value': float(total_remaining)},
+    ]
+
+    return JsonResponse({
+        'pie_data': pie_data,
+        'total_budget': float(total_budget),
+        'total_spent': float(total_spent),
+        'total_remaining': float(total_remaining),
+    })
+
+
+@login_required
+def api_expense_categories(request):
+    """API لبيانات المصروفات حسب الفئة"""
+    # تجميع المصروفات حسب الفئة
+    expenses_by_category = Expense.objects.filter(status='approved').values(
+        'category__name'
+    ).annotate(
+        total=Sum('amount')
+    ).order_by('-total')
+
+    # تحويل البيانات لتنسيق مناسب للرسم البياني
+    category_data = [
+        {'name': item['category__name'], 'value': float(item['total'])}
+        for item in expenses_by_category
+    ]
+
+    return JsonResponse({'data': category_data})
+
+
+@login_required
+def api_monthly_expenses(request):
+    """API لبيانات المصروفات الشهرية"""
+    year = request.GET.get('year', timezone.now().year)
+
+    # الحصول على المصروفات الشهرية
+    expenses = Expense.objects.filter(
+        date__year=year,
+        status='approved'
+    ).annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        total=Sum('amount')
+    ).order_by('month')
+
+    # تجهيز بيانات شهرية كاملة
+    monthly_data = []
+    for month in range(1, 13):
+        month_date = datetime.date(int(year), month, 1)
+        month_name = month_date.strftime('%B')  # اسم الشهر
+
+        # البحث عن المصروفات في هذا الشهر
+        month_expense = next(
+            (item for item in expenses if item['month'].month == month),
+            {'total': 0}
+        )
+
+        monthly_data.append({
+            'month': month_name,
+            'value': float(month_expense['total']),
+        })
+
+    return JsonResponse({'data': monthly_data})
+
+
+@login_required
+def api_budget_status(request):
+    """API لبيانات حالة الميزانيات"""
+    # عدد الميزانيات حسب الحالة
+    budgets_by_status = ScholarshipBudget.objects.values(
+        'status'
+    ).annotate(
+        count=Count('id')
+    )
+
+    # تحويل البيانات لتنسيق مناسب للرسم البياني
+    status_data = []
+    for item in budgets_by_status:
+        status_display = dict(ScholarshipBudget.STATUS_CHOICES).get(item['status'])
+        status_data.append({
+            'name': status_display,
+            'value': item['count'],
+        })
+
+    return JsonResponse({'data': status_data})

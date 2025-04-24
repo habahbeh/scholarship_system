@@ -1,0 +1,59 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="delete-confirm-container">
+    <div class="page-header">
+        <h2>{% trans "تأكيد حذف الميزانية" %}</h2>
+    </div>
+    
+    <div class="alert alert-danger">
+        <p>
+            {% trans "هل أنت متأكد من رغبتك في حذف ميزانية المبتعث" %}
+            <strong>{{ budget.application.applicant.get_full_name }}</strong>
+            {% trans "بقيمة" %}
+            <strong>{{ budget.total_amount|floatformat:2 }}</strong>
+            {% trans "ريال؟" %}
+        </p>
+        <p>{% trans "هذا الإجراء غير قابل للتراجع عنه." %}</p>
+    </div>
+    
+    <div class="budget-info">
+        <h3>{% trans "معلومات الميزانية" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "المبتعث" %}:</th>
+                <td>{{ budget.application.applicant.get_full_name }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "المنحة" %}:</th>
+                <td>{{ budget.application.scholarship.title }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "المبلغ الإجمالي" %}:</th>
+                <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+            </tr>
+            <tr>
+                <th>{% trans "تاريخ البداية" %}:</th>
+                <td>{{ budget.start_date }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "تاريخ النهاية" %}:</th>
+                <td>{{ budget.end_date }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "المصروفات المسجلة" %}:</th>
+                <td>{{ budget.expenses.count }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <form method="post" class="delete-form">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">{% trans "نعم، احذف الميزانية" %}</button>
+            <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
