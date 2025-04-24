@@ -1,10 +1,150 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="report-list-container">
+    <div class="page-header">
+        <h2>{% trans "قائمة التقارير المالية" %}</h2>
+        <div class="header-actions">
+            {% if perms.finance.add_financialreport %}
+            <a href="{% url 'finance:create_report' %}" class="btn btn-primary">
+                {% trans "إنشاء تقرير جديد" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="report-quick-access">
+        <h3>{% trans "تقارير سريعة" %}</h3>
+        <div class="quick-reports">
+            <a href="{% url 'finance:budget_summary_report' %}" class="quick-report-card">
+                <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="card-title">{% trans "ملخص الميزانية" %}</div>
+            </a>
+            <a href="{% url 'finance:expense_summary_report' %}" class="quick-report-card">
+                <div class="card-icon"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="card-title">{% trans "ملخص المصروفات" %}</div>
+            </a>
+            <a href="{% url 'finance:monthly_expenses_report' %}" class="quick-report-card">
+                <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
+                <div class="card-title">{% trans "المصروفات الشهرية" %}</div>
+            </a>
+            <a href="{% url 'finance:category_expenses_report' %}" class="quick-report-card">
+                <div class="card-icon"><i class="fas fa-tags"></i></div>
+                <div class="card-title">{% trans "المصروفات حسب الفئة" %}</div>
+            </a>
+        </div>
+    </div>
+    
+    {% if user_reports %}
+    <div class="user-reports">
+        <h3>{% trans "التقارير الخاصة بك" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "عنوان التقرير" %}</th>
+                    <th>{% trans "نوع التقرير" %}</th>
+                    <th>{% trans "تاريخ الإنشاء" %}</th>
+                    <th>{% trans "متاح للجميع" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in user_reports %}
+                <tr>
+                    <td>{{ report.title }}</td>
+                    <td>{{ report.get_report_type_display }}</td>
+                    <td>{{ report.created_at|date }}</td>
+                    <td>
+                        {% if report.is_public %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                        <i class="fas fa-times-circle text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:report_detail' report.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            {% if perms.finance.change_financialreport %}
+                            <a href="{% url 'finance:update_report' report.id %}" class="btn btn-sm btn-primary">
+                                {% trans "تعديل" %}
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'finance:export_report_pdf' report.id %}" class="btn btn-sm btn-secondary">
+                                {% trans "PDF" %}
+                            </a>
+                            <a href="{% url 'finance:export_report_excel' report.id %}" class="btn btn-sm btn-success">
+                                {% trans "Excel" %}
+                            </a>
+                            {% if perms.finance.delete_financialreport %}
+                            <a href="{% url 'finance:delete_report' report.id %}" class="btn btn-sm btn-danger">
+                                {% trans "حذف" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if public_reports %}
+    <div class="public-reports">
+        <h3>{% trans "التقارير العامة" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "عنوان التقرير" %}</th>
+                    <th>{% trans "نوع التقرير" %}</th>
+                    <th>{% trans "تاريخ الإنشاء" %}</th>
+                    <th>{% trans "تم الإنشاء بواسطة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in public_reports %}
+                <tr>
+                    <td>{{ report.title }}</td>
+                    <td>{{ report.get_report_type_display }}</td>
+                    <td>{{ report.created_at|date }}</td>
+                    <td>{{ report.created_by.get_full_name }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:report_detail' report.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            <a href="{% url 'finance:export_report_pdf' report.id %}" class="btn btn-sm btn-secondary">
+                                {% trans "PDF" %}
+                            </a>
+                            <a href="{% url 'finance:export_report_excel' report.id %}" class="btn btn-sm btn-success">
+                                {% trans "Excel" %}
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if not user_reports and not public_reports %}
+    <div class="no-reports alert alert-info">
+        <p>{% trans "لا توجد تقارير متاحة. قم بإنشاء تقرير جديد باستخدام الزر أعلاه." %}</p>
+    </div>
+    {% endif %}
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // يمكن إضافة أكواد JavaScript هنا للتفاعل مع صفحة التقارير
+    });
+</script>
+{% endblock %}
+{% endblock %}

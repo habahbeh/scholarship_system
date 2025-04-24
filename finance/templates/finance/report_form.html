@@ -1,10 +1,236 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="report-form-container">
+    <div class="page-header">
+        <h2>
+            {% if is_update %}
+            {% trans "تعديل تقرير" %}
+            {% else %}
+            {% trans "إنشاء تقرير جديد" %}
+            {% endif %}
+        </h2>
+    </div>
+    
+    <form method="post" class="report-form">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>{% trans "معلومات التقرير" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.report_type.id_for_label }}" class="form-label">{{ form.report_type.label }}</label>
+                            {{ form.report_type }}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                </div>
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.is_public }}
+                        <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                            {{ form.is_public.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="report-filters card mt-4">
+            <div class="card-header">
+                <h3>{% trans "فلاتر التقرير" %}</h3>
+            </div>
+            <div class="card-body">
+                <!-- قسم فلاتر تقرير ملخص الميزانية -->
+                <div id="budget_summary_filters" class="report-filter-section">
+                    <h4>{% trans "فلاتر ملخص الميزانية" %}</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="start_date" class="form-label">{% trans "تاريخ البداية" %}</label>
+                                {{ date_range_form.start_date }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="end_date" class="form-label">{% trans "تاريخ النهاية" %}</label>
+                                {{ date_range_form.end_date }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قسم فلاتر تقرير ملخص المصروفات -->
+                <div id="expense_summary_filters" class="report-filter-section">
+                    <h4>{% trans "فلاتر ملخص المصروفات" %}</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ expense_filter_form.status.id_for_label }}" class="form-label">{{ expense_filter_form.status.label }}</label>
+                                {{ expense_filter_form.status }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ expense_filter_form.category.id_for_label }}" class="form-label">{{ expense_filter_form.category.label }}</label>
+                                {{ expense_filter_form.category }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ expense_filter_form.start_date.id_for_label }}" class="form-label">{{ expense_filter_form.start_date.label }}</label>
+                                {{ expense_filter_form.start_date }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ expense_filter_form.end_date.id_for_label }}" class="form-label">{{ expense_filter_form.end_date.label }}</label>
+                                {{ expense_filter_form.end_date }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قسم فلاتر تقرير المصروفات الشهرية -->
+                <div id="monthly_expenses_filters" class="report-filter-section">
+                    <h4>{% trans "فلاتر المصروفات الشهرية" %}</h4>
+                    <div class="form-group">
+                        <label for="year" class="form-label">{% trans "السنة" %}</label>
+                        <select name="year" id="year" class="form-control">
+                            {% for year in years %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- قسم فلاتر تقرير المصروفات حسب الفئة -->
+                <div id="category_expenses_filters" class="report-filter-section">
+                    <h4>{% trans "فلاتر المصروفات حسب الفئة" %}</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="start_date" class="form-label">{% trans "تاريخ البداية" %}</label>
+                                {{ date_range_form.start_date }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="end_date" class="form-label">{% trans "تاريخ النهاية" %}</label>
+                                {{ date_range_form.end_date }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- قسم فلاتر تقرير مقارنة الميزانيات -->
+                <div id="budget_comparison_filters" class="report-filter-section">
+                    <h4>{% trans "فلاتر مقارنة الميزانيات" %}</h4>
+                    <p class="text-muted">{% trans "لا توجد فلاتر مطلوبة لهذا النوع من التقارير" %}</p>
+                </div>
+                
+                <!-- قسم فلاتر التقرير المخصص -->
+                <div id="custom_filters" class="report-filter-section">
+                    <h4>{% trans "فلاتر التقرير المخصص" %}</h4>
+                    <p class="text-muted">{% trans "يمكنك تخصيص فلاتر هذا التقرير بعد إنشائه" %}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary">
+                {% if is_update %}
+                {% trans "حفظ التعديلات" %}
+                {% else %}
+                {% trans "إنشاء التقرير" %}
+                {% endif %}
+            </button>
+            <a href="{% if is_update %}{% url 'finance:report_detail' report.id %}{% else %}{% url 'finance:report_list' %}{% endif %}" class="btn btn-secondary">
+                {% trans "إلغاء" %}
+            </a>
+        </div>
+    </form>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // إخفاء جميع أقسام الفلاتر في البداية
+    const filterSections = document.querySelectorAll('.report-filter-section');
+    filterSections.forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // إظهار قسم الفلاتر المناسب عند تغيير نوع التقرير
+    const reportTypeSelect = document.getElementById('{{ form.report_type.id_for_label }}');
+    
+    // عرض القسم المناسب عند تحميل الصفحة
+    showRelevantFilterSection(reportTypeSelect.value);
+    
+    // إضافة مستمع حدث لتغيير نوع التقرير
+    reportTypeSelect.addEventListener('change', function() {
+        showRelevantFilterSection(this.value);
+    });
+    
+    function showRelevantFilterSection(reportType) {
+        // إخفاء جميع الأقسام
+        filterSections.forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // إظهار القسم المناسب
+        switch(reportType) {
+            case 'budget_summary':
+                document.getElementById('budget_summary_filters').style.display = 'block';
+                break;
+            case 'expense_summary':
+                document.getElementById('expense_summary_filters').style.display = 'block';
+                break;
+            case 'monthly_expenses':
+                document.getElementById('monthly_expenses_filters').style.display = 'block';
+                break;
+            case 'category_expenses':
+                document.getElementById('category_expenses_filters').style.display = 'block';
+                break;
+            case 'budget_comparison':
+                document.getElementById('budget_comparison_filters').style.display = 'block';
+                break;
+            case 'custom':
+                document.getElementById('custom_filters').style.display = 'block';
+                break;
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

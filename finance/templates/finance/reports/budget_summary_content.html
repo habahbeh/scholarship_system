@@ -1,0 +1,113 @@
+<div class="budget-summary-report">
+    <div class="summary-statistics">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي الميزانيات" %}</div>
+                    <div class="card-value">{{ report_data.total_budget|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "المبلغ المصروف" %}</div>
+                    <div class="card-value">{{ report_data.total_spent|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "المبلغ المتبقي" %}</div>
+                    <div class="card-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="budget-chart">
+        <h4>{% trans "توزيع الميزانيات" %}</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <canvas id="budgetPieChart"></canvas>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>{% trans "البند" %}</th>
+                            <th>{% trans "المبلغ" %}</th>
+                            <th>{% trans "النسبة" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in report_data.pie_chart_data %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.value|floatformat:2 }} {% trans "ريال" %}</td>
+                            <td>{{ item.value|div:report_data.total_budget|mul:100|floatformat:1 }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="budget-details">
+        <h4>{% trans "تفاصيل الميزانيات" %}</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "المبتعث" %}</th>
+                    <th>{% trans "المنحة" %}</th>
+                    <th>{% trans "المبلغ الإجمالي" %}</th>
+                    <th>{% trans "المبلغ المصروف" %}</th>
+                    <th>{% trans "المبلغ المتبقي" %}</th>
+                    <th>{% trans "نسبة الصرف" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for budget in report_data.budgets %}
+                <tr>
+                    <td>{{ budget.applicant }}</td>
+                    <td>{{ budget.scholarship }}</td>
+                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                 role="progressbar" style="width: {{ budget.spent_percentage }}%">
+                                {{ budget.spent_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ budget.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني دائري لتوزيع الميزانية
+    var ctx = document.getElementById('budgetPieChart').getContext('2d');
+    var pieData = {
+        labels: [{% for item in report_data.pie_chart_data %}'{{ item.name }}',{% endfor %}],
+        datasets: [{
+            data: [{% for item in report_data.pie_chart_data %}{{ item.value }},{% endfor %}],
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+        }]
+    };
+
+    var budgetPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: pieData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+});
+</script>

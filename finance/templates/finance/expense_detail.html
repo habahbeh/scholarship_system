@@ -1,10 +1,191 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="expense-detail-container">
+    <div class="page-header">
+        <h2>{% trans "تفاصيل المصروف" %}</h2>
+        <div class="header-actions">
+            {% if perms.finance.change_expense and expense.status == 'pending' %}
+            <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-primary">
+                {% trans "تعديل المصروف" %}
+            </a>
+            {% endif %}
+            
+            {% if perms.finance.change_expense and expense.status == 'pending' %}
+            <a href="{% url 'finance:approve_expense' expense.id %}" class="btn btn-success">
+                {% trans "موافقة/رفض" %}
+            </a>
+            {% endif %}
+            
+            {% if perms.finance.delete_expense and expense.status == 'pending' %}
+            <a href="{% url 'finance:delete_expense' expense.id %}" class="btn btn-danger">
+                {% trans "حذف المصروف" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="expense-info">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات المبتعث" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "الاسم" %}:</th>
+                            <td>{{ expense.budget.application.applicant.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المنحة" %}:</th>
+                            <td>{{ expense.budget.application.scholarship.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "الجامعة" %}:</th>
+                            <td>{{ expense.budget.application.university }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "ميزانية الابتعاث" %}:</th>
+                            <td>
+                                <a href="{% url 'finance:budget_detail' expense.budget.id %}">
+                                    {{ expense.budget.total_amount|floatformat:2 }} {% trans "ريال" %}
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات المصروف" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "الفئة" %}:</th>
+                            <td>{{ expense.category.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المبلغ" %}:</th>
+                            <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "التاريخ" %}:</th>
+                            <td>{{ expense.date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "الحالة" %}:</th>
+                            <td>
+                                <span class="badge 
+                                    {% if expense.status == 'approved' %}badge-success
+                                    {% elif expense.status == 'rejected' %}badge-danger
+                                    {% else %}badge-warning{% endif %}">
+                                    {{ expense.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="expense-details">
+            <h3>{% trans "تفاصيل المصروف" %}</h3>
+            <div class="card">
+                <div class="card-body">
+                    <h5>{% trans "الوصف" %}</h5>
+                    <p>{{ expense.description }}</p>
+                    
+                    {% if expense.receipt_number %}
+                    <h5>{% trans "رقم الإيصال" %}</h5>
+                    <p>{{ expense.receipt_number }}</p>
+                    {% endif %}
+                    
+                    {% if expense.receipt_file %}
+                    <h5>{% trans "ملف الإيصال" %}</h5>
+                    <a href="{{ expense.receipt_file.url }}" target="_blank" class="btn btn-sm btn-info">
+                        {% trans "عرض الإيصال" %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if expense.status != 'pending' %}
+        <div class="approval-info">
+            <h3>{% trans "معلومات الموافقة/الرفض" %}</h3>
+            <div class="card">
+                <div class="card-body">
+                    <p>
+                        <strong>{% trans "الحالة" %}:</strong>
+                        <span class="badge 
+                            {% if expense.status == 'approved' %}badge-success
+                            {% elif expense.status == 'rejected' %}badge-danger
+                            {% else %}badge-warning{% endif %}">
+                            {{ expense.get_status_display }}
+                        </span>
+                    </p>
+                    
+                    {% if expense.approved_by %}
+                    <p>
+                        <strong>{% trans "تمت الموافقة/الرفض بواسطة" %}:</strong>
+                        {{ expense.approved_by.get_full_name }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if expense.approval_date %}
+                    <p>
+                        <strong>{% trans "تاريخ الموافقة/الرفض" %}:</strong>
+                        {{ expense.approval_date }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if expense.approval_notes %}
+                    <p>
+                        <strong>{% trans "ملاحظات الموافقة/الرفض" %}:</strong>
+                        {{ expense.approval_notes }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="expense-logs">
+            <h3>{% trans "سجل العمليات" %}</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "العملية" %}</th>
+                        <th>{% trans "الوصف" %}</th>
+                        <th>{% trans "بواسطة" %}</th>
+                        <th>{% trans "التاريخ" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <span class="badge 
+                                  {% if log.action_type == 'create' %}badge-primary
+                                  {% elif log.action_type == 'update' %}badge-info
+                                  {% elif log.action_type == 'delete' %}badge-danger
+                                  {% elif log.action_type == 'approve' %}badge-success
+                                  {% else %}badge-secondary{% endif %}">
+                                {{ log.get_action_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ log.description }}</td>
+                        <td>{{ log.created_by.get_full_name }}</td>
+                        <td>{{ log.created_at }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">{% trans "لا توجد سجلات عمليات لهذا المصروف" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

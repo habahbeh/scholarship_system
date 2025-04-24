@@ -1,0 +1,100 @@
+<div class="monthly-expenses-report">
+    <div class="summary-statistics">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي مصروفات العام" %}</div>
+                    <div class="card-value">{{ report_data.total_year_expenses|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "متوسط المصروفات الشهرية" %}</div>
+                    <div class="card-value">{{ report_data.monthly_average|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "العام" %}</div>
+                    <div class="card-value">{{ report_data.year }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="monthly-chart">
+        <h4>{% trans "المصروفات الشهرية" %}</h4>
+        <canvas id="monthlyExpensesChart"></canvas>
+    </div>
+
+    <div class="monthly-details">
+        <h4>{% trans "تفاصيل المصروفات الشهرية" %}</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "الشهر" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "النسبة من إجمالي العام" %}</th>
+                    <th>{% trans "مقارنة بالمتوسط" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for month in report_data.monthly_data %}
+                <tr>
+                    <td>{{ month.month }}</td>
+                    <td>{{ month.total|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ month.total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%</td>
+                    <td>
+                        {% if month.total > report_data.monthly_average %}
+                        <span class="text-danger"><i class="fas fa-arrow-up"></i> {{ month.total|sub:report_data.monthly_average|floatformat:2 }}</span>
+                        {% elif month.total < report_data.monthly_average %}
+                        <span class="text-success"><i class="fas fa-arrow-down"></i> {{ report_data.monthly_average|sub:month.total|floatformat:2 }}</span>
+                        {% else %}
+                        <span class="text-secondary"><i class="fas fa-equals"></i> 0</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للمصروفات الشهرية
+    var ctx = document.getElementById('monthlyExpensesChart').getContext('2d');
+    var monthlyData = {
+        labels: [{% for month in report_data.monthly_data %}'{{ month.month }}',{% endfor %}],
+        datasets: [{
+            label: '{% trans "المصروفات" %}',
+            data: [{% for month in report_data.monthly_data %}{{ month.total }},{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }, {
+            label: '{% trans "المتوسط" %}',
+            data: [{% for month in report_data.monthly_data %}{{ report_data.monthly_average }},{% endfor %}],
+            type: 'line',
+            fill: false,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderDash: [5, 5],
+            borderWidth: 2
+        }]
+    };
+
+    var monthlyExpensesChart = new Chart(ctx, {
+        type: 'bar',
+        data: monthlyData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>

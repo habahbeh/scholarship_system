@@ -1,10 +1,91 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="expense-approval-container">
+    <div class="page-header">
+        <h2>{% trans "الموافقة أو رفض المصروف" %}</h2>
+    </div>
+    
+    <div class="expense-info">
+        <h3>{% trans "معلومات المصروف" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "المبتعث" %}:</th>
+                <td>{{ expense.budget.application.applicant.get_full_name }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "الفئة" %}:</th>
+                <td>{{ expense.category.name }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "المبلغ" %}:</th>
+                <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+            </tr>
+            <tr>
+                <th>{% trans "التاريخ" %}:</th>
+                <td>{{ expense.date }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "الوصف" %}:</th>
+                <td>{{ expense.description }}</td>
+            </tr>
+            {% if expense.receipt_number %}
+            <tr>
+                <th>{% trans "رقم الإيصال" %}:</th>
+                <td>{{ expense.receipt_number }}</td>
+            </tr>
+            {% endif %}
+            {% if expense.receipt_file %}
+            <tr>
+                <th>{% trans "ملف الإيصال" %}:</th>
+                <td>
+                    <a href="{{ expense.receipt_file.url }}" target="_blank" class="btn btn-sm btn-info">
+                        {% trans "عرض الإيصال" %}
+                    </a>
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    
+    <form method="post" class="approval-form">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>{% trans "قرار الموافقة" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                    {{ form.status }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.approval_notes.id_for_label }}" class="form-label">{{ form.approval_notes.label }}</label>
+                    {{ form.approval_notes }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary">{% trans "حفظ القرار" %}</button>
+            <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

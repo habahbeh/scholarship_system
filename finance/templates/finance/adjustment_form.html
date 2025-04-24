@@ -2,18 +2,11 @@
 {% load static i18n %}
 
 {% block finance_content %}
-<div class="expense-form-container">
+<div class="adjustment-form-container">
     <div class="page-header">
-        <h2>
-            {% if is_update %}
-            {% trans "تعديل مصروف" %}
-            {% else %}
-            {% trans "إنشاء مصروف جديد" %}
-            {% endif %}
-        </h2>
+        <h2>{% trans "إنشاء تعديل جديد للميزانية" %}</h2>
     </div>
     
-    {% if not is_update %}
     <div class="budget-info">
         <h3>{% trans "معلومات الميزانية" %}</h3>
         <div class="info-card">
@@ -37,9 +30,8 @@
             </table>
         </div>
     </div>
-    {% endif %}
     
-    <form method="post" class="expense-form" enctype="multipart/form-data">
+    <form method="post" class="adjustment-form">
         {% csrf_token %}
         
         {% if form.errors %}
@@ -57,14 +49,14 @@
         
         <div class="card">
             <div class="card-header">
-                <h3>{% trans "معلومات المصروف" %}</h3>
+                <h3>{% trans "معلومات التعديل" %}</h3>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
-                            {{ form.category }}
+                            <label for="{{ form.adjustment_type.id_for_label }}" class="form-label">{{ form.adjustment_type.label }}</label>
+                            {{ form.adjustment_type }}
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -81,42 +73,39 @@
                             {{ form.date }}
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.receipt_number.id_for_label }}" class="form-label">{{ form.receipt_number.label }}</label>
-                            {{ form.receipt_number }}
-                        </div>
-                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-                    {{ form.description }}
+                    <label for="{{ form.reason.id_for_label }}" class="form-label">{{ form.reason.label }}</label>
+                    {{ form.reason }}
                 </div>
-                <div class="form-group">
-                    <label for="{{ form.receipt_file.id_for_label }}" class="form-label">{{ form.receipt_file.label }}</label>
-                    {{ form.receipt_file }}
-                    {% if expense.receipt_file %}
-                    <p class="form-text">
-                        {% trans "الملف الحالي:" %}
-                        <a href="{{ expense.receipt_file.url }}" target="_blank">{{ expense.receipt_file.name }}</a>
-                    </p>
-                    {% endif %}
+                
+                <div class="alert alert-info mt-3">
+                    <p>{% trans "ملاحظة: سيتم مراجعة هذا التعديل من قبل الإدارة المالية للموافقة عليه قبل تطبيقه." %}</p>
                 </div>
             </div>
         </div>
         
         <div class="form-actions mt-4">
-            <button type="submit" class="btn btn-primary">
-                {% if is_update %}
-                {% trans "حفظ التعديلات" %}
-                {% else %}
-                {% trans "إنشاء المصروف" %}
-                {% endif %}
-            </button>
-            <a href="{% if is_update %}{% url 'finance:expense_detail' expense.id %}{% else %}{% url 'finance:budget_detail' budget.id %}{% endif %}" class="btn btn-secondary">
-                {% trans "إلغاء" %}
-            </a>
+            <button type="submit" class="btn btn-primary">{% trans "إنشاء التعديل" %}</button>
+            <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
         </div>
     </form>
 </div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // عرض تنبيه عند اختيار تعديل التخفيض
+    const adjustmentTypeSelect = document.getElementById('{{ form.adjustment_type.id_for_label }}');
+    
+    adjustmentTypeSelect.addEventListener('change', function() {
+        if (this.value === 'decrease') {
+            const remainingAmount = {{ budget.get_remaining_amount }};
+            alert(`ملاحظة: المبلغ المتبقي حاليًا هو ${remainingAmount.toFixed(2)} ريال. يجب مراعاة ذلك عند تخفيض الميزانية.`);
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

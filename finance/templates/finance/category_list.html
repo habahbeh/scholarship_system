@@ -1,0 +1,115 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="category-list-container">
+    <div class="page-header">
+        <h2>{% trans "قائمة فئات المصروفات" %}</h2>
+        <div class="header-actions">
+            {% if perms.finance.add_expensecategory %}
+            <a href="{% url 'finance:create_category' %}" class="btn btn-primary">
+                {% trans "إضافة فئة جديدة" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="category-list">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "الفئة" %}</th>
+                    <th>{% trans "الرمز" %}</th>
+                    <th>{% trans "الوصف" %}</th>
+                    <th>{% trans "عدد المصروفات" %}</th>
+                    <th>{% trans "إجمالي المبالغ" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.code|default:"-" }}</td>
+                    <td>{{ category.description|truncatechars:50|default:"-" }}</td>
+                    <td>{{ category.expenses_count }}</td>
+                    <td>{{ category.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>
+                        <div class="btn-group">
+                            {% if perms.finance.change_expensecategory %}
+                            <a href="{% url 'finance:update_category' category.id %}" class="btn btn-sm btn-primary">
+                                {% trans "تعديل" %}
+                            </a>
+                            {% endif %}
+                            {% if perms.finance.delete_expensecategory %}
+                            <a href="{% url 'finance:delete_category' category.id %}" class="btn btn-sm btn-danger">
+                                {% trans "حذف" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">{% trans "لا توجد فئات مصروفات متاحة" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="category-chart">
+        <h3>{% trans "توزيع المصروفات حسب الفئة" %}</h3>
+        <div class="row">
+            <div class="col-md-8">
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <div class="col-md-4">
+                <div class="chart-legend">
+                    {% for category in categories %}
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: rgba({{ forloop.counter0|mul:30 }}, {{ 150|add:forloop.counter0|mul:20 }}, {{ 200|sub:forloop.counter0|mul:10 }}, 0.7);"></span>
+                            <span class="legend-label">{{ category.name }}</span>
+                            <span class="legend-value">{{ category.total_amount|floatformat:2 }} {% trans "ريال" %}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للفئات
+    var ctx = document.getElementById('categoryChart').getContext('2d');
+    var categoryChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [{% for category in categories %}'{{ category.name }}',{% endfor %}],
+            datasets: [{
+                data: [{% for category in categories %}{{ category.total_amount }},{% endfor %}],
+                backgroundColor: [
+                    {% for category in categories %}
+                    'rgba({{ forloop.counter0|mul:30 }}, {{ 150|add:forloop.counter0|mul:20 }}, {{ 200|sub:forloop.counter0|mul:10 }}, 0.7)',
+                    {% endfor %}
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

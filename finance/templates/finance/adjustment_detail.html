@@ -1,0 +1,157 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="adjustment-detail-container">
+    <div class="page-header">
+        <h2>{% trans "تفاصيل تعديل الميزانية" %}</h2>
+        <div class="header-actions">
+            <a href="{% url 'finance:adjustment_list' adjustment.budget.id %}" class="btn btn-secondary">
+                {% trans "العودة إلى قائمة التعديلات" %}
+            </a>
+            <a href="{% url 'finance:budget_detail' adjustment.budget.id %}" class="btn btn-secondary">
+                {% trans "العودة إلى الميزانية" %}
+            </a>
+            
+            {% if perms.finance.change_budgetadjustment and adjustment.status == 'pending' %}
+            <a href="{% url 'finance:approve_adjustment' adjustment.id %}" class="btn btn-primary">
+                {% trans "موافقة/رفض" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="info-card">
+                <h3>{% trans "معلومات التعديل" %}</h3>
+                <table class="table">
+                    <tr>
+                        <th>{% trans "نوع التعديل" %}:</th>
+                        <td>
+                            <span class="badge 
+                                  {% if adjustment.adjustment_type == 'increase' %}badge-success
+                                  {% else %}badge-danger{% endif %}">
+                                {{ adjustment.get_adjustment_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "المبلغ" %}:</th>
+                        <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "التاريخ" %}:</th>
+                        <td>{{ adjustment.date }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "الحالة" %}:</th>
+                        <td>
+                            <span class="badge 
+                                  {% if adjustment.status == 'approved' %}badge-success
+                                  {% elif adjustment.status == 'rejected' %}badge-danger
+                                  {% else %}badge-warning{% endif %}">
+                                {{ adjustment.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="info-card">
+                <h3>{% trans "معلومات الميزانية" %}</h3>
+                <table class="table">
+                    <tr>
+                        <th>{% trans "المبتعث" %}:</th>
+                        <td>{{ adjustment.budget.application.applicant.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "المبلغ الإجمالي" %}:</th>
+                        <td>{{ adjustment.budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "المبلغ المتبقي" %}:</th>
+                        <td>{{ adjustment.budget.get_remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تأثير التعديل" %}:</th>
+                        <td>
+                            {% if adjustment.adjustment_type == 'increase' %}
+                            <span class="text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                            {% else %}
+                            <span class="text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="adjustment-reason">
+        <h3>{% trans "سبب التعديل" %}</h3>
+        <div class="card">
+            <div class="card-body">
+                <p>{{ adjustment.reason }}</p>
+            </div>
+        </div>
+    </div>
+    
+    {% if adjustment.status != 'pending' %}
+    <div class="approval-info">
+        <h3>{% trans "معلومات الموافقة/الرفض" %}</h3>
+        <div class="card">
+            <div class="card-body">
+                <p>
+                    <strong>{% trans "تمت الموافقة/الرفض بواسطة" %}:</strong>
+                    {{ adjustment.approved_by.get_full_name }}
+                </p>
+                <p>
+                    <strong>{% trans "تاريخ الموافقة/الرفض" %}:</strong>
+                    {{ adjustment.approval_date }}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="adjustment-logs">
+        <h3>{% trans "سجل العمليات" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "العملية" %}</th>
+                    <th>{% trans "الوصف" %}</th>
+                    <th>{% trans "بواسطة" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>
+                        <span class="badge 
+                              {% if log.action_type == 'create' %}badge-primary
+                              {% elif log.action_type == 'update' %}badge-info
+                              {% elif log.action_type == 'delete' %}badge-danger
+                              {% elif log.action_type == 'approve' %}badge-success
+                              {% else %}badge-secondary{% endif %}">
+                            {{ log.get_action_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ log.description }}</td>
+                    <td>{{ log.created_by.get_full_name }}</td>
+                    <td>{{ log.created_at }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">{% trans "لا توجد سجلات عمليات لهذا التعديل" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

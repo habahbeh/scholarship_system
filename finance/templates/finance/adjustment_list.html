@@ -1,0 +1,129 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="adjustment-list-container">
+    <div class="page-header">
+        <h2>{% trans "قائمة تعديلات الميزانية" %} - {{ budget.application.applicant.get_full_name }}</h2>
+        <div class="header-actions">
+            <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-secondary">
+                {% trans "العودة إلى الميزانية" %}
+            </a>
+            {% if perms.finance.add_budgetadjustment and budget.status == 'active' %}
+            <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-primary">
+                {% trans "إضافة تعديل جديد" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="budget-info">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات الميزانية" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "المبلغ الإجمالي" %}:</th>
+                            <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المبلغ المصروف" %}:</th>
+                            <td>{{ budget.get_spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المبلغ المتبقي" %}:</th>
+                            <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "نسبة الصرف" %}:</th>
+                            <td>{{ budget.get_spent_percentage|floatformat:1 }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "ملخص التعديلات" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "إجمالي التعديلات" %}:</th>
+                            <td>{{ adjustments|length }} {% trans "تعديل" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "التعديلات المعتمدة" %}:</th>
+                            <td>{{ adjustments|filter_by_status:'approved'|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "التعديلات المرفوضة" %}:</th>
+                            <td>{{ adjustments|filter_by_status:'rejected'|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "التعديلات قيد المراجعة" %}:</th>
+                            <td>{{ adjustments|filter_by_status:'pending'|length }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="adjustment-list">
+        <h3>{% trans "قائمة التعديلات" %}</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "نوع التعديل" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                    <th>{% trans "السبب" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "تم بواسطة" %}</th>
+                    <th>{% trans "إجراءات" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adjustment in adjustments %}
+                <tr>
+                    <td>
+                        <span class="badge 
+                              {% if adjustment.adjustment_type == 'increase' %}badge-success
+                              {% else %}badge-danger{% endif %}">
+                            {{ adjustment.get_adjustment_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ adjustment.date }}</td>
+                    <td>{{ adjustment.reason|truncatechars:50 }}</td>
+                    <td>
+                        <span class="badge 
+                              {% if adjustment.status == 'approved' %}badge-success
+                              {% elif adjustment.status == 'rejected' %}badge-danger
+                              {% else %}badge-warning{% endif %}">
+                            {{ adjustment.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ adjustment.created_by.get_full_name }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'finance:adjustment_detail' adjustment.id %}" class="btn btn-sm btn-info">
+                                {% trans "عرض" %}
+                            </a>
+                            {% if perms.finance.change_budgetadjustment and adjustment.status == 'pending' %}
+                            <a href="{% url 'finance:approve_adjustment' adjustment.id %}" class="btn btn-sm btn-primary">
+                                {% trans "موافقة/رفض" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">{% trans "لا توجد تعديلات متاحة" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

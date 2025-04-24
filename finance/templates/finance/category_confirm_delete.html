@@ -1,0 +1,57 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="delete-confirm-container">
+    <div class="page-header">
+        <h2>{% trans "تأكيد حذف فئة المصروفات" %}</h2>
+    </div>
+    
+    <div class="alert alert-danger">
+        <p>
+            {% trans "هل أنت متأكد من رغبتك في حذف فئة المصروفات" %}
+            <strong>{{ category.name }}</strong>؟
+        </p>
+        
+        {% if category.expenses_count > 0 %}
+        <p class="text-danger">
+            <strong>{% trans "تحذير" %}:</strong> {% trans "هذه الفئة مستخدمة في" %} {{ category.expenses_count }} {% trans "مصروف. لا يمكن حذفها." %}
+        </p>
+        {% else %}
+        <p>{% trans "هذا الإجراء غير قابل للتراجع عنه." %}</p>
+        {% endif %}
+    </div>
+    
+    <div class="category-info">
+        <h3>{% trans "معلومات الفئة" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "الاسم" %}:</th>
+                <td>{{ category.name }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "الرمز" %}:</th>
+                <td>{{ category.code|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "الوصف" %}:</th>
+                <td>{{ category.description|default:"-" }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    {% if category.expenses_count == 0 %}
+    <form method="post" class="delete-form">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">{% trans "نعم، احذف الفئة" %}</button>
+            <a href="{% url 'finance:category_list' %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
+        </div>
+    </form>
+    {% else %}
+    <div class="form-actions">
+        <a href="{% url 'finance:category_list' %}" class="btn btn-secondary">{% trans "العودة إلى قائمة الفئات" %}</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

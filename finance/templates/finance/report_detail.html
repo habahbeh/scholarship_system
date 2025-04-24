@@ -1,10 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="report-detail-container">
+    <div class="page-header">
+        <h2>{{ report.title }}</h2>
+        <div class="header-actions">
+            {% if report.created_by == request.user %}
+            <a href="{% url 'finance:update_report' report.id %}" class="btn btn-primary">
+                {% trans "تعديل التقرير" %}
+            </a>
+            <a href="{% url 'finance:delete_report' report.id %}" class="btn btn-danger">
+                {% trans "حذف التقرير" %}
+            </a>
+            {% endif %}
+            
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% trans "تصدير" %}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'finance:export_report_pdf' report.id %}">
+                            <i class="fas fa-file-pdf"></i> {% trans "تصدير PDF" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'finance:export_report_excel' report.id %}">
+                            <i class="fas fa-file-excel"></i> {% trans "تصدير Excel" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="report-metadata">
+        <div class="metadata-item">
+            <span class="label">{% trans "نوع التقرير" %}:</span>
+            <span class="value">{{ report.get_report_type_display }}</span>
+        </div>
+        <div class="metadata-item">
+            <span class="label">{% trans "تاريخ الإنشاء" %}:</span>
+            <span class="value">{{ report.created_at|date }}</span>
+        </div>
+        <div class="metadata-item">
+            <span class="label">{% trans "تم الإنشاء بواسطة" %}:</span>
+            <span class="value">{{ report.created_by.get_full_name }}</span>
+        </div>
+        <div class="metadata-item">
+            <span class="label">{% trans "متاح للجميع" %}:</span>
+            <span class="value">
+                {% if report.is_public %}
+                <i class="fas fa-check-circle text-success"></i> {% trans "نعم" %}
+                {% else %}
+                <i class="fas fa-times-circle text-danger"></i> {% trans "لا" %}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    
+    {% if report.description %}
+    <div class="report-description">
+        <h3>{% trans "وصف التقرير" %}</h3>
+        <p>{{ report.description }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="report-filters">
+        <h3>{% trans "الفلاتر المطبقة" %}</h3>
+        <div class="filters-container">
+            {% if report.report_type == 'budget_summary' %}
+                <div class="filter-item">
+                    <span class="label">{% trans "تاريخ البداية" %}:</span>
+                    <span class="value">{{ report.filters.start_date|default:"-" }}</span>
+                </div>
+                <div class="filter-item">
+                    <span class="label">{% trans "تاريخ النهاية" %}:</span>
+                    <span class="value">{{ report.filters.end_date|default:"-" }}</span>
+                </div>
+            {% elif report.report_type == 'expense_summary' %}
+                <div class="filter-item">
+                    <span class="label">{% trans "الحالة" %}:</span>
+                    <span class="value">{{ report.filters.status|default:"-" }}</span>
+                </div>
+                <div class="filter-item">
+                    <span class="label">{% trans "الفئة" %}:</span>
+                    <span class="value">{{ report.filters.category|default:"-" }}</span>
+                </div>
+                <div class="filter-item">
+                    <span class="label">{% trans "تاريخ البداية" %}:</span>
+                    <span class="value">{{ report.filters.start_date|default:"-" }}</span>
+                </div>
+                <div class="filter-item">
+                    <span class="label">{% trans "تاريخ النهاية" %}:</span>
+                    <span class="value">{{ report.filters.end_date|default:"-" }}</span>
+                </div>
+            {% elif report.report_type == 'monthly_expenses' %}
+                <div class="filter-item">
+                    <span class="label">{% trans "السنة" %}:</span>
+                    <span class="value">{{ report.filters.year|default:"-" }}</span>
+                </div>
+            {% elif report.report_type == 'category_expenses' %}
+                <div class="filter-item">
+                    <span class="label">{% trans "تاريخ البداية" %}:</span>
+                    <span class="value">{{ report.filters.start_date|default:"-" }}</span>
+                </div>
+                <div class="filter-item">
+                    <span class="label">{% trans "تاريخ النهاية" %}:</span>
+                    <span class="value">{{ report.filters.end_date|default:"-" }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="report-content">
+        {% if report.report_type == 'budget_summary' %}
+            {% include "finance/reports/budget_summary_content.html" with report_data=report_data %}
+        {% elif report.report_type == 'expense_summary' %}
+            {% include "finance/reports/expense_summary_content.html" with report_data=report_data %}
+        {% elif report.report_type == 'monthly_expenses' %}
+            {% include "finance/reports/monthly_expenses_content.html" with report_data=report_data %}
+        {% elif report.report_type == 'category_expenses' %}
+            {% include "finance/reports/category_expenses_content.html" with report_data=report_data %}
+        {% elif report.report_type == 'budget_comparison' %}
+            {% include "finance/reports/budget_comparison_content.html" with report_data=report_data %}
+        {% elif report.report_type == 'custom' %}
+            <div class="alert alert-info">
+                {% trans "التقرير المخصص غير متاح حالياً" %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // يمكن إضافة أكواد JavaScript هنا للتفاعل مع بيانات التقرير
+    });
+</script>
+{% endblock %}
+{% endblock %}

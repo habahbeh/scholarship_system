@@ -1,0 +1,142 @@
+<div class="expense-summary-report">
+    <div class="summary-statistics">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
+                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "عدد المصروفات" %}</div>
+                    <div class="card-value">{{ report_data.expenses|length }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "متوسط المصروف" %}</div>
+                    <div class="card-value">
+                        {% if report_data.expenses %}
+                        {{ report_data.total_amount|div:report_data.expenses|length|floatformat:2 }} {% trans "ريال" %}
+                        {% else %}
+                        0 {% trans "ريال" %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="expense-charts">
+        <div class="row">
+            <div class="col-md-6">
+                <h4>{% trans "المصروفات حسب الفئة" %}</h4>
+                <canvas id="expenseCategoryChart"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h4>{% trans "المصروفات حسب الحالة" %}</h4>
+                <canvas id="expenseStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="expense-category-details">
+        <h4>{% trans "تفاصيل المصروفات حسب الفئة" %}</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "الفئة" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "النسبة" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report_data.expenses_by_category %}
+                <tr>
+                    <td>{{ item.category__name }}</td>
+                    <td>{{ item.total|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ item.total|div:report_data.total_amount|mul:100|floatformat:1 }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="expense-details">
+        <h4>{% trans "تفاصيل المصروفات" %}</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "المبتعث" %}</th>
+                    <th>{% trans "الفئة" %}</th>
+                    <th>{% trans "المبلغ" %}</th>
+                    <th>{% trans "التاريخ" %}</th>
+                    <th>{% trans "الحالة" %}</th>
+                    <th>{% trans "الوصف" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in report_data.expenses %}
+                <tr>
+                    <td>{{ expense.applicant }}</td>
+                    <td>{{ expense.category }}</td>
+                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ expense.date }}</td>
+                    <td>
+                        <span class="badge
+                              {% if expense.status == 'approved' %}badge-success
+                              {% elif expense.status == 'rejected' %}badge-danger
+                              {% else %}badge-warning{% endif %}">
+                            {{ expense.status }}
+                        </span>
+                    </td>
+                    <td>{{ expense.description|truncatechars:50 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للمصروفات حسب الفئة
+    var ctxCategory = document.getElementById('expenseCategoryChart').getContext('2d');
+    var categoryData = {
+        labels: [{% for item in report_data.expenses_by_category %}'{{ item.category__name }}',{% endfor %}],
+        datasets: [{
+            data: [{% for item in report_data.expenses_by_category %}{{ item.total }},{% endfor %}],
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF']
+        }]
+    };
+
+    var expenseCategoryChart = new Chart(ctxCategory, {
+        type: 'pie',
+        data: categoryData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // رسم بياني للمصروفات حسب الحالة
+    var ctxStatus = document.getElementById('expenseStatusChart').getContext('2d');
+    var statusData = {
+        labels: [{% for item in report_data.status_chart_data %}'{{ item.name }}',{% endfor %}],
+        datasets: [{
+            data: [{% for item in report_data.status_chart_data %}{{ item.value }},{% endfor %}],
+            backgroundColor: ['#FFCE56', '#4BC0C0', '#FF6384']
+        }]
+    };
+
+    var expenseStatusChart = new Chart(ctxStatus, {
+        type: 'pie',
+        data: statusData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+});
+</script>

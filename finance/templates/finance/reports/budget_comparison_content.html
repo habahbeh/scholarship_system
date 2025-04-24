@@ -1,0 +1,91 @@
+<div class="budget-comparison-report">
+    <div class="comparison-summary">
+        <h4>{% trans "مقارنة الميزانيات حسب الفئات" %}</h4>
+        <p class="text-muted">{% trans "مقارنة المبالغ المخصصة والمصروفة لكل فئة من فئات الميزانية" %}</p>
+    </div>
+
+    <div class="category-chart-container mb-4">
+        <canvas id="budgetComparisonChart"></canvas>
+    </div>
+
+    <div class="comparison-details">
+        <h4>{% trans "تفاصيل الميزانيات" %}</h4>
+
+        {% for budget in report_data.comparison_data %}
+        <div class="budget-comparison-item">
+            <h5>{{ budget.applicant }}</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "الفئة" %}</th>
+                        <th>{% trans "المبلغ المخصص" %}</th>
+                        <th>{% trans "المبلغ المصروف" %}</th>
+                        <th>{% trans "المبلغ المتبقي" %}</th>
+                        <th>{% trans "نسبة الصرف" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in report_data.categories %}
+                    <tr>
+                        <td>{{ category.name }}</td>
+                        <td>{{ budget|get_item:category.key|get_item:'budget'|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ budget|get_item:category.key|get_item:'spent'|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ budget|get_item:category.key|get_item:'remaining'|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar {% if budget|get_item:category.key|get_item:'percentage' > 80 %}bg-danger{% elif budget|get_item:category.key|get_item:'percentage' > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                     role="progressbar" style="width: {{ budget|get_item:category.key|get_item:'percentage' }}%">
+                                    {{ budget|get_item:category.key|get_item:'percentage'|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للمقارنة بين الميزانيات
+    var ctx = document.getElementById('budgetComparisonChart').getContext('2d');
+
+    var budgetLabels = [{% for category in report_data.categories %}'{{ category.name }}',{% endfor %}];
+    var datasets = [];
+
+    {% for budget in report_data.comparison_data %}
+    // إضافة مجموعة بيانات لكل ميزانية
+    datasets.push({
+        label: '{{ budget.applicant }}',
+        data: [
+            {% for category in report_data.categories %}
+            {{ budget|get_item:category.key|get_item:'spent' }},
+            {% endfor %}
+        ],
+        backgroundColor: 'rgba({{ forloop.counter|mul:50 }}, {{ 255|sub:forloop.counter|mul:50 }}, {{ forloop.counter|mul:25 }}, 0.2)',
+        borderColor: 'rgba({{ forloop.counter|mul:50 }}, {{ 255|sub:forloop.counter|mul:50 }}, {{ forloop.counter|mul:25 }}, 1)',
+        borderWidth: 1
+    });
+    {% endfor %}
+
+    var budgetComparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: budgetLabels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>

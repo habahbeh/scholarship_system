@@ -1,0 +1,124 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="adjustment-approval-container">
+    <div class="page-header">
+        <h2>{% trans "الموافقة أو رفض تعديل الميزانية" %}</h2>
+    </div>
+    
+    <div class="adjustment-info">
+        <h3>{% trans "معلومات التعديل" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "المبتعث" %}:</th>
+                <td>{{ adjustment.budget.application.applicant.get_full_name }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "نوع التعديل" %}:</th>
+                <td>
+                    <span class="badge 
+                          {% if adjustment.adjustment_type == 'increase' %}badge-success
+                          {% else %}badge-danger{% endif %}">
+                        {{ adjustment.get_adjustment_type_display }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <th>{% trans "المبلغ" %}:</th>
+                <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+            </tr>
+            <tr>
+                <th>{% trans "التاريخ" %}:</th>
+                <td>{{ adjustment.date }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "السبب" %}:</th>
+                <td>{{ adjustment.reason }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "تم الإنشاء بواسطة" %}:</th>
+                <td>{{ adjustment.created_by.get_full_name }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "تاريخ الإنشاء" %}:</th>
+                <td>{{ adjustment.created_at }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="budget-impact">
+        <h3>{% trans "تأثير التعديل على الميزانية" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "المبلغ الحالي للميزانية" %}:</th>
+                <td>{{ adjustment.budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+            </tr>
+            <tr>
+                <th>{% trans "المبلغ بعد التعديل" %}:</th>
+                <td>
+                    {% if adjustment.adjustment_type == 'increase' %}
+                    {{ adjustment.budget.total_amount|add:adjustment.amount|floatformat:2 }} {% trans "ريال" %}
+                    {% else %}
+                    {{ adjustment.budget.total_amount|sub:adjustment.amount|floatformat:2 }} {% trans "ريال" %}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>{% trans "التغيير" %}:</th>
+                <td>
+                    {% if adjustment.adjustment_type == 'increase' %}
+                    <span class="text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                    {% else %}
+                    <span class="text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>{% trans "نسبة التغيير" %}:</th>
+                <td>
+                    {{ adjustment.amount|div:adjustment.budget.total_amount|mul:100|floatformat:2 }}%
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <form method="post" class="approval-form">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <p>{{ field.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>{% trans "قرار الموافقة" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                    {{ form.status }}
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <p>{% trans "تحذير: الموافقة على هذا التعديل ستؤدي إلى تغيير إجمالي الميزانية بشكل مباشر." %}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-primary">{% trans "حفظ القرار" %}</button>
+            <a href="{% url 'finance:adjustment_detail' adjustment.id %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
