@@ -469,17 +469,34 @@ def president_report(request):
 
 
 @login_required
+@login_required
 @permission_required('applications.view_application')
 def application_full_report(request, application_id):
     """تقرير تفصيلي لطلب معين مع جميع المرفقات"""
     application = get_object_or_404(Application, pk=application_id)
 
-    # تحميل المرفقات للطلب
+    # Get all attachments
     attachments = ApprovalAttachment.objects.filter(application=application)
+
+    # Pre-filter attachments by type and get the most recent ones
+    higher_committee_attachment = attachments.filter(
+        approval_type='higher_committee'
+    ).order_by('-upload_date').first()
+
+    faculty_council_attachment = attachments.filter(
+        approval_type='faculty_council'
+    ).order_by('-upload_date').first()
+
+    president_attachment = attachments.filter(
+        approval_type='president'
+    ).order_by('-upload_date').first()
 
     context = {
         'application': application,
         'attachments': attachments,
+        'higher_committee_attachment': higher_committee_attachment,
+        'faculty_council_attachment': faculty_council_attachment,
+        'president_attachment': president_attachment,
         'title': _("تقرير تفصيلي لطلب ابتعاث"),
         'date': timezone.now()
     }
@@ -497,7 +514,6 @@ def application_full_report(request, application_id):
         return response
 
     return render(request, 'applications/reports/application_full_report.html', context)
-
 
 # --- Standard Application Views ---
 

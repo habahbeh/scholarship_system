@@ -1,0 +1,349 @@
+{% load i18n %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "تقرير كامل للطلب" %} #{{ application.id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            direction: rtl;
+            text-align: right;
+            font-size: 12pt;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .section-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 0.5rem;
+        }
+
+        th {
+            background-color: #f8f9fa;
+        }
+
+        .alert {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+
+        .col-4 {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        .signatures {
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- ترويسة التقرير -->
+    <div class="header">
+        <img src="{{ petra_logo_path }}" alt="{% trans 'جامعة البترا' %}" height="80" style="margin-bottom: 1rem;">
+        <h2>{% trans "جامعة البترا" %}</h2>
+        <h3>{% trans "نظام الابتعاث الإلكتروني" %}</h3>
+        <h4>{% trans "تقرير كامل لطلب الابتعاث" %} #{{ application.id }}</h4>
+        <p>{% trans "تاريخ إنشاء التقرير:" %} {{ date|date:"Y-m-d" }}</p>
+    </div>
+
+    <!-- بيانات الطلب -->
+    <div class="card">
+        <div class="card-header">
+            <h3>{% trans "بيانات الطلب" %}</h3>
+        </div>
+        <div class="card-body">
+            <h4 class="section-title">{% trans "معلومات الطلب" %}</h4>
+            <table>
+                <tbody>
+                    <tr>
+                        <th style="width: 30%;">{% trans "رقم الطلب" %}</th>
+                        <td>#{{ application.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "فرصة الابتعاث" %}</th>
+                        <td>{{ application.scholarship.title }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تاريخ التقديم" %}</th>
+                        <td>{{ application.application_date|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "آخر تحديث" %}</th>
+                        <td>{{ application.last_update|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "الحالة" %}</th>
+                        <td>{{ application.status.name }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 class="section-title">{% trans "معلومات المتقدم" %}</h4>
+            <table>
+                <tbody>
+                    <tr>
+                        <th style="width: 30%;">{% trans "الاسم الكامل" %}</th>
+                        <td>{{ application.applicant.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "البريد الإلكتروني" %}</th>
+                        <td>{{ application.applicant.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "الكلية/القسم" %}</th>
+                        <td>{{ application.applicant.profile.faculty|default:"-" }} / {{ application.applicant.profile.department|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "الرتبة الأكاديمية" %}</th>
+                        <td>{{ application.applicant.profile.get_academic_rank_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "رقم الهاتف" %}</th>
+                        <td>{{ application.applicant.profile.phone_number|default:"-" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 class="section-title">{% trans "خطاب الدوافع" %}</h4>
+            <div style="padding: 1rem; border: 1px solid #ddd; background-color: #f8f9fa;">
+                {{ application.motivation_letter|linebreaks }}
+            </div>
+
+            {% if application.research_proposal %}
+            <h4 class="section-title">{% trans "مقترح البحث" %}</h4>
+            <div style="padding: 1rem; border: 1px solid #ddd; background-color: #f8f9fa;">
+                {{ application.research_proposal|linebreaks }}
+            </div>
+            {% endif %}
+
+            <h4 class="section-title">{% trans "خطاب القبول" %}</h4>
+            <div style="padding: 1rem; border: 1px solid #ddd; background-color: #f8f9fa;">
+                {% if application.acceptance_letter %}
+                <p>✓ {% trans "نعم، لدي قبول مبدئي" %}</p>
+                <p><strong>{% trans "الجامعة:" %}</strong> {{ application.acceptance_university }}</p>
+                {% else %}
+                <p>✕ {% trans "لا يوجد قبول مبدئي" %}</p>
+                {% endif %}
+            </div>
+
+            {% if application.comments %}
+            <h4 class="section-title">{% trans "ملاحظات إضافية" %}</h4>
+            <div style="padding: 1rem; border: 1px solid #ddd; background-color: #f8f9fa;">
+                {{ application.comments|linebreaks }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- المستندات المرفقة -->
+    <div class="card">
+        <div class="card-header">
+            <h3>{% trans "المستندات المرفقة بالطلب" %}</h3>
+        </div>
+        <div class="card-body">
+            {% if application.documents.all %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>{% trans "اسم المستند" %}</th>
+                        <th>{% trans "الوصف" %}</th>
+                        <th>{% trans "تاريخ الرفع" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in application.documents.all %}
+                    <tr>
+                        <td>{{ document.name }}</td>
+                        <td>{{ document.description|default:"-" }}</td>
+                        <td>{{ document.upload_date|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-warning">
+                {% trans "لا توجد مستندات مرفقة بهذا الطلب." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- مرفقات الموافقات -->
+    <div class="card">
+        <div class="card-header">
+            <h3>{% trans "الموافقات" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- موافقة اللجنة العليا -->
+                <div class="col-4">
+                    <h4>{% trans "موافقة اللجنة العليا" %}</h4>
+                    {% if higher_committee_attachment %}
+                    <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ higher_committee_attachment.upload_date|date:"Y-m-d" }}</p>
+                    {% if higher_committee_attachment.notes %}
+                    <p><strong>{% trans "ملاحظات:" %}</strong> {{ higher_committee_attachment.notes }}</p>
+                    {% endif %}
+                    {% else %}
+                    <p>{% trans "لا يوجد مرفق" %}</p>
+                    {% endif %}
+                </div>
+
+                <!-- موافقة مجلس الكلية -->
+                <div class="col-4">
+                    <h4>{% trans "موافقة مجلس الكلية" %}</h4>
+                    {% if faculty_council_attachment %}
+                    <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ faculty_council_attachment.upload_date|date:"Y-m-d" }}</p>
+                    {% if faculty_council_attachment.notes %}
+                    <p><strong>{% trans "ملاحظات:" %}</strong> {{ faculty_council_attachment.notes }}</p>
+                    {% endif %}
+                    {% else %}
+                    <p>{% trans "لا يوجد مرفق" %}</p>
+                    {% endif %}
+                </div>
+
+                <!-- موافقة رئيس الجامعة -->
+                <div class="col-4">
+                    <h4>{% trans "موافقة رئيس الجامعة" %}</h4>
+                    {% if president_attachment %}
+                    <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ president_attachment.upload_date|date:"Y-m-d" }}</p>
+                    {% if president_attachment.notes %}
+                    <p><strong>{% trans "ملاحظات:" %}</strong> {{ president_attachment.notes }}</p>
+                    {% endif %}
+                    {% else %}
+                    <p>{% trans "لا يوجد مرفق" %}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- سجل التغييرات -->
+    <div class="card">
+        <div class="card-header">
+            <h3>{% trans "سجل التغييرات" %}</h3>
+        </div>
+        <div class="card-body">
+            {% if application.logs.all %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>{% trans "التاريخ" %}</th>
+                        <th>{% trans "من حالة" %}</th>
+                        <th>{% trans "إلى حالة" %}</th>
+                        <th>{% trans "بواسطة" %}</th>
+                        <th>{% trans "ملاحظات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in application.logs.all|dictsortreversed:"created_at" %}
+                    <tr>
+                        <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ log.from_status.name|default:"-" }}</td>
+                        <td>{{ log.to_status.name }}</td>
+                        <td>{{ log.created_by.get_full_name }}</td>
+                        <td>{{ log.comment|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-warning">
+                {% trans "لا يوجد سجل للتغييرات على هذا الطلب." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- توقيعات -->
+    <div class="signatures">
+        <div class="row">
+            <div class="col-4 text-center">
+                <h4>{% trans "رئيس قسم الابتعاث" %}</h4>
+                <div style="height: 60px;"></div>
+                <p>____________________</p>
+            </div>
+            <div class="col-4 text-center">
+                <h4>{% trans "عميد الكلية" %}</h4>
+                <div style="height: 60px;"></div>
+                <p>____________________</p>
+            </div>
+            <div class="col-4 text-center">
+                <h4>{% trans "رئيس الجامعة" %}</h4>
+                <div style="height: 60px;"></div>
+                <p>____________________</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

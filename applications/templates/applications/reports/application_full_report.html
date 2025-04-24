@@ -243,7 +243,6 @@
                             <h6 class="mb-0">{% trans "موافقة اللجنة العليا" %}</h6>
                         </div>
                         <div class="card-body">
-                            {% with higher_committee_attachment=attachments|dictsortreversed:"upload_date"|selectattr:"approval_type","equalto","higher_committee"|first %}
                             {% if higher_committee_attachment %}
                             <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ higher_committee_attachment.upload_date|date:"Y-m-d" }}</p>
                             <p class="no-print">
@@ -260,11 +259,10 @@
                                 {% trans "لا يوجد مرفق" %}
                             </div>
                             {% endif %}
-                            {% endwith %}
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- موافقة مجلس الكلية -->
                 <div class="col-md-4 mb-3">
                     <div class="card h-100">
@@ -272,7 +270,6 @@
                             <h6 class="mb-0">{% trans "موافقة مجلس الكلية" %}</h6>
                         </div>
                         <div class="card-body">
-                            {% with faculty_council_attachment=attachments|dictsortreversed:"upload_date"|selectattr:"approval_type","equalto","faculty_council"|first %}
                             {% if faculty_council_attachment %}
                             <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ faculty_council_attachment.upload_date|date:"Y-m-d" }}</p>
                             <p class="no-print">
@@ -289,11 +286,10 @@
                                 {% trans "لا يوجد مرفق" %}
                             </div>
                             {% endif %}
-                            {% endwith %}
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- موافقة رئيس الجامعة -->
                 <div class="col-md-4 mb-3">
                     <div class="card h-100">
@@ -301,7 +297,6 @@
                             <h6 class="mb-0">{% trans "موافقة رئيس الجامعة" %}</h6>
                         </div>
                         <div class="card-body">
-                            {% with president_attachment=attachments|dictsortreversed:"upload_date"|selectattr:"approval_type","equalto","president"|first %}
                             {% if president_attachment %}
                             <p><strong>{% trans "تاريخ الموافقة:" %}</strong> {{ president_attachment.upload_date|date:"Y-m-d" }}</p>
                             <p class="no-print">
@@ -318,7 +313,6 @@
                                 {% trans "لا يوجد مرفق" %}
                             </div>
                             {% endif %}
-                            {% endwith %}
                         </div>
                     </div>
                 </div>
