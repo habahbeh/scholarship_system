@@ -1,10 +1,462 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="report-container">
+    <div class="page-header">
+        <h2>{% trans "تقرير المصروفات الشهرية" %}</h2>
+        <div class="header-actions">
+            <div class="btn-group">
+                <a href="{% url 'finance:export_report_pdf' report_id=report.id %}" class="btn btn-secondary" target="_blank">
+                    <i class="fa fa-file-pdf-o"></i> {% trans "تصدير PDF" %}
+                </a>
+                <a href="{% url 'finance:export_report_excel' report_id=report.id %}" class="btn btn-secondary">
+                    <i class="fa fa-file-excel-o"></i> {% trans "تصدير Excel" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نموذج اختيار السنة -->
+    <div class="filter-section">
+        <form method="post" class="filter-form">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="year">{% trans "السنة" %}</label>
+                        <select name="year" id="year" class="form-control">
+                            {% for year_option in years %}
+                            <option value="{{ year_option }}" {% if selected_year == year_option %}selected{% endif %}>{{ year_option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">{% trans "تطبيق" %}</button>
+                    <a href="{% url 'finance:monthly_expenses_report' %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- ملخص المصروفات الشهرية -->
+    <div class="report-summary">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي المصروفات للعام" %}</div>
+                    <div class="card-value">{{ report_data.total_year_expenses|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-footer">{% trans "للعام" %} {{ selected_year }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "متوسط المصروفات الشهرية" %}</div>
+                    <div class="card-value">{{ report_data.monthly_average|floatformat:2 }} {% trans "ريال" %}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "الشهر الأعلى إنفاقاً" %}</div>
+                    <div class="card-value">
+                        {% with max_month=report_data.monthly_data|dictsortreversed:"total"|first %}
+                        {% if max_month.total > 0 %}
+                        {{ max_month.month }} ({{ max_month.total|floatformat:2 }} {% trans "ريال" %})
+                        {% else %}
+                        {% trans "لا يوجد" %}
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني للمصروفات الشهرية -->
+    <div class="report-chart">
+        <h3>{% trans "المصروفات الشهرية لعام" %} {{ selected_year }}</h3>
+        <div class="chart-container">
+            <canvas id="monthlyExpensesChart" style="height: 400px;"></canvas>
+        </div>
+    </div>
+    
+    <!-- جدول المصروفات الشهرية -->
+    <div class="report-details mt-4">
+        <h3>{% trans "تفاصيل المصروفات الشهرية" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>{% trans "الشهر" %}</th>
+                        <th>{% trans "إجمالي المصروفات" %}</th>
+                        <th>{% trans "النسبة من الإجمالي" %}</th>
+                        <th>{% trans "الانحراف عن المتوسط" %}</th>
+                        <th>{% trans "مؤشر النسبة" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in report_data.monthly_data %}
+                    <tr>
+                        <td>{{ month.month }}</td>
+                        <td>{{ month.total|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>
+                            {% if report_data.total_year_expenses > 0 %}
+                            {{ month.total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% with variance=month.total|sub:report_data.monthly_average %}
+                            {% if variance > 0 %}
+                            <span class="text-danger">+{{ variance|floatformat:2 }} {% trans "ريال" %}</span>
+                            {% elif variance < 0 %}
+                            <span class="text-success">{{ variance|floatformat:2 }} {% trans "ريال" %}</span>
+                            {% else %}
+                            <span class="text-muted">0 {% trans "ريال" %}</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar 
+                                    {% if month.total > report_data.monthly_average %}bg-danger
+                                    {% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {% if report_data.total_year_expenses > 0 %}{{ month.total|div:report_data.total_year_expenses|mul:100 }}{% else %}0{% endif %}%"
+                                     aria-valuenow="{% if report_data.total_year_expenses > 0 %}{{ month.total|div:report_data.total_year_expenses|mul:100 }}{% else %}0{% endif %}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-active">
+                        <th>{% trans "الإجمالي" %}</th>
+                        <th>{{ report_data.total_year_expenses|floatformat:2 }} {% trans "ريال" %}</th>
+                        <th>100%</th>
+                        <th>-</th>
+                        <th>-</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <!-- تحليل الاتجاهات الموسمية -->
+    <div class="report-seasonal mt-4">
+        <h3>{% trans "تحليل الاتجاهات الموسمية" %}</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="seasonal-card">
+                    <h4>{% trans "الربع الأول" %} ({% trans "يناير - مارس" %})</h4>
+                    {% with q1_total=0 %}
+                        {% for month in report_data.monthly_data|slice:":3" %}
+                            {% with q1_total=q1_total|add:month.total %}{% endwith %}
+                        {% endfor %}
+                        <div class="season-value">{{ q1_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-percentage">
+                            {% if report_data.total_year_expenses > 0 %}
+                            {{ q1_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
+                            {% else %}
+                            0% {% trans "من الإجمالي" %}
+                            {% endif %}
+                        </div>
+                        <div class="progress mt-2">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {% if report_data.total_year_expenses > 0 %}{{ q1_total|div:report_data.total_year_expenses|mul:100 }}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="seasonal-card">
+                    <h4>{% trans "الربع الثاني" %} ({% trans "أبريل - يونيو" %})</h4>
+                    {% with q2_total=0 %}
+                        {% for month in report_data.monthly_data|slice:"3:6" %}
+                            {% with q2_total=q2_total|add:month.total %}{% endwith %}
+                        {% endfor %}
+                        <div class="season-value">{{ q2_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-percentage">
+                            {% if report_data.total_year_expenses > 0 %}
+                            {{ q2_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
+                            {% else %}
+                            0% {% trans "من الإجمالي" %}
+                            {% endif %}
+                        </div>
+                        <div class="progress mt-2">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {% if report_data.total_year_expenses > 0 %}{{ q2_total|div:report_data.total_year_expenses|mul:100 }}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="seasonal-card">
+                    <h4>{% trans "الربع الثالث" %} ({% trans "يوليو - سبتمبر" %})</h4>
+                    {% with q3_total=0 %}
+                        {% for month in report_data.monthly_data|slice:"6:9" %}
+                            {% with q3_total=q3_total|add:month.total %}{% endwith %}
+                        {% endfor %}
+                        <div class="season-value">{{ q3_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-percentage">
+                            {% if report_data.total_year_expenses > 0 %}
+                            {{ q3_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
+                            {% else %}
+                            0% {% trans "من الإجمالي" %}
+                            {% endif %}
+                        </div>
+                        <div class="progress mt-2">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {% if report_data.total_year_expenses > 0 %}{{ q3_total|div:report_data.total_year_expenses|mul:100 }}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="seasonal-card">
+                    <h4>{% trans "الربع الرابع" %} ({% trans "أكتوبر - ديسمبر" %})</h4>
+                    {% with q4_total=0 %}
+                        {% for month in report_data.monthly_data|slice:"9:12" %}
+                            {% with q4_total=q4_total|add:month.total %}{% endwith %}
+                        {% endfor %}
+                        <div class="season-value">{{ q4_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-percentage">
+                            {% if report_data.total_year_expenses > 0 %}
+                            {{ q4_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
+                            {% else %}
+                            0% {% trans "من الإجمالي" %}
+                            {% endif %}
+                        </div>
+                        <div class="progress mt-2">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {% if report_data.total_year_expenses > 0 %}{{ q4_total|div:report_data.total_year_expenses|mul:100 }}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مقارنة نصف سنوية -->
+    <div class="report-halfyear mt-4">
+        <h3>{% trans "مقارنة نصف سنوية" %}</h3>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="comparison-container">
+                    {% with first_half_total=0 second_half_total=0 %}
+                        {% for month in report_data.monthly_data|slice:":6" %}
+                            {% with first_half_total=first_half_total|add:month.total %}{% endwith %}
+                        {% endfor %}
+                        {% for month in report_data.monthly_data|slice:"6:12" %}
+                            {% with second_half_total=second_half_total|add:month.total %}{% endwith %}
+                        {% endfor %}
+                        
+                        <div class="comparison-bar">
+                            <div class="half-year first-half" style="width: {% if report_data.total_year_expenses > 0 %}{{ first_half_total|div:report_data.total_year_expenses|mul:100 }}{% else %}50{% endif %}%">
+                                <span class="half-label">{% trans "النصف الأول" %}</span>
+                                <span class="half-value">{{ first_half_total|floatformat:2 }} {% trans "ريال" %}</span>
+                                <span class="half-percentage">
+                                    {% if report_data.total_year_expenses > 0 %}
+                                    ({{ first_half_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%)
+                                    {% else %}
+                                    (0%)
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="half-year second-half" style="width: {% if report_data.total_year_expenses > 0 %}{{ second_half_total|div:report_data.total_year_expenses|mul:100 }}{% else %}50{% endif %}%">
+                                <span class="half-label">{% trans "النصف الثاني" %}</span>
+                                <span class="half-value">{{ second_half_total|floatformat:2 }} {% trans "ريال" %}</span>
+                                <span class="half-percentage">
+                                    {% if report_data.total_year_expenses > 0 %}
+                                    ({{ second_half_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%)
+                                    {% else %}
+                                    (0%)
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-diff mt-3">
+                            {% with diff=first_half_total|sub:second_half_total %}
+                            {% if diff > 0 %}
+                            <p>{% trans "النصف الأول من العام كان أعلى إنفاقاً بفارق" %} {{ diff|floatformat:2 }} {% trans "ريال" %} ({{ diff|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%).</p>
+                            {% elif diff < 0 %}
+                            <p>{% trans "النصف الثاني من العام كان أعلى إنفاقاً بفارق" %} {{ diff|abs|floatformat:2 }} {% trans "ريال" %} ({{ diff|abs|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%).</p>
+                            {% else %}
+                            <p>{% trans "الإنفاق متساوٍ بين النصف الأول والثاني من العام." %}</p>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تاريخ إنشاء التقرير -->
+    <div class="report-footer mt-4">
+        <p>{% trans "تم إنشاء التقرير في:" %} {{ report_data.date|default:now|date:"Y-m-d H:i:s" }}</p>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني للمصروفات الشهرية
+    var ctx = document.getElementById('monthlyExpensesChart').getContext('2d');
+    var monthlyExpensesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for month in report_data.monthly_data %}
+                '{{ month.month }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: '{% trans "المصروفات الشهرية" %}',
+                data: [
+                    {% for month in report_data.monthly_data %}
+                    {{ month.total }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: '{% trans "المتوسط الشهري" %}',
+                data: Array(12).fill({{ report_data.monthly_average }}),
+                type: 'line',
+                fill: false,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderDash: [5, 5],
+                borderWidth: 2,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return value.toLocaleString() + ' {% trans "ريال" %}';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.dataset.label === '{% trans "المتوسط الشهري" %}') {
+                                return context.dataset.label + ': ' + context.raw.toLocaleString() + ' {% trans "ريال" %}';
+                            }
+                            
+                            var label = context.dataset.label || '';
+                            var value = context.raw;
+                            var total = {{ report_data.total_year_expenses }};
+                            var percentage = Math.round((value / total) * 100);
+                            return label + ': ' + value.toLocaleString() + ' {% trans "ريال" %} (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+/* أنماط إضافية للتقرير */
+.seasonal-card {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.seasonal-card h4 {
+    margin-bottom: 15px;
+    color: #3c4b64;
+}
+
+.season-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3c4b64;
+}
+
+.season-percentage {
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.comparison-container {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.comparison-bar {
+    display: flex;
+    height: 60px;
+    width: 100%;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.half-year {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    color: white;
+    position: relative;
+}
+
+.first-half {
+    background-color: #36a2eb;
+}
+
+.second-half {
+    background-color: #ff6384;
+}
+
+.half-label {
+    font-weight: bold;
+}
+
+.half-value, .half-percentage {
+    font-size: 0.9em;
+}
+
+.comparison-diff {
+    text-align: center;
+    font-weight: bold;
+    color: #3c4b64;
+}
+</style>
+{% endblock %}
+{% endblock %}

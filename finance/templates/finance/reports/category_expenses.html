@@ -1,10 +1,290 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="report-container">
+    <div class="page-header">
+        <h2>{% trans "تقرير المصروفات حسب الفئة" %}</h2>
+        <div class="header-actions">
+            <div class="btn-group">
+                <a href="{% url 'finance:export_report_pdf' report_id=report.id %}" class="btn btn-secondary" target="_blank">
+                    <i class="fa fa-file-pdf-o"></i> {% trans "تصدير PDF" %}
+                </a>
+                <a href="{% url 'finance:export_report_excel' report_id=report.id %}" class="btn btn-secondary">
+                    <i class="fa fa-file-excel-o"></i> {% trans "تصدير Excel" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نموذج فلترة التقرير -->
+    <div class="filter-section">
+        <form method="post" class="filter-form">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label>
+                        {{ form.start_date }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+                        {{ form.end_date }}
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">{% trans "تطبيق الفلاتر" %}</button>
+                    <a href="{% url 'finance:category_expenses_report' %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- ملخص المصروفات -->
+    <div class="report-summary">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
+                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-footer">{% trans "عدد فئات المصروفات:" %} {{ report_data.category_data|length }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "متوسط المصروفات لكل فئة" %}</div>
+                    <div class="card-value">
+                        {% if report_data.category_data|length > 0 %}
+                        {{ report_data.total_amount|div:report_data.category_data|length|floatformat:2 }} {% trans "ريال" %}
+                        {% else %}
+                        0 {% trans "ريال" %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "الفئة الأكثر صرفاً" %}</div>
+                    <div class="card-value">
+                        {% if report_data.category_data|length > 0 %}
+                        {{ report_data.category_data.0.category__name }}
+                        {% else %}
+                        {% trans "لا يوجد" %}
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if report_data.category_data|length > 0 %}
+                        {{ report_data.category_data.0.total|floatformat:2 }} {% trans "ريال" %}
+                        ({{ report_data.category_data.0.percentage|floatformat:1 }}%)
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني لتوزيع المصروفات حسب الفئة -->
+    <div class="report-chart">
+        <h3>{% trans "توزيع المصروفات حسب الفئة" %}</h3>
+        <div class="row">
+            <div class="col-md-8">
+                <canvas id="categoryExpensesChart" style="height: 400px;"></canvas>
+            </div>
+            <div class="col-md-4">
+                <div class="chart-legend">
+                    {% for category in report_data.chart_data %}
+                    <div class="legend-item">
+                        <div class="legend-color color-{{ forloop.counter }}"></div>
+                        <div class="legend-label">{{ category.name }}</div>
+                        <div class="legend-value">{{ category.value|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="legend-percentage">({{ category.percentage|floatformat:1 }}%)</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول تفاصيل المصروفات حسب الفئة -->
+    <div class="report-details">
+        <h3>{% trans "تفاصيل المصروفات حسب الفئة" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "الفئة" %}</th>
+                        <th>{% trans "عدد المصروفات" %}</th>
+                        <th>{% trans "المبلغ الإجمالي" %}</th>
+                        <th>{% trans "متوسط المصروف" %}</th>
+                        <th>{% trans "النسبة من الإجمالي" %}</th>
+                        <th>{% trans "مؤشر النسبة" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in report_data.category_data %}
+                    <tr>
+                        <td>{{ category.category__name }}</td>
+                        <td>{{ category.count }}</td>
+                        <td>{{ category.total|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>
+                            {% if category.count > 0 %}
+                            {{ category.total|div:category.count|floatformat:2 }} {% trans "ريال" %}
+                            {% else %}
+                            0 {% trans "ريال" %}
+                            {% endif %}
+                        </td>
+                        <td>{{ category.percentage|floatformat:1 }}%</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     role="progressbar" 
+                                     style="width: {{ category.percentage }}%"
+                                     aria-valuenow="{{ category.percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-active">
+                        <th>{% trans "الإجمالي" %}</th>
+                        <th>{{ report_data.category_data|sum:'count' }}</th>
+                        <th>{{ report_data.total_amount|floatformat:2 }} {% trans "ريال" %}</th>
+                        <th>-</th>
+                        <th>100%</th>
+                        <th>-</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <!-- تحليل اتجاهات المصروفات -->
+    <div class="report-trends">
+        <h3>{% trans "تحليل اتجاهات المصروفات" %}</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="trend-card">
+                    <h4>{% trans "الفئات الأعلى صرفاً" %}</h4>
+                    <ul class="trend-list">
+                        {% for category in report_data.category_data|slice:":5" %}
+                        <li>
+                            <span class="trend-name">{{ category.category__name }}</span>
+                            <span class="trend-value">{{ category.total|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="trend-percentage">({{ category.percentage|floatformat:1 }}%)</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="trend-card">
+                    <h4>{% trans "الفئات الأكثر تكراراً" %}</h4>
+                    <ul class="trend-list">
+                        {% for category in report_data.category_data|dictsortreversed:"count"|slice:":5" %}
+                        <li>
+                            <span class="trend-name">{{ category.category__name }}</span>
+                            <span class="trend-value">{{ category.count }} {% trans "مصروف" %}</span>
+                            <span class="trend-percentage">
+                                ({{ category.count|div:report_data.category_data|sum:'count'|mul:100|floatformat:1 }}%)
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- فلاتر التقرير المطبقة -->
+    {% if report_data.filters.start_date or report_data.filters.end_date %}
+    <div class="report-filters">
+        <h4>{% trans "فلاتر التقرير" %}</h4>
+        <ul>
+            {% if report_data.filters.start_date %}
+            <li>{% trans "تاريخ البداية:" %} {{ report_data.filters.start_date }}</li>
+            {% endif %}
+            {% if report_data.filters.end_date %}
+            <li>{% trans "تاريخ النهاية:" %} {{ report_data.filters.end_date }}</li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- تاريخ إنشاء التقرير -->
+    <div class="report-footer">
+        <p>{% trans "تم إنشاء التقرير في:" %} {{ report_data.date|default:now|date:"Y-m-d H:i:s" }}</p>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // الألوان المستخدمة للرسم البياني
+    var chartColors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', 
+        '#FF9F40', '#C9CBCF', '#7C7F9E', '#6C757D', '#28A745',
+        '#DC3545', '#17A2B8', '#FFC107', '#007BFF', '#6610F2'
+    ];
+    
+    // رسم بياني لتوزيع المصروفات حسب الفئة
+    var ctx = document.getElementById('categoryExpensesChart').getContext('2d');
+    var categoryExpensesChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [
+                {% for category in report_data.chart_data %}
+                '{{ category.name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for category in report_data.chart_data %}
+                    {{ category.value }},
+                    {% endfor %}
+                ],
+                backgroundColor: chartColors.slice(0, {{ report_data.chart_data|length }}),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            var label = context.label || '';
+                            var value = context.raw;
+                            var total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            var percentage = Math.round((value / total) * 100);
+                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // إضافة ألوان للمفاتيح
+    document.querySelectorAll('.legend-color').forEach(function(element, index) {
+        element.style.backgroundColor = chartColors[index % chartColors.length];
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

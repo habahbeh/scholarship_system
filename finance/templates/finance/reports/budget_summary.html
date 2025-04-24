@@ -1,10 +1,255 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "finance/base.html" %}
+{% load static i18n %}
 
-</body>
-</html>
+{% block finance_content %}
+<div class="report-container">
+    <div class="page-header">
+        <h2>{% trans "تقرير ملخص الميزانية" %}</h2>
+        <div class="header-actions">
+            <div class="btn-group">
+                <a href="{% url 'finance:export_report_pdf' report_id=report.id %}" class="btn btn-secondary" target="_blank">
+                    <i class="fa fa-file-pdf-o"></i> {% trans "تصدير PDF" %}
+                </a>
+                <a href="{% url 'finance:export_report_excel' report_id=report.id %}" class="btn btn-secondary">
+                    <i class="fa fa-file-excel-o"></i> {% trans "تصدير Excel" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نموذج فلترة التقرير -->
+    <div class="filter-section">
+        <form method="post" class="filter-form">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label>
+                        {{ form.start_date }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+                        {{ form.end_date }}
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">{% trans "تطبيق الفلاتر" %}</button>
+                    <a href="{% url 'finance:budget_summary_report' %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- ملخص الميزانية -->
+    <div class="report-summary">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي الميزانيات" %}</div>
+                    <div class="card-value">{{ report_data.total_budget|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-footer">{% trans "عدد الميزانيات:" %} {{ report_data.budgets|length }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
+                    <div class="card-value">{{ report_data.total_spent|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-footer">
+                        {% if report_data.total_budget > 0 %}
+                        {% trans "نسبة الصرف:" %} {{ report_data.total_spent|div:report_data.total_budget|mul:100|floatformat:1 }}%
+                        {% else %}
+                        {% trans "نسبة الصرف:" %} 0%
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card">
+                    <div class="card-title">{% trans "إجمالي المتبقي" %}</div>
+                    <div class="card-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-footer">
+                        {% if report_data.total_budget > 0 %}
+                        {% trans "نسبة المتبقي:" %} {{ report_data.total_remaining|div:report_data.total_budget|mul:100|floatformat:1 }}%
+                        {% else %}
+                        {% trans "نسبة المتبقي:" %} 0%
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني لتوزيع الميزانية -->
+    <div class="report-chart">
+        <h3>{% trans "توزيع الميزانية" %}</h3>
+        <div class="row">
+            <div class="col-md-8">
+                <canvas id="budgetPieChart" style="height: 300px;"></canvas>
+            </div>
+            <div class="col-md-4">
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #4bc0c0;"></div>
+                        <div class="legend-label">{% trans "المبلغ المصروف" %}</div>
+                        <div class="legend-value">{{ report_data.total_spent|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ff6384;"></div>
+                        <div class="legend-label">{% trans "المبلغ المتبقي" %}</div>
+                        <div class="legend-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "ريال" %}</div>
+                    </div>
+                </div>
+                
+                <div class="chart-summary mt-4">
+                    <h4>{% trans "ملخص الصرف" %}</h4>
+                    <div class="progress">
+                        <div class="progress-bar 
+                            {% if report_data.total_spent|div:report_data.total_budget|mul:100 > 80 %}bg-danger
+                            {% elif report_data.total_spent|div:report_data.total_budget|mul:100 > 60 %}bg-warning
+                            {% else %}bg-success{% endif %}" 
+                            role="progressbar" 
+                            style="width: {% if report_data.total_budget > 0 %}{{ report_data.total_spent|div:report_data.total_budget|mul:100 }}{% else %}0{% endif %}%">
+                            {% if report_data.total_budget > 0 %}
+                            {{ report_data.total_spent|div:report_data.total_budget|mul:100|floatformat:1 }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- جدول تفاصيل الميزانيات -->
+    <div class="report-details">
+        <h3>{% trans "تفاصيل الميزانيات" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "المبتعث" %}</th>
+                        <th>{% trans "المنحة" %}</th>
+                        <th>{% trans "المبلغ الإجمالي" %}</th>
+                        <th>{% trans "المبلغ المصروف" %}</th>
+                        <th>{% trans "المبلغ المتبقي" %}</th>
+                        <th>{% trans "نسبة الصرف" %}</th>
+                        <th>{% trans "تاريخ البداية" %}</th>
+                        <th>{% trans "تاريخ النهاية" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for budget in report_data.budgets %}
+                    <tr>
+                        <td>{{ budget.applicant }}</td>
+                        <td>{{ budget.scholarship }}</td>
+                        <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar 
+                                    {% if budget.spent_percentage > 80 %}bg-danger
+                                    {% elif budget.spent_percentage > 60 %}bg-warning
+                                    {% else %}bg-success{% endif %}" 
+                                    role="progressbar" 
+                                    style="width: {{ budget.spent_percentage }}%">
+                                    {{ budget.spent_percentage|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ budget.start_date|date:"Y-m-d" }}</td>
+                        <td>{{ budget.end_date|date:"Y-m-d" }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if budget.status == 'نشطة' %}badge-success
+                                {% elif budget.status == 'معلقة' %}badge-warning
+                                {% else %}badge-secondary{% endif %}">
+                                {{ budget.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">{% trans "لا توجد بيانات متاحة" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- فلاتر التقرير المطبقة -->
+    {% if report_data.filters.start_date or report_data.filters.end_date %}
+    <div class="report-filters">
+        <h4>{% trans "فلاتر التقرير" %}</h4>
+        <ul>
+            {% if report_data.filters.start_date %}
+            <li>{% trans "تاريخ البداية:" %} {{ report_data.filters.start_date }}</li>
+            {% endif %}
+            {% if report_data.filters.end_date %}
+            <li>{% trans "تاريخ النهاية:" %} {{ report_data.filters.end_date }}</li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- تاريخ إنشاء التقرير -->
+    <div class="report-footer">
+        <p>{% trans "تم إنشاء التقرير في:" %} {{ report_data.date|default:now|date:"Y-m-d H:i:s" }}</p>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // رسم بياني لتوزيع الميزانية
+    var ctx = document.getElementById('budgetPieChart').getContext('2d');
+    var budgetPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [
+                '{% trans "المبلغ المصروف" %}',
+                '{% trans "المبلغ المتبقي" %}'
+            ],
+            datasets: [{
+                data: [
+                    {{ report_data.total_spent }},
+                    {{ report_data.total_remaining }}
+                ],
+                backgroundColor: [
+                    '#4bc0c0',
+                    '#ff6384'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            var label = context.label || '';
+                            var value = context.raw;
+                            var total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            var percentage = Math.round((value / total) * 100);
+                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
