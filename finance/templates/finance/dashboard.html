@@ -125,8 +125,9 @@
           </div>
         </div>
         <div class="card-body">
+          <!-- تغيير هنا: استبدال كانفاس بعنصر div لمكونات React -->
           <div class="chart-container" style="height: 300px;">
-            <canvas id="monthlyExpensesChart"></canvas>
+            <div id="monthlyExpensesChart"></div>
           </div>
         </div>
       </div>
@@ -138,8 +139,9 @@
           <h5 class="mb-0">{% trans "توزيع المصروفات حسب الفئة" %}</h5>
         </div>
         <div class="card-body">
+          <!-- تغيير هنا: استبدال كانفاس بعنصر div لمكونات React -->
           <div class="chart-container" style="height: 300px;">
-            <canvas id="categoryExpensesChart"></canvas>
+            <div id="categoryExpensesChart"></div>
           </div>
         </div>
       </div>
@@ -205,8 +207,9 @@
         <div class="card-body">
           <div class="row">
             <div class="col-md-5">
+              <!-- تغيير هنا: استبدال كانفاس بعنصر div لمكونات React -->
               <div class="chart-container mb-3" style="height: 150px;">
-                <canvas id="budgetStatusChart"></canvas>
+                <div id="budgetStatusChart"></div>
               </div>
             </div>
             <div class="col-md-7">
@@ -247,14 +250,18 @@
 
 {% block scripts %}
 {{ block.super }}
+    <!-- إضافة مكتبات React و Recharts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.9/Recharts.min.js"></script>
 
+    <!-- تحميل مكونات الرسوم البيانية -->
     <script src="{% static 'finance/js/components/MonthlyExpensesChart.js' %}"></script>
-<script src="{% static 'finance/js/components/CategoryExpensesChart.js' %}"></script>
-<script src="{% static 'finance/js/components/BudgetStatusChart.js' %}"></script>
+    <script src="{% static 'finance/js/components/CategoryExpensesChart.js' %}"></script>
+    <script src="{% static 'finance/js/components/BudgetStatusChart.js' %}"></script>
 
 
 <script>
-  // بيانات تجريبية للمخططات (يجب استبدالها ببيانات حقيقية)
   // JavaScript for initializing the React components in the dashboard
 document.addEventListener('DOMContentLoaded', function() {
   // Get the chart containers
