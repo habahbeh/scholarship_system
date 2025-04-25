@@ -9,59 +9,13 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.rtl.min.css">
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-<!-- نمط مخصص -->
-<link rel="stylesheet" href="{% static 'finance/css/finance-bootstrap.css' %}">
-<style>
-/* Sidebar Enhancements */
-.finance-sidebar .list-group-item-action {
-  border-left: 0;
-  border-right: 0;
-  border-top: 0;
-  padding: 0.8rem 1rem;
-  transition: all 0.2s ease;
-}
-
-.finance-sidebar .list-group-item-action.active,
-.finance-sidebar .list-group-item-action:hover {
-  border-right: 3px solid #0d6efd;
-  background-color: rgba(13, 110, 253, 0.05);
-}
-
-.finance-sidebar .list-group-item-action:last-child {
-  border-bottom: 0;
-}
-
-.finance-sidebar .list-group-item i {
-  transition: all 0.2s ease;
-}
-
-.finance-sidebar .list-group-item-action:hover i,
-.finance-sidebar .list-group-item-action.active i {
-  transform: translateX(-3px);
-}
-
-/* Add animation to dropdown arrows */
-.finance-sidebar [data-bs-toggle="collapse"] .fa-chevron-down {
-  transition: transform 0.2s ease;
-}
-
-.finance-sidebar [data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
-  transform: rotate(180deg);
-}
-
-@media (max-width: 991.98px) {
-  .offcanvas-lg {
-    width: 280px;
-  }
-}
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
   <div class="row g-4">
     <!-- القائمة الجانبية -->
-    <div class="col-lg-3 col-md-4 ">
+    <div class="col-lg-3 col-md-4">
       <div class="offcanvas-lg offcanvas-end" tabindex="-1" id="financeMenu" aria-labelledby="financeMenuLabel">
         <div class="offcanvas-header bg-primary text-white">
           <h5 class="offcanvas-title" id="financeMenuLabel">
@@ -69,8 +23,8 @@
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div class="offcanvas-body p-0">
-          <div class="finance-sidebar card shadow rounded-3 mb-4 border-0 h-100">
+        <div class="offcanvas-body p-0 d-block"><!-- Added d-block to override display:flex -->
+          <div class="card shadow rounded-3 mb-4 border-0 h-100">
             <div class="card-header bg-primary text-white d-lg-flex d-none">
               <h5 class="mb-0">
                 <i class="fas fa-money-bill-wave me-2"></i>{% trans "الشؤون المالية" %}
@@ -78,7 +32,7 @@
             </div>
             <div class="card-body p-0">
               <div class="list-group list-group-flush rounded-0">
-                <a href="{% url 'finance:home' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'home' %}active bg-light{% endif %}">
+                <a href="{% url 'finance:home' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'home' %}active fw-bold{% endif %}">
                   <div class="d-flex align-items-center">
                     <div class="me-3">
                       <i class="fas fa-home fa-fw text-primary"></i>
@@ -88,7 +42,7 @@
                     </div>
                   </div>
                 </a>
-                <a href="{% url 'finance:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active bg-light{% endif %}">
+                <a href="{% url 'finance:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active fw-bold{% endif %}">
                   <div class="d-flex align-items-center">
                     <div class="me-3">
                       <i class="fas fa-tachometer-alt fa-fw text-primary"></i>
@@ -98,7 +52,7 @@
                     </div>
                   </div>
                 </a>
-                <a href="{% url 'finance:budget_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'budget_list' or 'budget_detail' in request.resolver_match.url_name or 'budget_create' in request.resolver_match.url_name or 'budget_update' in request.resolver_match.url_name %}active bg-light{% endif %}">
+                <a href="{% url 'finance:budget_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'budget_list' or 'budget_detail' in request.resolver_match.url_name or 'budget_create' in request.resolver_match.url_name or 'budget_update' in request.resolver_match.url_name %}active fw-bold{% endif %}">
                   <div class="d-flex align-items-center">
                     <div class="me-3">
                       <i class="fas fa-wallet fa-fw text-primary"></i>
@@ -124,17 +78,17 @@
                   </a>
                   <div class="collapse {% if 'expense' in request.resolver_match.url_name %}show{% endif %}" id="expensesSubmenu">
                     <div class="list-group list-group-flush border-top">
-                      <a href="{% url 'finance:expense_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'expense_list' %}active bg-light{% endif %}">
+                      <a href="{% url 'finance:expense_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'expense_list' %}active fw-bold{% endif %}">
                         <i class="fas fa-list-ul fa-fw me-2"></i>{% trans "قائمة المصروفات" %}
                       </a>
-                      <a href="{% url 'finance:category_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'category_list' %}active bg-light{% endif %}">
+                      <a href="{% url 'finance:category_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'category_list' %}active fw-bold{% endif %}">
                         <i class="fas fa-tags fa-fw me-2"></i>{% trans "فئات المصروفات" %}
                       </a>
                     </div>
                   </div>
                 </div>
 
-                <a href="{% url 'finance:report_list' %}" class="list-group-item list-group-item-action {% if 'report' in request.resolver_match.url_name %}active bg-light{% endif %}">
+                <a href="{% url 'finance:report_list' %}" class="list-group-item list-group-item-action {% if 'report' in request.resolver_match.url_name %}active fw-bold{% endif %}">
                   <div class="d-flex align-items-center">
                     <div class="me-3">
                       <i class="fas fa-chart-pie fa-fw text-primary"></i>
@@ -160,7 +114,7 @@
 
     <!-- المحتوى الرئيسي -->
     <div class="col-lg-9 col-md-8">
-      <div class="finance-content card shadow-sm">
+      <div class="card shadow-sm">
         <div class="card-body">
           {% block finance_content %}{% endblock %}
         </div>
@@ -176,16 +130,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-<script src="{% static 'finance/js/charts.js' %}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Activate the appropriate menu item based on current page
     const currentPath = window.location.pathname;
-    const menuItems = document.querySelectorAll('.finance-sidebar .list-group-item-action');
+    const menuItems = document.querySelectorAll('.list-group-item-action');
 
     menuItems.forEach(item => {
       if (item.getAttribute('href') === currentPath) {
-        item.classList.add('active', 'bg-light');
+        item.classList.add('active', 'fw-bold');
 
         // If this item is in a collapse, open the collapse
         const parentCollapse = item.closest('.collapse');

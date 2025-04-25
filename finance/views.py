@@ -1673,46 +1673,81 @@ def finance_dashboard(request):
     # إحصائيات عامة
     total_budgets = ScholarshipBudget.objects.count()
     active_budgets = ScholarshipBudget.objects.filter(status='active').count()
+    pending_budgets = ScholarshipBudget.objects.filter(status='pending').count()
+    closed_budgets = ScholarshipBudget.objects.filter(status='closed').count()
+
+    # حساب النسب المئوية للميزانيات
+    active_budget_percentage = (active_budgets / total_budgets * 100) if total_budgets > 0 else 0
+    pending_budget_percentage = (pending_budgets / total_budgets * 100) if total_budgets > 0 else 0
+    closed_budget_percentage = (closed_budgets / total_budgets * 100) if total_budgets > 0 else 0
+
+    # المصروفات
     total_expenses = Expense.objects.count()
-    pending_expenses = Expense.objects.filter(status='pending').count()
+    pending_expense_count = Expense.objects.filter(status='pending').count()
+    pending_expense_amount = Expense.objects.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
 
     # إجمالي الميزانيات والمصروفات
     total_budget_amount = ScholarshipBudget.objects.aggregate(total=Sum('total_amount'))['total'] or 0
     total_expense_amount = Expense.objects.filter(status='approved').aggregate(total=Sum('amount'))['total'] or 0
-    total_remaining_amount = total_budget_amount - total_expense_amount
+    remaining_budget = total_budget_amount - total_expense_amount
+    budget_percentage = (total_expense_amount / total_budget_amount * 100) if total_budget_amount > 0 else 0
 
-    # حساب المصروفات الشهرية للسنة الحالية
-    current_year = timezone.now().year
-    monthly_expenses = generate_monthly_expenses_data({'year': current_year})
+    # حساب التغير في المصروفات
+    # يمكن حساب التغير بمقارنة الشهر الحالي مع الشهر السابق
+    this_month = timezone.now().replace(day=1)
+    last_month = (this_month - datetime.timedelta(days=1)).replace(day=1)
+
+    this_month_expenses = Expense.objects.filter(
+        date__gte=this_month, status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    last_month_expenses = Expense.objects.filter(
+        date__gte=last_month, date__lt=this_month, status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    expense_change = ((this_month_expenses - last_month_expenses) / last_month_expenses * 100) if last_month_expenses > 0 else 0
+
+    # حساب معدل الصرف اليومي
+    today = timezone.now().date()
+    month_start = today.replace(day=1)
+    days_passed = (today - month_start).days + 1
+
+    monthly_expenses = Expense.objects.filter(
+        date__gte=month_start, date__lte=today, status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    daily_spend_rate = monthly_expenses / days_passed if days_passed > 0 else 0
+    print("monthly_expenses", monthly_expenses)
+    print("days_passed", days_passed)
+    # آخر تحديث
+    last_update = today
 
     # الحصول على أحدث المصروفات
-    latest_expenses = Expense.objects.all().order_by('-date')[:10]
-
-    # الحصول على الميزانيات التي تقترب من النفاد
-    critical_budgets = []
-    for budget in ScholarshipBudget.objects.filter(status='active'):
-        spent_percentage = budget.get_spent_percentage()
-        if spent_percentage > 80:  # أكثر من 80% تم استهلاكه
-            critical_budgets.append({
-                'id': budget.id,
-                'applicant': budget.application.applicant.get_full_name(),
-                'total_amount': budget.total_amount,
-                'remaining_amount': budget.get_remaining_amount(),
-                'spent_percentage': spent_percentage,
-            })
+    recent_expenses = Expense.objects.all().order_by('-date')[:10]
 
     context = {
-        'total_budgets': total_budgets,
+        # قيم ضرورية للقالب
+        'remaining_budget': remaining_budget,
+        'budget_percentage': budget_percentage,
+        'monthly_expenses': this_month_expenses,
+        'expense_change': expense_change,
+        'daily_spend_rate': daily_spend_rate,
+        'last_update': last_update,
+        'pending_expense_count': pending_expense_count,
+        'pending_expense_amount': pending_expense_amount,
+        'recent_expenses': recent_expenses,
         'active_budgets': active_budgets,
+        'pending_budgets': pending_budgets,
+        'closed_budgets': closed_budgets,
+        'total_budgets': total_budgets,
+        'active_budget_percentage': active_budget_percentage,
+        'pending_budget_percentage': pending_budget_percentage,
+        'closed_budget_percentage': closed_budget_percentage,
+
+        # قيم إضافية
         'total_expenses': total_expenses,
-        'pending_expenses': pending_expenses,
         'total_budget_amount': total_budget_amount,
         'total_expense_amount': total_expense_amount,
-        'total_remaining_amount': total_remaining_amount,
-        'spent_percentage': (total_expense_amount / total_budget_amount * 100) if total_budget_amount > 0 else 0,
-        'monthly_expenses': monthly_expenses,
-        'latest_expenses': latest_expenses,
-        'critical_budgets': critical_budgets,
     }
     return render(request, 'finance/dashboard.html', context)
 

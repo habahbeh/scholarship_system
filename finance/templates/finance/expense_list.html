@@ -1,56 +1,60 @@
 {% extends "finance/base.html" %}
-{% load static i18n %}
+{% load i18n %}
+{% load static %}
 
 {% block finance_content %}
 <div class="expense-list-container">
     <div class="page-header">
         <h2>{% trans "قائمة المصروفات" %}</h2>
+        <div class="header-actions">
+            <p>{% trans "يمكنك إضافة مصروف جديد من خلال صفحة تفاصيل الميزانية" %}</p>
+        </div>
     </div>
-    
+
     <div class="filter-section">
         <form method="get" class="filter-form">
             <div class="row">
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.status.id_for_label }}" class="form-label">{{ filter_form.status.label }}</label>
                         {{ filter_form.status }}
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.category.id_for_label }}">{{ filter_form.category.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.category.id_for_label }}" class="form-label">{{ filter_form.category.label }}</label>
                         {{ filter_form.category }}
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.start_date.id_for_label }}">{{ filter_form.start_date.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.start_date.id_for_label }}" class="form-label">{{ filter_form.start_date.label }}</label>
                         {{ filter_form.start_date }}
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.end_date.id_for_label }}">{{ filter_form.end_date.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.end_date.id_for_label }}" class="form-label">{{ filter_form.end_date.label }}</label>
                         {{ filter_form.end_date }}
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.min_amount.id_for_label }}">{{ filter_form.min_amount.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.min_amount.id_for_label }}" class="form-label">{{ filter_form.min_amount.label }}</label>
                         {{ filter_form.min_amount }}
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.max_amount.id_for_label }}">{{ filter_form.max_amount.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.max_amount.id_for_label }}" class="form-label">{{ filter_form.max_amount.label }}</label>
                         {{ filter_form.max_amount }}
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.search.id_for_label }}">{{ filter_form.search.label }}</label>
+                    <div class="form-group mb-3">
+                        <label for="{{ filter_form.search.id_for_label }}" class="form-label">{{ filter_form.search.label }}</label>
                         {{ filter_form.search }}
                     </div>
                 </div>
@@ -61,63 +65,107 @@
             </div>
         </form>
     </div>
-    
+
     <div class="expense-list">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>{% trans "المبتعث" %}</th>
-                    <th>{% trans "الفئة" %}</th>
-                    <th>{% trans "المبلغ" %}</th>
-                    <th>{% trans "التاريخ" %}</th>
-                    <th>{% trans "الوصف" %}</th>
-                    <th>{% trans "الحالة" %}</th>
-                    <th>{% trans "إجراءات" %}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for expense in expenses %}
-                <tr>
-                    <td>{{ expense.budget.application.applicant.get_full_name }}</td>
-                    <td>{{ expense.category.name }}</td>
-                    <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
-                    <td>{{ expense.date }}</td>
-                    <td>{{ expense.description|truncatechars:50 }}</td>
-                    <td>
-                        <span class="badge 
-                              {% if expense.status == 'approved' %}badge-success
-                              {% elif expense.status == 'rejected' %}badge-danger
-                              {% else %}badge-warning{% endif %}">
-                            {{ expense.get_status_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="btn-group">
-                            <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-sm btn-info">
-                                {% trans "عرض" %}
-                            </a>
-                            {% if perms.finance.change_expense and expense.status == 'pending' %}
-                            <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-sm btn-primary">
-                                {% trans "تعديل" %}
-                            </a>
-                            {% endif %}
-                            {% if perms.finance.change_expense and expense.status == 'pending' %}
-                            <a href="{% url 'finance:approve_expense' expense.id %}" class="btn btn-sm btn-success">
-                                {% trans "موافقة/رفض" %}
-                            </a>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">{% trans "لا توجد مصروفات متاحة" %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "المبتعث" %}</th>
+                        <th>{% trans "الفئة" %}</th>
+                        <th>{% trans "المبلغ" %}</th>
+                        <th>{% trans "التاريخ" %}</th>
+                        <th>{% trans "الوصف" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                        <th>{% trans "إجراءات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.budget.application.applicant.get_full_name }}</td>
+                        <td>{{ expense.category.name }}</td>
+                        <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ expense.date }}</td>
+                        <td>{{ expense.description|truncatechars:50 }}</td>
+                        <td>
+                            <span class="badge rounded-pill
+                                {% if expense.status == 'approved' %}bg-success
+                                {% elif expense.status == 'rejected' %}bg-danger
+                                {% else %}bg-warning{% endif %}">
+                                {{ expense.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> {% trans "عرض" %}
+                                </a>
+                                {% if perms.finance.change_expense and expense.status == 'pending' %}
+                                <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil"></i> {% trans "تعديل" %}
+                                </a>
+                                {% endif %}
+                                {% if perms.finance.change_expense and expense.status == 'pending' %}
+                                <a href="{% url 'finance:approve_expense' expense.id %}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check-circle"></i> {% trans "موافقة/رفض" %}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> {% trans "لا توجد مصروفات متاحة" %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
         {% include "finance/includes/pagination.html" with page_obj=expenses %}
     </div>
+
+    {% if expenses %}
+    <div class="expense-summary mt-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">{% trans "ملخص المصروفات" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card border-success mb-3">
+                            <div class="card-body text-success">
+                                <h5 class="card-title">{% trans "المصروفات المعتمدة" %}</h5>
+                                <p class="card-text h4">{{ approved_expenses_total|default:"0.00"|floatformat:2 }} {% trans "دينار" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-warning mb-3">
+                            <div class="card-body text-warning">
+                                <h5 class="card-title">{% trans "المصروفات المعلقة" %}</h5>
+                                <p class="card-text h4">{{ pending_expenses_total|default:"0.00"|floatformat:2 }} {% trans "دينار" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-danger mb-3">
+                            <div class="card-body text-danger">
+                                <h5 class="card-title">{% trans "المصروفات المرفوضة" %}</h5>
+                                <p class="card-text h4">{{ rejected_expenses_total|default:"0.00"|floatformat:2 }} {% trans "دينار" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

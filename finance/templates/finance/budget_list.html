@@ -3,125 +3,240 @@
 {% load static %}
 
 {% block finance_content %}
-<div class="budget-list-container">
-    <div class="page-header">
-        <h2>{% trans "قائمة الميزانيات" %}</h2>
-        {% if perms.finance.add_scholarshipbudget %}
-        <div class="header-actions">
-            <p>{% trans "يمكنك إضافة ميزانية جديدة من خلال صفحة تفاصيل طلب الابتعاث المعتمد" %}</p>
+<div class="container-fluid py-4">
+    <!-- Page Header with Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="card-title mb-0">{% trans "قائمة الميزانيات" %}</h2>
+                {% if perms.finance.add_scholarshipbudget %}
+                <div class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <small>{% trans "يمكنك إضافة ميزانية جديدة من خلال صفحة تفاصيل طلب الابتعاث المعتمد" %}</small>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
-    
-    <div class="filter-section">
-        <form method="get" class="filter-form">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
-                        {{ filter_form.status }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.start_date.id_for_label }}">{{ filter_form.start_date.label }}</label>
-                        {{ filter_form.start_date }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.end_date.id_for_label }}">{{ filter_form.end_date.label }}</label>
-                        {{ filter_form.end_date }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.search.id_for_label }}">{{ filter_form.search.label }}</label>
-                        {{ filter_form.search }}
-                    </div>
-                </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel me-2"></i>{% trans "تصفية النتائج" %}
+                </h5>
+                <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
             </div>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.min_amount.id_for_label }}">{{ filter_form.min_amount.label }}</label>
-                        {{ filter_form.min_amount }}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="{{ filter_form.max_amount.id_for_label }}">{{ filter_form.max_amount.label }}</label>
-                        {{ filter_form.max_amount }}
-                    </div>
-                </div>
-                <div class="col-md-6 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">{% trans "تطبيق الفلاتر" %}</button>
-                    <a href="{% url 'finance:budget_list' %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
-                </div>
-            </div>
-        </form>
-    </div>
-    
-    <div class="budget-list">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>{% trans "المبتعث" %}</th>
-                    <th>{% trans "المنحة" %}</th>
-                    <th>{% trans "المبلغ الإجمالي" %}</th>
-                    <th>{% trans "المبلغ المصروف" %}</th>
-                    <th>{% trans "المبلغ المتبقي" %}</th>
-                    <th>{% trans "نسبة الصرف" %}</th>
-                    <th>{% trans "الحالة" %}</th>
-                    <th>{% trans "إجراءات" %}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for budget in budgets %}
-                <tr>
-                    <td>{{ budget.application.applicant.get_full_name }}</td>
-                    <td>{{ budget.application.scholarship.title }}</td>
-                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
-                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
-                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
-                    <td>
-                        <div class="progress">
-                            <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}" 
-                                 role="progressbar" style="width: {{ budget.spent_percentage }}%">
-                                {{ budget.spent_percentage|floatformat:1 }}%
+        </div>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body">
+                <form method="get" class="filter-form">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.status.id_for_label }}" class="form-label">{{ filter_form.status.label }}</label>
+                            {{ filter_form.status }}
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.start_date.id_for_label }}" class="form-label">{{ filter_form.start_date.label }}</label>
+                            {{ filter_form.start_date }}
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.end_date.id_for_label }}" class="form-label">{{ filter_form.end_date.label }}</label>
+                            {{ filter_form.end_date }}
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.search.id_for_label }}" class="form-label">{{ filter_form.search.label }}</label>
+                            <div class="input-group">
+                                {{ filter_form.search }}
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
                             </div>
                         </div>
-                    </td>
-                    <td>
-                        <span class="badge 
-                              {% if budget.status == 'active' %}badge-success
-                              {% elif budget.status == 'suspended' %}badge-warning
-                              {% else %}badge-secondary{% endif %}">
-                            {{ budget.get_status_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="btn-group">
-                            <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-sm btn-info">
-                                {% trans "عرض" %}
-                            </a>
-                            {% if perms.finance.change_scholarshipbudget %}
-                            <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-sm btn-primary">
-                                {% trans "تعديل" %}
-                            </a>
-                            {% endif %}
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.min_amount.id_for_label }}" class="form-label">{{ filter_form.min_amount.label }}</label>
+                            {{ filter_form.min_amount }}
                         </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center">{% trans "لا توجد ميزانيات متاحة" %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        {% include "finance/includes/pagination.html" with page_obj=budgets %}
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.max_amount.id_for_label }}" class="form-label">{{ filter_form.max_amount.label }}</label>
+                            {{ filter_form.max_amount }}
+                        </div>
+                        <div class="col-12 col-md-12 col-lg-6 d-flex align-items-end">
+                            <div class="d-grid gap-2 d-md-flex mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-filter me-1"></i>{% trans "تطبيق الفلاتر" %}
+                                </button>
+                                <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>{% trans "إعادة ضبط" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-exchange me-2"></i>{% trans "الميزانيات" %}
+                </h5>
+                <span class="badge bg-primary rounded-pill">{{ budgets.paginator.count }}</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "المبتعث" %}</th>
+                            <th>{% trans "المنحة" %}</th>
+                            <th>{% trans "المبلغ الإجمالي" %}</th>
+                            <th>{% trans "المبلغ المصروف" %}</th>
+                            <th>{% trans "المبلغ المتبقي" %}</th>
+                            <th>{% trans "نسبة الصرف" %}</th>
+                            <th>{% trans "الحالة" %}</th>
+                            <th class="text-center">{% trans "إجراءات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for budget in budgets %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light text-primary me-2">
+                                        {{ budget.application.applicant.get_full_name|slice:":1" }}
+                                    </div>
+                                    <div>{{ budget.application.applicant.get_full_name }}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ budget.application.scholarship.title }}">
+                                    {{ budget.application.scholarship.title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ budget.total_amount|floatformat:2 }}</span>
+                                <small class="text-muted">{% trans "دينار" %}</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ budget.spent_amount|floatformat:2 }}</span>
+                                <small class="text-muted">{% trans "دينار" %}</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ budget.remaining_amount|floatformat:2 }}</span>
+                                <small class="text-muted">{% trans "دينار" %}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                        <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                             role="progressbar" style="width: {{ budget.spent_percentage }}%">
+                                        </div>
+                                    </div>
+                                    <span class="small fw-bold">{{ budget.spent_percentage|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if budget.status == 'active' %}
+                                    <span class="badge bg-success">{{ budget.get_status_display }}</span>
+                                {% elif budget.status == 'suspended' %}
+                                    <span class="badge bg-warning text-dark">{{ budget.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ budget.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center">
+                                    <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-sm btn-outline-info me-1" title="{% trans 'عرض' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if perms.finance.change_scholarshipbudget %}
+                                    <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'تعديل' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                    <p class="mt-2">{% trans "لا توجد ميزانيات متاحة" %}</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            {% include "finance/includes/pagination.html" with page_obj=budgets %}
+        </div>
     </div>
 </div>
+
+<!-- Required CSS for avatar circles - add to your CSS file -->
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    color: #6c757d;
+}
+</style>
+
+<!-- Make sure to include Bootstrap Icons -->
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+{% endblock %}
+
+<!-- Add JavaScript for filter collapse functionality if not already included -->
+{% block extra_js %}
+<script>
+    // Initialize tooltips and apply Bootstrap classes to form fields
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Apply Bootstrap classes to form fields
+        var formElements = {
+            '{{ filter_form.status.id_for_label }}': 'form-select',
+            '{{ filter_form.start_date.id_for_label }}': 'form-control',
+            '{{ filter_form.end_date.id_for_label }}': 'form-control',
+            '{{ filter_form.search.id_for_label }}': 'form-control',
+            '{{ filter_form.min_amount.id_for_label }}': 'form-control',
+            '{{ filter_form.max_amount.id_for_label }}': 'form-control'
+        };
+
+        for (var elementId in formElements) {
+            var element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add(formElements[elementId]);
+            }
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}
