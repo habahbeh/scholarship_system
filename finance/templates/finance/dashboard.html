@@ -125,7 +125,7 @@
           </div>
         </div>
         <div class="card-body">
-          <!-- تغيير هنا: استبدال كانفاس بعنصر div لمكونات React -->
+          <!-- تغيير هنا: استبدلنا div React بعنصر div عادي -->
           <div class="chart-container" style="height: 300px;">
             <div id="monthlyExpensesChart"></div>
           </div>
@@ -139,7 +139,6 @@
           <h5 class="mb-0">{% trans "توزيع المصروفات حسب الفئة" %}</h5>
         </div>
         <div class="card-body">
-          <!-- تغيير هنا: استبدال كانفاس بعنصر div لمكونات React -->
           <div class="chart-container" style="height: 300px;">
             <div id="categoryExpensesChart"></div>
           </div>
@@ -207,7 +206,6 @@
         <div class="card-body">
           <div class="row">
             <div class="col-md-5">
-              <!-- تغيير هنا: استبدال كانفاس بعنصر div لمكونات React -->
               <div class="chart-container mb-3" style="height: 150px;">
                 <div id="budgetStatusChart"></div>
               </div>
@@ -250,31 +248,25 @@
 
 {% block scripts %}
 {{ block.super }}
-    <!-- إضافة مكتبات React و Recharts -->
+    <!-- Cargar Chart.js en lugar de React y Recharts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+
+    <!-- Cargar nuestros scripts de gráficas personalizados -->
+    <script src="{% static 'finance/js/monthly-expenses-chart.js' %}"></script>
+
+    <!-- Mantener estos scripts para los otros gráficos por ahora -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.9/Recharts.min.js"></script>
-
-    <!-- تحميل مكونات الرسوم البيانية -->
-    <script src="{% static 'finance/js/components/MonthlyExpensesChart.js' %}"></script>
     <script src="{% static 'finance/js/components/CategoryExpensesChart.js' %}"></script>
     <script src="{% static 'finance/js/components/BudgetStatusChart.js' %}"></script>
 
-
 <script>
-  // JavaScript for initializing the React components in the dashboard
+  // JavaScript para inicializar los componentes React restantes
 document.addEventListener('DOMContentLoaded', function() {
-  // Get the chart containers
-  const monthlyExpensesContainer = document.getElementById('monthlyExpensesChart');
+  // Inicializar solo los gráficos de categoría y estado de presupuesto con React
   const categoryExpensesContainer = document.getElementById('categoryExpensesChart');
   const budgetStatusContainer = document.getElementById('budgetStatusChart');
-
-  // Initialize React components if the containers exist
-  if (monthlyExpensesContainer && typeof ReactDOM !== 'undefined' && typeof MonthlyExpensesChart !== 'undefined') {
-    ReactDOM.render(React.createElement(MonthlyExpensesChart), monthlyExpensesContainer);
-  } else {
-    console.warn('Monthly expenses chart container or React component not found');
-  }
 
   if (categoryExpensesContainer && typeof ReactDOM !== 'undefined' && typeof CategoryExpensesChart !== 'undefined') {
     ReactDOM.render(React.createElement(CategoryExpensesChart), categoryExpensesContainer);
@@ -288,15 +280,14 @@ document.addEventListener('DOMContentLoaded', function() {
     console.warn('Budget status chart container or React component not found');
   }
 
-  // Handle period selector change events
+  // Manejar eventos de cambio de período
   const periodSelector = document.getElementById('period-selector');
   if (periodSelector) {
     periodSelector.addEventListener('change', function(e) {
       const period = e.target.value;
-      // You could use this to refresh data with different time periods
       console.log('Period changed to:', period);
 
-      // Optionally trigger a custom event that your React components can listen for
+      // Disparar evento personalizado que nuestros scripts de gráficos pueden escuchar
       const event = new CustomEvent('periodChanged', { detail: { period } });
       document.dispatchEvent(event);
     });
