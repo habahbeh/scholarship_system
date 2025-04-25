@@ -34,7 +34,7 @@
                     <td>{{ category.code|default:"-" }}</td>
                     <td>{{ category.description|truncatechars:50|default:"-" }}</td>
                     <td>{{ category.expenses_count }}</td>
-                    <td>{{ category.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ category.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>
                         <div class="btn-group">
                             {% if perms.finance.change_expensecategory %}
@@ -71,7 +71,7 @@
                         <div class="legend-item">
                             <span class="legend-color" style="background-color: rgba({{ forloop.counter0|mul:30 }}, {{ 150|add:forloop.counter0|mul:20 }}, {{ 200|sub:forloop.counter0|mul:10 }}, 0.7);"></span>
                             <span class="legend-label">{{ category.name }}</span>
-                            <span class="legend-value">{{ category.total_amount|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="legend-value">{{ category.total_amount|floatformat:2 }} {% trans "دينار" %}</span>
                         </div>
                     {% endfor %}
                 </div>

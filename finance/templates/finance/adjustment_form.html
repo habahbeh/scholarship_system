@@ -21,11 +21,11 @@
                 </tr>
                 <tr>
                     <th>{% trans "إجمالي الميزانية" %}:</th>
-                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
                 </tr>
                 <tr>
                     <th>{% trans "المبلغ المتبقي" %}:</th>
-                    <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
                 </tr>
             </table>
         </div>
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
     adjustmentTypeSelect.addEventListener('change', function() {
         if (this.value === 'decrease') {
             const remainingAmount = {{ budget.get_remaining_amount }};
-            alert(`ملاحظة: المبلغ المتبقي حاليًا هو ${remainingAmount.toFixed(2)} ريال. يجب مراعاة ذلك عند تخفيض الميزانية.`);
+            alert(`ملاحظة: المبلغ المتبقي حاليًا هو ${remainingAmount.toFixed(2)} دينار. يجب مراعاة ذلك عند تخفيض الميزانية.`);
         }
     });
 });

@@ -54,7 +54,7 @@
                     <table class="table">
                         <tr>
                             <th>{% trans "المبلغ الإجمالي" %}:</th>
-                            <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                            <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
                         </tr>
                         <tr>
                             <th>{% trans "تاريخ البداية" %}:</th>
@@ -86,13 +86,13 @@
                 <div class="col-md-4">
                     <div class="summary-card">
                         <div class="card-title">{% trans "المبلغ المصروف" %}</div>
-                        <div class="card-value">{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="card-value">{{ budget.spent_amount|floatformat:2 }} {% trans "دينار" %}</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="summary-card">
                         <div class="card-title">{% trans "المبلغ المتبقي" %}</div>
-                        <div class="card-value">{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="card-value">{{ budget.remaining_amount|floatformat:2 }} {% trans "دينار" %}</div>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -126,42 +126,42 @@
                         <tbody>
                             <tr>
                                 <td>{% trans "الرسوم الدراسية" %}</td>
-                                <td>{{ budget.tuition_fees|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.tuition_fees|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.tuition_fees|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "المخصص الشهري" %}</td>
-                                <td>{{ budget.monthly_stipend|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.monthly_stipend|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.monthly_stipend|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "بدل السفر" %}</td>
-                                <td>{{ budget.travel_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.travel_allowance|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.travel_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "التأمين الصحي" %}</td>
-                                <td>{{ budget.health_insurance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.health_insurance|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.health_insurance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "بدل الكتب" %}</td>
-                                <td>{{ budget.books_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.books_allowance|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.books_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "بدل البحث العلمي" %}</td>
-                                <td>{{ budget.research_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.research_allowance|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.research_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "بدل المؤتمرات" %}</td>
-                                <td>{{ budget.conference_allowance|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.conference_allowance|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.conference_allowance|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>{% trans "مصاريف أخرى" %}</td>
-                                <td>{{ budget.other_expenses|floatformat:2 }} {% trans "ريال" %}</td>
+                                <td>{{ budget.other_expenses|floatformat:2 }} {% trans "دينار" %}</td>
                                 <td>{{ budget.other_expenses|div:budget.total_amount|mul:100|floatformat:1 }}%</td>
                             </tr>
                         </tbody>
@@ -199,7 +199,7 @@
                 {% for expense in expenses %}
                 <tr>
                     <td>{{ expense.category.name }}</td>
-                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>{{ expense.date }}</td>
                     <td>{{ expense.description|truncatechars:50 }}</td>
                     <td>
@@ -263,7 +263,7 @@
                             {{ adjustment.get_adjustment_type_display }}
                         </span>
                     </td>
-                    <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>{{ adjustment.date }}</td>
                     <td>{{ adjustment.reason|truncatechars:50 }}</td>
                     <td>

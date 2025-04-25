@@ -25,15 +25,15 @@
                     <table class="table">
                         <tr>
                             <th>{% trans "المبلغ الإجمالي" %}:</th>
-                            <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                            <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
                         </tr>
                         <tr>
                             <th>{% trans "المبلغ المصروف" %}:</th>
-                            <td>{{ budget.get_spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                            <td>{{ budget.get_spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
                         </tr>
                         <tr>
                             <th>{% trans "المبلغ المتبقي" %}:</th>
-                            <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                            <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
                         </tr>
                         <tr>
                             <th>{% trans "نسبة الصرف" %}:</th>
@@ -92,7 +92,7 @@
                             {{ adjustment.get_adjustment_type_display }}
                         </span>
                     </td>
-                    <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>{{ adjustment.date }}</td>
                     <td>{{ adjustment.reason|truncatechars:50 }}</td>
                     <td>

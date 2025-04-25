@@ -4,7 +4,7 @@
             <div class="col-md-6">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
-                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "دينار" %}</div>
                 </div>
             </div>
             <div class="col-md-6">
@@ -43,7 +43,7 @@
                 {% for category in report_data.category_data %}
                 <tr>
                     <td>{{ category.category__name }}</td>
-                    <td>{{ category.total|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ category.total|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>{{ category.percentage|floatformat:1 }}%</td>
                     <td>{{ category.count }}</td>
                 </tr>

@@ -1,164 +1,70 @@
-// وظائف الرسوم البيانية للنظام المالي
+// وظائف الرسوم البيانية للنظام المالي - نسخة محسنة
 
-// إنشاء مخطط دائري لملخص الميزانية
-function createBudgetPieChart(data) {
-    var ctx = document.getElementById('budgetPieChart');
-    if (!ctx) return;
+// الألوان الموحدة للمخططات
+const chartColors = {
+    primary: '#2196F3',
+    secondary: '#78909C',
+    success: '#4CAF50',
+    danger: '#F44336',
+    warning: '#FFC107',
+    info: '#03A9F4',
+    // مجموعة ألوان متناسقة للمخططات الدائرية
+    pieColors: [
+        '#2196F3', // أزرق
+        '#4CAF50', // أخضر
+        '#FFC107', // أصفر
+        '#F44336', // أحمر
+        '#9C27B0', // أرجواني
+        '#3F51B5', // نيلي
+        '#FF9800', // برتقالي
+        '#00BCD4', // فيروزي
+        '#009688', // أخضر فاتح
+        '#E91E63'  // وردي
+    ]
+};
 
-    var chart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: data.pie_data.map(item => item.name),
-            datasets: [{
-                data: data.pie_data.map(item => item.value),
-                backgroundColor: [
-                    '#4bc0c0',
-                    '#ff6384',
-                    '#36a2eb',
-                    '#ffcd56',
-                    '#9966ff',
-                    '#c9cbcf'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+// خيارات موحدة للمخططات
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+        duration: 1000,
+        easing: 'easeOutQuart'
+    },
+    plugins: {
+        legend: {
+            labels: {
+                font: {
+                    family: 'Cairo, Tajawal, sans-serif',
+                    size: 13
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            var label = context.label || '';
-                            var value = context.raw;
-                            var total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            var percentage = Math.round((value / total) * 100);
-                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
-                        }
-                    }
-                }
+                color: '#546e7a',
+                usePointStyle: true,
+                padding: 20
             }
-        }
-    });
-}
-
-// إنشاء مخطط دائري للمصروفات حسب الفئة
-function createCategoryExpensesChart(data) {
-    var ctx = document.getElementById('categoryExpensesChart');
-    if (!ctx) return;
-
-    var chart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: data.data.map(item => item.name),
-            datasets: [{
-                data: data.data.map(item => item.value),
-                backgroundColor: [
-                    '#ff6384',
-                    '#36a2eb',
-                    '#ffcd56',
-                    '#4bc0c0',
-                    '#9966ff',
-                    '#ff9f40',
-                    '#c9cbcf',
-                    '#4d5360'
-                ]
-            }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            var label = context.label || '';
-                            var value = context.raw;
-                            var total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            var percentage = Math.round((value / total) * 100);
-                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// إنشاء مخطط شريطي للمصروفات الشهرية
-function createMonthlyExpensesChart(data) {
-    var ctx = document.getElementById('monthlyExpensesChart');
-    if (!ctx) return;
-
-    var chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.data.map(item => item.month),
-            datasets: [{
-                label: 'المصروفات الشهرية',
-                data: data.data.map(item => item.value),
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value, index, values) {
-                            return value.toLocaleString() + ' ريال';
-                        }
-                    }
-                }
+        tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            titleColor: '#37474f',
+            bodyColor: '#546e7a',
+            borderColor: '#e9ecef',
+            borderWidth: 1,
+            cornerRadius: 8,
+            boxPadding: 6,
+            usePointStyle: true,
+            titleFont: {
+                family: 'Cairo, Tajawal, sans-serif',
+                size: 14,
+                weight: 'bold'
             },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.raw.toLocaleString() + ' ريال';
-                        }
-                    }
-                }
-            }
+            bodyFont: {
+                family: 'Cairo, Tajawal, sans-serif',
+                size: 13
+            },
+            padding: 12,
+            caretSize: 6
         }
-    });
-}
+    }
+};
 
-// إنشاء مخطط دونات لحالة الميزانيات
-function createBudgetStatusChart(data) {
-    var ctx = document.getElementById('budgetStatusChart');
-    if (!ctx) return;
-
-    var chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: data.data.map(item => item.name),
-            datasets: [{
-                data: data.data.map(item => item.value),
-                backgroundColor: [
-                    '#28a745',  // نشطة
-                    '#ffc107',  // معلقة
-                    '#6c757d'   // مغلقة
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
+// إنشاء مخطط دائري لملخص

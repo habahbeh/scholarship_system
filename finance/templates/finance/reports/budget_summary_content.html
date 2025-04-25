@@ -4,19 +4,19 @@
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي الميزانيات" %}</div>
-                    <div class="card-value">{{ report_data.total_budget|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_budget|floatformat:2 }} {% trans "دينار" %}</div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "المبلغ المصروف" %}</div>
-                    <div class="card-value">{{ report_data.total_spent|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_spent|floatformat:2 }} {% trans "دينار" %}</div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "المبلغ المتبقي" %}</div>
-                    <div class="card-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "دينار" %}</div>
                 </div>
             </div>
         </div>
@@ -41,7 +41,7 @@
                         {% for item in report_data.pie_chart_data %}
                         <tr>
                             <td>{{ item.name }}</td>
-                            <td>{{ item.value|floatformat:2 }} {% trans "ريال" %}</td>
+                            <td>{{ item.value|floatformat:2 }} {% trans "دينار" %}</td>
                             <td>{{ item.value|div:report_data.total_budget|mul:100|floatformat:1 }}%</td>
                         </tr>
                         {% endfor %}
@@ -70,9 +70,9 @@
                 <tr>
                     <td>{{ budget.applicant }}</td>
                     <td>{{ budget.scholarship }}</td>
-                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>
                         <div class="progress">
                             <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}"

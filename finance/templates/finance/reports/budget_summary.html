@@ -48,14 +48,14 @@
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي الميزانيات" %}</div>
-                    <div class="card-value">{{ report_data.total_budget|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_budget|floatformat:2 }} {% trans "دينار" %}</div>
                     <div class="card-footer">{% trans "عدد الميزانيات:" %} {{ report_data.budgets|length }}</div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
-                    <div class="card-value">{{ report_data.total_spent|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_spent|floatformat:2 }} {% trans "دينار" %}</div>
                     <div class="card-footer">
                         {% if report_data.total_budget > 0 %}
                         {% trans "نسبة الصرف:" %} {{ report_data.total_spent|div:report_data.total_budget|mul:100|floatformat:1 }}%
@@ -68,7 +68,7 @@
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي المتبقي" %}</div>
-                    <div class="card-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "دينار" %}</div>
                     <div class="card-footer">
                         {% if report_data.total_budget > 0 %}
                         {% trans "نسبة المتبقي:" %} {{ report_data.total_remaining|div:report_data.total_budget|mul:100|floatformat:1 }}%
@@ -93,12 +93,12 @@
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #4bc0c0;"></div>
                         <div class="legend-label">{% trans "المبلغ المصروف" %}</div>
-                        <div class="legend-value">{{ report_data.total_spent|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="legend-value">{{ report_data.total_spent|floatformat:2 }} {% trans "دينار" %}</div>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: #ff6384;"></div>
                         <div class="legend-label">{% trans "المبلغ المتبقي" %}</div>
-                        <div class="legend-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="legend-value">{{ report_data.total_remaining|floatformat:2 }} {% trans "دينار" %}</div>
                     </div>
                 </div>
                 
@@ -146,9 +146,9 @@
                     <tr>
                         <td>{{ budget.applicant }}</td>
                         <td>{{ budget.scholarship }}</td>
-                        <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                        <td>{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                        <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget.spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
                         <td>
                             <div class="progress">
                                 <div class="progress-bar 
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             var value = context.raw;
                             var total = context.dataset.data.reduce((a, b) => a + b, 0);
                             var percentage = Math.round((value / total) * 100);
-                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
+                            return label + ': ' + value.toLocaleString() + ' دينار (' + percentage + '%)';
                         }
                     }
                 }

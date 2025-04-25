@@ -1,64 +1,153 @@
-/* ملف أنماط CSS للنظام المالي مع Bootstrap */
+/* ملف أنماط CSS للنظام المالي مع Bootstrap - نسخة محسنة */
 
-/* توجيه RTL للغة العربية */
+/* توجيه RTL للغة العربية مع خطوط محسنة */
 body {
     font-family: 'Cairo', 'Tajawal', sans-serif;
+    background-color: #f5f8fa;
+    color: #495057;
 }
 
-/* تخصيص القائمة الجانبية */
+/* تحسين القائمة الجانبية */
 .finance-sidebar {
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.finance-sidebar .card-header {
+    padding: 1rem;
+    border-bottom: none;
+    background: linear-gradient(135deg, #2196F3, #1565C0);
 }
 
 .finance-sidebar .nav-link {
-    color: #495057;
+    color: #546e7a;
     transition: all 0.3s ease;
-    padding-right: 1.5rem;
+    padding: 0.75rem 1.25rem;
+    border-right: 3px solid transparent;
+    font-weight: 500;
 }
 
 .finance-sidebar .nav-link:hover,
 .finance-sidebar .nav-link.active {
-    background-color: rgba(13, 110, 253, 0.1);
-    color: #0d6efd;
-    border-right: 3px solid #0d6efd;
+    background-color: rgba(33, 150, 243, 0.08);
+    color: #2196F3;
+    border-right: 3px solid #2196F3;
 }
 
 .finance-sidebar .nav-link i {
     width: 24px;
     text-align: center;
+    margin-left: 0.5rem;
 }
 
-/* تخصيص المحتوى */
+/* تحسين المحتوى الرئيسي */
 .finance-content {
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     min-height: 80vh;
+    background-color: #fff;
+    transition: all 0.3s ease;
 }
 
-/* تخصيص بطاقات الإحصائيات */
+.finance-content .card-body {
+    padding: 1.5rem;
+}
+
+/* تصميم بطاقات الإحصائيات بشكل أجمل */
+.stats-card {
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    border: none;
+    overflow: hidden;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
 .card-body .display-5 {
     font-weight: 600;
+    color: #2196F3;
 }
 
+.card-body .text-muted {
+    color: #78909c !important;
+}
+
+/* تحسين حاويات المخططات */
 .chart-container {
     position: relative;
-    height: 250px;
+    height: 280px;
     width: 100%;
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background-color: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 /* تصميم قائمة البيانات */
+.list-group {
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.list-group-item {
+    border-right: none;
+    border-left: none;
+    padding: 1rem 1.25rem;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
 .list-group-item-action:hover {
-    background-color: rgba(13, 110, 253, 0.05);
+    background-color: rgba(33, 150, 243, 0.05);
 }
 
 /* تصميم البادج/Labels */
 .badge {
     font-weight: 500;
+    padding: 0.35em 0.65em;
+    border-radius: 0.5rem;
+}
+
+.badge-primary {
+    background-color: #2196F3;
+}
+
+.badge-success {
+    background-color: #4CAF50;
+}
+
+.badge-warning {
+    background-color: #FFC107;
+    color: #212529;
+}
+
+.badge-danger {
+    background-color: #F44336;
 }
 
 /* تصميم شريط التقدم */
 .progress {
     height: 0.8rem;
-    border-radius: 0.25rem;
+    border-radius: 1rem;
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 1rem;
+    background: linear-gradient(to right, #2196F3, #1976D2);
 }
 
 /* تطويعات لأجهزة مختلفة */
@@ -74,28 +163,45 @@ body {
     }
 
     .chart-container {
-        height: 200px;
+        height: 220px;
     }
 }
 
-/* تصميم النماذج */
+/* تحسين النماذج */
 .form-control {
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dfe3e8;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
 }
 
 .form-label {
     font-weight: 500;
+    color: #546e7a;
+    margin-bottom: 0.5rem;
 }
 
 .form-actions {
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid #e9ecef;
 }
 
-/* تصميم لوحة المعلومات */
+/* تحسين لوحة المعلومات */
 .dashboard-header {
     margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.dashboard-header h2 {
+    color: #37474f;
+    font-weight: 600;
 }
 
 .dashboard-actions {
@@ -103,53 +209,124 @@ body {
     gap: 0.5rem;
 }
 
-/* تصميم التقارير */
+/* تحسين التقارير */
 .report-section {
     margin-bottom: 2rem;
+    background-color: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 .report-header {
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #e9ecef;
     padding-bottom: 1rem;
     margin-bottom: 1.5rem;
 }
 
-/* تخصيص الأزرار */
+.report-header h3 {
+    color: #37474f;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* تحسين الأزرار */
 .btn {
-    border-radius: 0.25rem;
-    padding: 0.375rem 1rem;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .btn-primary {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    border: none;
 }
 
 .btn-primary:hover {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
+    background: linear-gradient(135deg, #1976D2, #0D47A1);
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
 }
 
-/* تخصيص الجداول */
+.btn-outline-primary {
+    border-color: #2196F3;
+    color: #2196F3;
+}
+
+.btn-outline-primary:hover {
+    background-color: #2196F3;
+    color: #fff;
+}
+
+/* تحسين الجداول */
 .table {
-    color: #212529;
+    color: #546e7a;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .table th {
     font-weight: 600;
     background-color: #f8f9fa;
+    padding: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-color: #e9ecef;
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.05);
+    background-color: rgba(33, 150, 243, 0.05);
 }
 
-/* تخصيص البطاقات */
+/* تحسين البطاقات العامة */
 .card {
     border: none;
     transition: all 0.3s ease;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
-.card.shadow-sm:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card-footer {
+    padding: 1rem 1.25rem;
+    background-color: #fff;
+    border-top: 1px solid #e9ecef;
+}
+
+/* تأثيرات إضافية لتحسين المظهر */
+.text-primary {
+    color: #2196F3 !important;
+}
+
+.bg-primary {
+    background-color: #2196F3 !important;
+}
+
+.border-primary {
+    border-color: #2196F3 !important;
+}
+
+/* تأثيرات تحميل ولطيفة */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }

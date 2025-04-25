@@ -1,21 +1,22 @@
-/* ملف أنماط CSS للنظام المالي */
+/* ملف أنماط CSS محسن للنظام المالي */
 
 /* تصميم القائمة الجانبية */
 .finance-sidebar {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .finance-sidebar h3 {
-    margin-bottom: 20px;
-    color: #3c4b64;
-    font-weight: bold;
+    margin-bottom: 0;
+    color: #ffffff;
+    font-weight: 600;
     font-size: 1.3rem;
-    border-bottom: 2px solid #e9ecef;
-    padding-bottom: 10px;
+    background: linear-gradient(135deg, #2196F3, #1565C0);
+    padding: 1.25rem;
 }
 
 .finance-menu {
@@ -25,30 +26,46 @@
 }
 
 .finance-menu li {
-    margin-bottom: 8px;
+    margin: 0;
+    border-bottom: 1px solid #f0f3f6;
+}
+
+.finance-menu li:last-child {
+    border-bottom: none;
 }
 
 .finance-menu a {
     display: block;
-    padding: 12px 15px;
-    border-radius: 5px;
-    color: #495057;
+    padding: 14px 20px;
+    color: #546e7a;
     text-decoration: none;
     transition: all 0.3s ease;
     font-weight: 500;
+    position: relative;
 }
 
 .finance-menu a:hover, .finance-menu a.active {
-    background-color: #007bff;
-    color: #ffffff;
+    background-color: rgba(33, 150, 243, 0.08);
+    color: #2196F3;
+    padding-right: 25px;
+}
+
+.finance-menu a:hover:before, .finance-menu a.active:before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #2196F3;
 }
 
 /* تصميم المحتوى */
 .finance-content {
-    background-color: #fff;
+    background-color: #ffffff;
     padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
     min-height: 500px;
 }
 
@@ -56,139 +73,194 @@
 .finance-stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 20px;
     margin-bottom: 30px;
 }
 
 .stats-card {
-    flex: 1 1 calc(33.333% - 15px);
+    flex: 1 1 calc(33.333% - 20px);
     min-width: 200px;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
+    padding: 25px;
     text-align: center;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, #2196F3, #1976D2);
 }
 
 .stats-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
 }
 
 .stats-number {
     font-size: 32px;
     font-weight: bold;
-    color: #3c4b64;
-    margin: 10px 0;
+    color: #2196F3;
+    margin: 15px 0;
 }
 
 .stats-label {
-    color: #6c757d;
+    color: #546e7a;
     font-size: 16px;
+    font-weight: 500;
 }
 
 /* تصميم بطاقات لوحة المعلومات */
 .dashboard-summary {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 20px;
     margin-bottom: 30px;
 }
 
 .summary-card {
-    flex: 1 1 calc(33.333% - 15px);
+    flex: 1 1 calc(33.333% - 20px);
     min-width: 200px;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
+    padding: 25px;
     text-align: center;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #2196F3;
+    opacity: 0;
+    transition: all 0.3s ease;
 }
 
 .summary-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+}
+
+.summary-card:hover:after {
+    opacity: 1;
 }
 
 .card-title {
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #495057;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #37474f;
+    font-size: 1.1rem;
 }
 
 .card-value {
     font-size: 28px;
-    color: #3c4b64;
-    margin-bottom: 10px;
+    color: #2196F3;
+    margin-bottom: 15px;
+    font-weight: 600;
 }
 
 .card-footer {
     font-size: 14px;
-    color: #6c757d;
-    border-top: 1px solid #e9ecef;
-    padding-top: 10px;
+    color: #78909c;
+    border-top: 1px solid #f5f7f9;
+    padding-top: 15px;
+    margin-top: 15px;
 }
 
 /* تصميم مخططات لوحة المعلومات */
 .dashboard-charts {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 25px;
     margin-bottom: 30px;
 }
 
 .chart-container {
-    flex: 1 1 calc(50% - 20px);
+    flex: 1 1 calc(50% - 25px);
     min-width: 300px;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin-bottom: 20px;
-    height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
+    padding: 25px;
+    margin-bottom: 25px;
+    height: 350px;
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
 }
 
 .chart-container h3 {
-    color: #3c4b64;
-    margin-bottom: 15px;
+    color: #37474f;
+    margin-bottom: 20px;
     font-size: 1.2rem;
-    border-bottom: 1px solid #e9ecef;
-    padding-bottom: 8px;
+    font-weight: 600;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f3f6;
 }
 
 /* تصميم النماذج */
 .filter-section {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    background-color: #f8fafc;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.05);
 }
 
 .filter-form label {
-    font-weight: bold;
-    color: #495057;
-    margin-bottom: 5px;
+    font-weight: 600;
+    color: #546e7a;
+    margin-bottom: 8px;
     display: block;
 }
 
 .filter-form select,
 .filter-form input {
     width: 100%;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ced4da;
-    margin-bottom: 15px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #dfe3e8;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    color: #546e7a;
+}
+
+.filter-form select:focus,
+.filter-form input:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+    outline: none;
 }
 
 .form-actions {
-    margin-top: 20px;
-    text-align: center;
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 }
 
 .form-actions .btn {
-    padding: 8px 25px;
-    margin: 0 5px;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 /* تصميم العناوين */
@@ -196,110 +268,155 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    border-bottom: 2px solid #e9ecef;
-    padding-bottom: 15px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f3f6;
 }
 
 .page-header h2 {
     margin: 0;
-    color: #3c4b64;
-    font-weight: bold;
+    color: #37474f;
+    font-weight: 600;
+    font-size: 1.75rem;
 }
 
 .header-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
 }
 
 /* تصميم التقارير */
 .report-header {
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     text-align: center;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 12px;
 }
 
 .report-section {
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.report-section:hover {
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
 }
 
 .summary-box {
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 5px;
+    background-color: #f8fafc;
+    border: none;
+    padding: 25px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.summary-box:hover {
+    background-color: #f0f7ff;
 }
 
 .summary-title {
-    font-weight: bold;
-    margin-bottom: 10px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #37474f;
 }
 
 .summary-value {
-    font-size: 24px;
-    color: #3c4b64;
+    font-size: 28px;
+    color: #2196F3;
+    font-weight: 600;
 }
 
 /* تصميم التنبيهات والرسائل */
 .alert {
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 20px;
+    border: none;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.alert:before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
 }
 
 .alert-danger {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
+    background-color: #fff5f5;
+    color: #d32f2f;
+}
+
+.alert-danger:before {
+    background-color: #f44336;
 }
 
 .alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
+    background-color: #f0fff4;
+    color: #388e3c;
+}
+
+.alert-success:before {
+    background-color: #4caf50;
 }
 
 .alert-warning {
-    background-color: #fff3cd;
-    border-color: #ffeeba;
-    color: #856404;
+    background-color: #fffcf2;
+    color: #f57c00;
+}
+
+.alert-warning:before {
+    background-color: #ff9800;
 }
 
 .alert-info {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
+    background-color: #f0f9ff;
+    color: #0277bd;
+}
+
+.alert-info:before {
+    background-color: #03a9f4;
 }
 
 /* تصميم البادج/Labels */
 .badge {
     display: inline-block;
-    padding: 0.25em 0.4em;
+    padding: 0.35em 0.65em;
     font-size: 75%;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     text-align: center;
     white-space: nowrap;
     vertical-align: baseline;
-    border-radius: 0.25rem;
+    border-radius: 6px;
 }
 
-.badge-primary { background-color: #007bff; color: #fff; }
-.badge-secondary { background-color: #6c757d; color: #fff; }
-.badge-success { background-color: #28a745; color: #fff; }
-.badge-danger { background-color: #dc3545; color: #fff; }
-.badge-warning { background-color: #ffc107; color: #212529; }
-.badge-info { background-color: #17a2b8; color: #fff; }
+.badge-primary { background-color: #2196F3; color: #fff; }
+.badge-secondary { background-color: #78909c; color: #fff; }
+.badge-success { background-color: #4CAF50; color: #fff; }
+.badge-danger { background-color: #F44336; color: #fff; }
+.badge-warning { background-color: #FFC107; color: #333; }
+.badge-info { background-color: #03A9F4; color: #fff; }
 
 /* تصميم شريط التقدم */
 .progress {
-    display: flex;
-    height: 1rem;
+    height: 0.8rem;
     overflow: hidden;
     font-size: 0.75rem;
     background-color: #e9ecef;
-    border-radius: 0.25rem;
-    margin-bottom: 10px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .progress-bar {
@@ -309,57 +426,69 @@
     color: #fff;
     text-align: center;
     white-space: nowrap;
-    background-color: #007bff;
+    background: linear-gradient(to right, #2196F3, #1976D2);
     transition: width 0.6s ease;
+    border-radius: 10px;
 }
 
-.bg-success { background-color: #28a745 !important; }
-.bg-warning { background-color: #ffc107 !important; }
-.bg-danger { background-color: #dc3545 !important; }
+.bg-success { background: linear-gradient(to right, #4CAF50, #388E3C) !important; }
+.bg-warning { background: linear-gradient(to right, #FFC107, #FFA000) !important; }
+.bg-danger { background: linear-gradient(to right, #F44336, #D32F2F) !important; }
 
 /* تصميم الجداول */
 .table {
     width: 100%;
-    margin-bottom: 1rem;
-    color: #212529;
-    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    color: #546e7a;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .table th {
-    background-color: #f8f9fa;
-    font-weight: bold;
+    background-color: #f8fafc;
+    font-weight: 600;
     vertical-align: bottom;
-    padding: 12px;
-    border-bottom: 2px solid #dee2e6;
+    padding: 15px;
+    border-bottom: 2px solid #e9ecef;
 }
 
 .table td {
-    padding: 12px;
+    padding: 15px;
     vertical-align: middle;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid #f0f3f6;
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: #f8fafc;
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(33, 150, 243, 0.05);
 }
 
-/* توافقية الجوال */
+/* توافقية الجوال محسنة */
+@media (max-width: 991px) {
+    .finance-stats, .dashboard-summary {
+        gap: 15px;
+    }
+
+    .stats-card, .summary-card {
+        flex: 1 1 calc(50% - 15px);
+    }
+
+    .chart-container {
+        flex: 1 1 100%;
+    }
+}
+
 @media (max-width: 768px) {
-    .finance-stats {
+    .finance-stats, .dashboard-summary {
         flex-direction: column;
     }
 
     .stats-card, .summary-card {
         flex: 1 1 100%;
         margin-bottom: 15px;
-    }
-
-    .chart-container {
-        flex: 1 1 100%;
     }
 
     .page-header {
@@ -373,6 +502,59 @@
     }
 
     .header-actions .btn {
-        margin-bottom: 5px;
+        margin-bottom: 8px;
     }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* تأثيرات انتقالية جميلة */
+.fade-in {
+    animation: fadeIn 0.4s ease-in;
+}
+
+.slide-up {
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* تحسينات أخرى للمظهر العام */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c8cd;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a5b0b8;
 }

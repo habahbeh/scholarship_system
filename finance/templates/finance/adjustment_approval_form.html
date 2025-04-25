@@ -26,7 +26,7 @@
             </tr>
             <tr>
                 <th>{% trans "المبلغ" %}:</th>
-                <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                <td>{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</td>
             </tr>
             <tr>
                 <th>{% trans "التاريخ" %}:</th>
@@ -52,15 +52,15 @@
         <table class="table">
             <tr>
                 <th>{% trans "المبلغ الحالي للميزانية" %}:</th>
-                <td>{{ adjustment.budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                <td>{{ adjustment.budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
             </tr>
             <tr>
                 <th>{% trans "المبلغ بعد التعديل" %}:</th>
                 <td>
                     {% if adjustment.adjustment_type == 'increase' %}
-                    {{ adjustment.budget.total_amount|add:adjustment.amount|floatformat:2 }} {% trans "ريال" %}
+                    {{ adjustment.budget.total_amount|add:adjustment.amount|floatformat:2 }} {% trans "دينار" %}
                     {% else %}
-                    {{ adjustment.budget.total_amount|sub:adjustment.amount|floatformat:2 }} {% trans "ريال" %}
+                    {{ adjustment.budget.total_amount|sub:adjustment.amount|floatformat:2 }} {% trans "دينار" %}
                     {% endif %}
                 </td>
             </tr>
@@ -68,9 +68,9 @@
                 <th>{% trans "التغيير" %}:</th>
                 <td>
                     {% if adjustment.adjustment_type == 'increase' %}
-                    <span class="text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                    <span class="text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</span>
                     {% else %}
-                    <span class="text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                    <span class="text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</span>
                     {% endif %}
                 </td>
             </tr>

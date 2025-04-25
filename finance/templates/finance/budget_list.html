@@ -81,9 +81,9 @@
                 <tr>
                     <td>{{ budget.application.applicant.get_full_name }}</td>
                     <td>{{ budget.application.scholarship.title }}</td>
-                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    <td>{{ budget.spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>
                         <div class="progress">
                             <div class="progress-bar {% if budget.spent_percentage > 80 %}bg-danger{% elif budget.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}" 

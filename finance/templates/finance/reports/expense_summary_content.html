@@ -4,7 +4,7 @@
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
-                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "دينار" %}</div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -18,9 +18,9 @@
                     <div class="card-title">{% trans "متوسط المصروف" %}</div>
                     <div class="card-value">
                         {% if report_data.expenses %}
-                        {{ report_data.total_amount|div:report_data.expenses|length|floatformat:2 }} {% trans "ريال" %}
+                        {{ report_data.total_amount|div:report_data.expenses|length|floatformat:2 }} {% trans "دينار" %}
                         {% else %}
-                        0 {% trans "ريال" %}
+                        0 {% trans "دينار" %}
                         {% endif %}
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                 {% for item in report_data.expenses_by_category %}
                 <tr>
                     <td>{{ item.category__name }}</td>
-                    <td>{{ item.total|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ item.total|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>{{ item.total|div:report_data.total_amount|mul:100|floatformat:1 }}%</td>
                 </tr>
                 {% endfor %}
@@ -81,7 +81,7 @@
                 <tr>
                     <td>{{ expense.applicant }}</td>
                     <td>{{ expense.category }}</td>
-                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                    <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
                     <td>{{ expense.date }}</td>
                     <td>
                         <span class="badge

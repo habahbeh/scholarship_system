@@ -62,7 +62,7 @@
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
-                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_amount|floatformat:2 }} {% trans "دينار" %}</div>
                     <div class="card-footer">{% trans "عدد المصروفات:" %} {{ report_data.expenses|length }}</div>
                 </div>
             </div>
@@ -71,9 +71,9 @@
                     <div class="card-title">{% trans "متوسط قيمة المصروف" %}</div>
                     <div class="card-value">
                         {% if report_data.expenses|length > 0 %}
-                        {{ report_data.total_amount|div:report_data.expenses|length|floatformat:2 }} {% trans "ريال" %}
+                        {{ report_data.total_amount|div:report_data.expenses|length|floatformat:2 }} {% trans "دينار" %}
                         {% else %}
-                        0 {% trans "ريال" %}
+                        0 {% trans "دينار" %}
                         {% endif %}
                     </div>
                 </div>
@@ -138,7 +138,7 @@
                     <tr>
                         <td>{{ category.category__name }}</td>
                         <td>{{ category.count|default:"0" }}</td>
-                        <td>{{ category.total|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ category.total|floatformat:2 }} {% trans "دينار" %}</td>
                         <td>
                             {% if report_data.total_amount > 0 %}
                             {{ category.total|div:report_data.total_amount|mul:100|floatformat:1 }}%
@@ -188,7 +188,7 @@
                     <tr>
                         <td>{{ expense.applicant }}</td>
                         <td>{{ expense.category }}</td>
-                        <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
                         <td>{{ expense.date|date:"Y-m-d" }}</td>
                         <td>{{ expense.description|truncatechars:50 }}</td>
                         <td>
@@ -226,7 +226,7 @@
                                 {% endfor %}
                                 <li>
                                     <span class="trend-name">{{ applicant.grouper }}</span>
-                                    <span class="trend-value">{{ total_amount|floatformat:2 }} {% trans "ريال" %}</span>
+                                    <span class="trend-value">{{ total_amount|floatformat:2 }} {% trans "دينار" %}</span>
                                     <span class="trend-count">({{ applicant.list|length }} {% trans "مصروف" %})</span>
                                 </li>
                             {% endwith %}
@@ -243,7 +243,7 @@
                         {% for expense in report_data.expenses|dictsortreversed:"amount"|slice:":5" %}
                         <li>
                             <span class="trend-name">{{ expense.category }}</span>
-                            <span class="trend-value">{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="trend-value">{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</span>
                             <span class="trend-applicant">({{ expense.applicant }})</span>
                         </li>
                         {% empty %}
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             var value = context.raw;
                             var total = context.dataset.data.reduce((a, b) => a + b, 0);
                             var percentage = Math.round((value / total) * 100);
-                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
+                            return label + ': ' + value.toLocaleString() + ' دينار (' + percentage + '%)';
                         }
                     }
                 }
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             var value = context.raw;
                             var total = context.dataset.data.reduce((a, b) => a + b, 0);
                             var percentage = Math.round((value / total) * 100);
-                            return label + ': ' + value.toLocaleString() + ' ريال (' + percentage + '%)';
+                            return label + ': ' + value.toLocaleString() + ' دينار (' + percentage + '%)';
                         }
                     }
                 }

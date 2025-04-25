@@ -46,14 +46,14 @@
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "إجمالي المصروفات للعام" %}</div>
-                    <div class="card-value">{{ report_data.total_year_expenses|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.total_year_expenses|floatformat:2 }} {% trans "دينار" %}</div>
                     <div class="card-footer">{% trans "للعام" %} {{ selected_year }}</div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="summary-card">
                     <div class="card-title">{% trans "متوسط المصروفات الشهرية" %}</div>
-                    <div class="card-value">{{ report_data.monthly_average|floatformat:2 }} {% trans "ريال" %}</div>
+                    <div class="card-value">{{ report_data.monthly_average|floatformat:2 }} {% trans "دينار" %}</div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -62,7 +62,7 @@
                     <div class="card-value">
                         {% with max_month=report_data.monthly_data|dictsortreversed:"total"|first %}
                         {% if max_month.total > 0 %}
-                        {{ max_month.month }} ({{ max_month.total|floatformat:2 }} {% trans "ريال" %})
+                        {{ max_month.month }} ({{ max_month.total|floatformat:2 }} {% trans "دينار" %})
                         {% else %}
                         {% trans "لا يوجد" %}
                         {% endif %}
@@ -99,7 +99,7 @@
                     {% for month in report_data.monthly_data %}
                     <tr>
                         <td>{{ month.month }}</td>
-                        <td>{{ month.total|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ month.total|floatformat:2 }} {% trans "دينار" %}</td>
                         <td>
                             {% if report_data.total_year_expenses > 0 %}
                             {{ month.total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%
@@ -110,11 +110,11 @@
                         <td>
                             {% with variance=month.total|sub:report_data.monthly_average %}
                             {% if variance > 0 %}
-                            <span class="text-danger">+{{ variance|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="text-danger">+{{ variance|floatformat:2 }} {% trans "دينار" %}</span>
                             {% elif variance < 0 %}
-                            <span class="text-success">{{ variance|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="text-success">{{ variance|floatformat:2 }} {% trans "دينار" %}</span>
                             {% else %}
-                            <span class="text-muted">0 {% trans "ريال" %}</span>
+                            <span class="text-muted">0 {% trans "دينار" %}</span>
                             {% endif %}
                             {% endwith %}
                         </td>
@@ -141,7 +141,7 @@
                 <tfoot>
                     <tr class="table-active">
                         <th>{% trans "الإجمالي" %}</th>
-                        <th>{{ report_data.total_year_expenses|floatformat:2 }} {% trans "ريال" %}</th>
+                        <th>{{ report_data.total_year_expenses|floatformat:2 }} {% trans "دينار" %}</th>
                         <th>100%</th>
                         <th>-</th>
                         <th>-</th>
@@ -162,7 +162,7 @@
                         {% for month in report_data.monthly_data|slice:":3" %}
                             {% with q1_total=q1_total|add:month.total %}{% endwith %}
                         {% endfor %}
-                        <div class="season-value">{{ q1_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-value">{{ q1_total|floatformat:2 }} {% trans "دينار" %}</div>
                         <div class="season-percentage">
                             {% if report_data.total_year_expenses > 0 %}
                             {{ q1_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
@@ -185,7 +185,7 @@
                         {% for month in report_data.monthly_data|slice:"3:6" %}
                             {% with q2_total=q2_total|add:month.total %}{% endwith %}
                         {% endfor %}
-                        <div class="season-value">{{ q2_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-value">{{ q2_total|floatformat:2 }} {% trans "دينار" %}</div>
                         <div class="season-percentage">
                             {% if report_data.total_year_expenses > 0 %}
                             {{ q2_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
@@ -210,7 +210,7 @@
                         {% for month in report_data.monthly_data|slice:"6:9" %}
                             {% with q3_total=q3_total|add:month.total %}{% endwith %}
                         {% endfor %}
-                        <div class="season-value">{{ q3_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-value">{{ q3_total|floatformat:2 }} {% trans "دينار" %}</div>
                         <div class="season-percentage">
                             {% if report_data.total_year_expenses > 0 %}
                             {{ q3_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
@@ -233,7 +233,7 @@
                         {% for month in report_data.monthly_data|slice:"9:12" %}
                             {% with q4_total=q4_total|add:month.total %}{% endwith %}
                         {% endfor %}
-                        <div class="season-value">{{ q4_total|floatformat:2 }} {% trans "ريال" %}</div>
+                        <div class="season-value">{{ q4_total|floatformat:2 }} {% trans "دينار" %}</div>
                         <div class="season-percentage">
                             {% if report_data.total_year_expenses > 0 %}
                             {{ q4_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}% {% trans "من الإجمالي" %}
@@ -269,7 +269,7 @@
                         <div class="comparison-bar">
                             <div class="half-year first-half" style="width: {% if report_data.total_year_expenses > 0 %}{{ first_half_total|div:report_data.total_year_expenses|mul:100 }}{% else %}50{% endif %}%">
                                 <span class="half-label">{% trans "النصف الأول" %}</span>
-                                <span class="half-value">{{ first_half_total|floatformat:2 }} {% trans "ريال" %}</span>
+                                <span class="half-value">{{ first_half_total|floatformat:2 }} {% trans "دينار" %}</span>
                                 <span class="half-percentage">
                                     {% if report_data.total_year_expenses > 0 %}
                                     ({{ first_half_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%)
@@ -280,7 +280,7 @@
                             </div>
                             <div class="half-year second-half" style="width: {% if report_data.total_year_expenses > 0 %}{{ second_half_total|div:report_data.total_year_expenses|mul:100 }}{% else %}50{% endif %}%">
                                 <span class="half-label">{% trans "النصف الثاني" %}</span>
-                                <span class="half-value">{{ second_half_total|floatformat:2 }} {% trans "ريال" %}</span>
+                                <span class="half-value">{{ second_half_total|floatformat:2 }} {% trans "دينار" %}</span>
                                 <span class="half-percentage">
                                     {% if report_data.total_year_expenses > 0 %}
                                     ({{ second_half_total|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%)
@@ -294,9 +294,9 @@
                         <div class="comparison-diff mt-3">
                             {% with diff=first_half_total|sub:second_half_total %}
                             {% if diff > 0 %}
-                            <p>{% trans "النصف الأول من العام كان أعلى إنفاقاً بفارق" %} {{ diff|floatformat:2 }} {% trans "ريال" %} ({{ diff|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%).</p>
+                            <p>{% trans "النصف الأول من العام كان أعلى إنفاقاً بفارق" %} {{ diff|floatformat:2 }} {% trans "دينار" %} ({{ diff|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%).</p>
                             {% elif diff < 0 %}
-                            <p>{% trans "النصف الثاني من العام كان أعلى إنفاقاً بفارق" %} {{ diff|abs|floatformat:2 }} {% trans "ريال" %} ({{ diff|abs|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%).</p>
+                            <p>{% trans "النصف الثاني من العام كان أعلى إنفاقاً بفارق" %} {{ diff|abs|floatformat:2 }} {% trans "دينار" %} ({{ diff|abs|div:report_data.total_year_expenses|mul:100|floatformat:1 }}%).</p>
                             {% else %}
                             <p>{% trans "الإنفاق متساوٍ بين النصف الأول والثاني من العام." %}</p>
                             {% endif %}
@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value, index, values) {
-                            return value.toLocaleString() + ' {% trans "ريال" %}';
+                            return value.toLocaleString() + ' {% trans "دينار" %}';
                         }
                     }
                 }
@@ -367,14 +367,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     callbacks: {
                         label: function(context) {
                             if (context.dataset.label === '{% trans "المتوسط الشهري" %}') {
-                                return context.dataset.label + ': ' + context.raw.toLocaleString() + ' {% trans "ريال" %}';
+                                return context.dataset.label + ': ' + context.raw.toLocaleString() + ' {% trans "دينار" %}';
                             }
                             
                             var label = context.dataset.label || '';
                             var value = context.raw;
                             var total = {{ report_data.total_year_expenses }};
                             var percentage = Math.round((value / total) * 100);
-                            return label + ': ' + value.toLocaleString() + ' {% trans "ريال" %} (' + percentage + '%)';
+                            return label + ': ' + value.toLocaleString() + ' {% trans "دينار" %} (' + percentage + '%)';
                         }
                     }
                 }

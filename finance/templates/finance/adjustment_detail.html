@@ -38,7 +38,7 @@
                     </tr>
                     <tr>
                         <th>{% trans "المبلغ" %}:</th>
-                        <td>{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</td>
                     </tr>
                     <tr>
                         <th>{% trans "التاريخ" %}:</th>
@@ -69,19 +69,19 @@
                     </tr>
                     <tr>
                         <th>{% trans "المبلغ الإجمالي" %}:</th>
-                        <td>{{ adjustment.budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ adjustment.budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
                     </tr>
                     <tr>
                         <th>{% trans "المبلغ المتبقي" %}:</th>
-                        <td>{{ adjustment.budget.get_remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ adjustment.budget.get_remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
                     </tr>
                     <tr>
                         <th>{% trans "تأثير التعديل" %}:</th>
                         <td>
                             {% if adjustment.adjustment_type == 'increase' %}
-                            <span class="text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</span>
                             {% else %}
-                            <span class="text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "ريال" %}</span>
+                            <span class="text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "دينار" %}</span>
                             {% endif %}
                         </td>
                     </tr>

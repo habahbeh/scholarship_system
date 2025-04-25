@@ -11,41 +11,150 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
 <!-- نمط مخصص -->
 <link rel="stylesheet" href="{% static 'finance/css/finance-bootstrap.css' %}">
+<style>
+/* Sidebar Enhancements */
+.finance-sidebar .list-group-item-action {
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  padding: 0.8rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.finance-sidebar .list-group-item-action.active,
+.finance-sidebar .list-group-item-action:hover {
+  border-right: 3px solid #0d6efd;
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.finance-sidebar .list-group-item-action:last-child {
+  border-bottom: 0;
+}
+
+.finance-sidebar .list-group-item i {
+  transition: all 0.2s ease;
+}
+
+.finance-sidebar .list-group-item-action:hover i,
+.finance-sidebar .list-group-item-action.active i {
+  transform: translateX(-3px);
+}
+
+/* Add animation to dropdown arrows */
+.finance-sidebar [data-bs-toggle="collapse"] .fa-chevron-down {
+  transition: transform 0.2s ease;
+}
+
+.finance-sidebar [data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 991.98px) {
+  .offcanvas-lg {
+    width: 280px;
+  }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="row">
+<div class="container-fluid py-4">
+  <div class="row g-4">
     <!-- القائمة الجانبية -->
-    <div class="col-lg-3 col-md-4">
-      <div class="finance-sidebar card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">
+    <div class="col-lg-3 col-md-4 ">
+      <div class="offcanvas-lg offcanvas-end" tabindex="-1" id="financeMenu" aria-labelledby="financeMenuLabel">
+        <div class="offcanvas-header bg-primary text-white">
+          <h5 class="offcanvas-title" id="financeMenuLabel">
             <i class="fas fa-money-bill-wave me-2"></i>{% trans "الشؤون المالية" %}
           </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div class="card-body p-0">
-          <nav class="nav flex-column">
-            <a class="nav-link py-3 border-bottom" href="{% url 'finance:home' %}">
-              <i class="fas fa-home me-2"></i>{% trans "الرئيسية" %}
-            </a>
-            <a class="nav-link py-3 border-bottom" href="{% url 'finance:dashboard' %}">
-              <i class="fas fa-tachometer-alt me-2"></i>{% trans "لوحة المعلومات" %}
-            </a>
-            <a class="nav-link py-3 border-bottom" href="{% url 'finance:budget_list' %}">
-              <i class="fas fa-wallet me-2"></i>{% trans "الميزانيات" %}
-            </a>
-            <a class="nav-link py-3 border-bottom" href="{% url 'finance:expense_list' %}">
-              <i class="fas fa-file-invoice-dollar me-2"></i>{% trans "المصروفات" %}
-            </a>
-            <a class="nav-link py-3 border-bottom" href="{% url 'finance:category_list' %}">
-              <i class="fas fa-tags me-2"></i>{% trans "فئات المصروفات" %}
-            </a>
-            <a class="nav-link py-3" href="{% url 'finance:report_list' %}">
-              <i class="fas fa-chart-pie me-2"></i>{% trans "التقارير المالية" %}
-            </a>
-          </nav>
+        <div class="offcanvas-body p-0">
+          <div class="finance-sidebar card shadow rounded-3 mb-4 border-0 h-100">
+            <div class="card-header bg-primary text-white d-lg-flex d-none">
+              <h5 class="mb-0">
+                <i class="fas fa-money-bill-wave me-2"></i>{% trans "الشؤون المالية" %}
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush rounded-0">
+                <a href="{% url 'finance:home' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'home' %}active bg-light{% endif %}">
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <i class="fas fa-home fa-fw text-primary"></i>
+                    </div>
+                    <div>
+                      <span>{% trans "الرئيسية" %}</span>
+                    </div>
+                  </div>
+                </a>
+                <a href="{% url 'finance:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active bg-light{% endif %}">
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <i class="fas fa-tachometer-alt fa-fw text-primary"></i>
+                    </div>
+                    <div>
+                      <span>{% trans "لوحة المعلومات" %}</span>
+                    </div>
+                  </div>
+                </a>
+                <a href="{% url 'finance:budget_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'budget_list' or 'budget_detail' in request.resolver_match.url_name or 'budget_create' in request.resolver_match.url_name or 'budget_update' in request.resolver_match.url_name %}active bg-light{% endif %}">
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <i class="fas fa-wallet fa-fw text-primary"></i>
+                    </div>
+                    <div>
+                      <span>{% trans "الميزانيات" %}</span>
+                    </div>
+                  </div>
+                </a>
+
+                <!-- Expandable menu for expenses -->
+                <div class="list-group-item p-0">
+                  <a class="d-flex align-items-center p-3 text-decoration-none text-dark" data-bs-toggle="collapse" href="#expensesSubmenu" role="button" aria-expanded="false" aria-controls="expensesSubmenu">
+                    <div class="me-3">
+                      <i class="fas fa-file-invoice-dollar fa-fw text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <span>{% trans "المصروفات" %}</span>
+                    </div>
+                    <div>
+                      <i class="fas fa-chevron-down small"></i>
+                    </div>
+                  </a>
+                  <div class="collapse {% if 'expense' in request.resolver_match.url_name %}show{% endif %}" id="expensesSubmenu">
+                    <div class="list-group list-group-flush border-top">
+                      <a href="{% url 'finance:expense_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'expense_list' %}active bg-light{% endif %}">
+                        <i class="fas fa-list-ul fa-fw me-2"></i>{% trans "قائمة المصروفات" %}
+                      </a>
+                      <a href="{% url 'finance:category_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'category_list' %}active bg-light{% endif %}">
+                        <i class="fas fa-tags fa-fw me-2"></i>{% trans "فئات المصروفات" %}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <a href="{% url 'finance:report_list' %}" class="list-group-item list-group-item-action {% if 'report' in request.resolver_match.url_name %}active bg-light{% endif %}">
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <i class="fas fa-chart-pie fa-fw text-primary"></i>
+                    </div>
+                    <div>
+                      <span>{% trans "التقارير المالية" %}</span>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Visible only on small screens -->
+      <div class="d-lg-none mb-3">
+        <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#financeMenu" aria-controls="financeMenu">
+          <i class="fas fa-bars me-2"></i>{% trans "قائمة الشؤون المالية" %}
+        </button>
       </div>
     </div>
 
@@ -68,4 +177,29 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 <script src="{% static 'finance/js/charts.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Activate the appropriate menu item based on current page
+    const currentPath = window.location.pathname;
+    const menuItems = document.querySelectorAll('.finance-sidebar .list-group-item-action');
+
+    menuItems.forEach(item => {
+      if (item.getAttribute('href') === currentPath) {
+        item.classList.add('active', 'bg-light');
+
+        // If this item is in a collapse, open the collapse
+        const parentCollapse = item.closest('.collapse');
+        if (parentCollapse) {
+          parentCollapse.classList.add('show');
+
+          // Also set the parent toggle button to expanded
+          const toggleButton = document.querySelector(`[data-bs-toggle="collapse"][href="#${parentCollapse.id}"]`);
+          if (toggleButton) {
+            toggleButton.setAttribute('aria-expanded', 'true');
+          }
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}

@@ -28,9 +28,9 @@
                     {% for category in report_data.categories %}
                     <tr>
                         <td>{{ category.name }}</td>
-                        <td>{{ budget|get_item:category.key|get_item:'budget'|floatformat:2 }} {% trans "ريال" %}</td>
-                        <td>{{ budget|get_item:category.key|get_item:'spent'|floatformat:2 }} {% trans "ريال" %}</td>
-                        <td>{{ budget|get_item:category.key|get_item:'remaining'|floatformat:2 }} {% trans "ريال" %}</td>
+                        <td>{{ budget|get_item:category.key|get_item:'budget'|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget|get_item:category.key|get_item:'spent'|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget|get_item:category.key|get_item:'remaining'|floatformat:2 }} {% trans "دينار" %}</td>
                         <td>
                             <div class="progress">
                                 <div class="progress-bar {% if budget|get_item:category.key|get_item:'percentage' > 80 %}bg-danger{% elif budget|get_item:category.key|get_item:'percentage' > 60 %}bg-warning{% else %}bg-success{% endif %}"

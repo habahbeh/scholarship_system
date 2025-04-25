@@ -15,7 +15,7 @@
             <strong>{{ expense.budget.application.applicant.get_full_name }}</strong>
             {% trans "بقيمة" %}
             <strong>{{ expense.amount|floatformat:2 }}</strong>
-            {% trans "ريال؟" %}
+            {% trans "دينار؟" %}
         </p>
         <p>{% trans "هذا الإجراء غير قابل للتراجع عنه." %}</p>
     </div>
@@ -33,7 +33,7 @@
             </tr>
             <tr>
                 <th>{% trans "المبلغ" %}:</th>
-                <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
+                <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
             </tr>
             <tr>
                 <th>{% trans "التاريخ" %}:</th>
