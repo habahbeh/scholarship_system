@@ -1,173 +1,300 @@
 {% extends "finance/base.html" %}
 {% load static i18n %}
+{% load finance_extras %}
 
 {% block finance_content %}
 <div class="dashboard-container">
-    <h2>{% trans "لوحة معلومات الشؤون المالية" %}</h2>
-    
-    <div class="dashboard-summary">
-        <div class="summary-card">
-            <div class="card-title">{% trans "إجمالي الميزانيات" %}</div>
-            <div class="card-value">{{ total_budget_amount|floatformat:2 }} {% trans "ريال" %}</div>
-            <div class="card-footer">{{ total_budgets }} {% trans "ميزانية" %}</div>
+  <div class="dashboard-header mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+      <h2 class="mb-2 mb-md-0">{% trans "لوحة المعلومات" %}</h2>
+      <div class="dashboard-actions">
+        <div class="input-group me-2">
+          <span class="input-group-text bg-white"><i class="fas fa-calendar"></i></span>
+          <select class="form-select" id="period-selector">
+            <option value="monthly">{% trans "شهري" %}</option>
+            <option value="quarterly">{% trans "ربع سنوي" %}</option>
+            <option value="yearly">{% trans "سنوي" %}</option>
+          </select>
         </div>
-        
-        <div class="summary-card">
-            <div class="card-title">{% trans "إجمالي المصروفات" %}</div>
-            <div class="card-value">{{ total_expense_amount|floatformat:2 }} {% trans "ريال" %}</div>
-            <div class="card-footer">{{ total_expenses }} {% trans "مصروف" %}</div>
-        </div>
-        
-        <div class="summary-card">
-            <div class="card-title">{% trans "المبلغ المتبقي" %}</div>
-            <div class="card-value">{{ total_remaining_amount|floatformat:2 }} {% trans "ريال" %}</div>
-            <div class="card-footer">{% trans "نسبة الصرف:" %} {{ spent_percentage|floatformat:1 }}%</div>
-        </div>
-        
-        <div class="summary-card">
-            <div class="card-title">{% trans "المصروفات قيد المراجعة" %}</div>
-            <div class="card-value">{{ pending_expenses }}</div>
-            <div class="card-footer">
-                <a href="{% url 'finance:expense_list' %}?status=pending">{% trans "عرض الكل" %}</a>
+        <button class="btn btn-outline-secondary">
+          <i class="fas fa-download me-2"></i>{% trans "تصدير التقرير" %}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ملخص البيانات -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card border-start border-primary border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">{% trans "الميزانية المتبقية" %}</h6>
+              <h3 class="mb-0">{{ remaining_budget|floatformat:2 }}</h3>
+              <small class="text-muted">{% trans "ريال سعودي" %}</small>
             </div>
+            <div class="text-primary">
+              <i class="fas fa-wallet fa-3x"></i>
+            </div>
+          </div>
+          <div class="progress mt-3">
+            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ budget_percentage }}%"></div>
+          </div>
+          <small class="text-muted">{{ budget_percentage }}% {% trans "من الميزانية الكلية" %}</small>
         </div>
+      </div>
     </div>
-    
-    <div class="dashboard-charts">
-        <div class="chart-container">
-            <h3>{% trans "توزيع الميزانية" %}</h3>
-            <canvas id="budgetPieChart"></canvas>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card border-start border-success border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">{% trans "المصروفات الشهرية" %}</h6>
+              <h3 class="mb-0">{{ monthly_expenses|floatformat:2 }}</h3>
+              <small class="text-muted">{% trans "ريال سعودي" %}</small>
+            </div>
+            <div class="text-success">
+              <i class="fas fa-chart-line fa-3x"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            {% if expense_change > 0 %}
+            <small class="text-success"><i class="fas fa-arrow-up me-1"></i>{{ expense_change }}% {% trans "زيادة عن الشهر السابق" %}</small>
+            {% else %}
+            <small class="text-danger"><i class="fas fa-arrow-down me-1"></i>{{ expense_change|abs }}% {% trans "انخفاض عن الشهر السابق" %}</small>
+            {% endif %}
+          </div>
         </div>
-        
-        <div class="chart-container">
-            <h3>{% trans "المصروفات الشهرية" %}</h3>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card border-start border-warning border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">{% trans "معدل الصرف اليومي" %}</h6>
+              <h3 class="mb-0">{{ daily_spend_rate|floatformat:2 }}</h3>
+              <small class="text-muted">{% trans "ريال سعودي" %}</small>
+            </div>
+            <div class="text-warning">
+              <i class="fas fa-calendar-day fa-3x"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            <small class="text-muted">{% trans "آخر تحديث:" %} {{ last_update|date:"Y-m-d" }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card border-start border-info border-4 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">{% trans "المصروفات قيد المراجعة" %}</h6>
+              <h3 class="mb-0">{{ pending_expense_count }}</h3>
+              <small class="text-muted">{% trans "عملية" %}</small>
+            </div>
+            <div class="text-info">
+              <i class="fas fa-hourglass-half fa-3x"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            <small class="text-muted">{% trans "بقيمة:" %} {{ pending_expense_amount|floatformat:2 }} {% trans "ريال" %}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- المخططات البيانية -->
+  <div class="row mb-4">
+    <div class="col-md-8 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{% trans "تحليل المصروفات الشهرية" %}</h5>
+          <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-outline-secondary">{% trans "الجميع" %}</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">{% trans "رسوم دراسية" %}</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">{% trans "سكن" %}</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">{% trans "معيشة" %}</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;">
             <canvas id="monthlyExpensesChart"></canvas>
+          </div>
         </div>
-        
-        <div class="chart-container">
-            <h3>{% trans "المصروفات حسب الفئة" %}</h3>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">{% trans "توزيع المصروفات حسب الفئة" %}</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;">
             <canvas id="categoryExpensesChart"></canvas>
+          </div>
         </div>
-        
-        <div class="chart-container">
-            <h3>{% trans "حالة الميزانيات" %}</h3>
-            <canvas id="budgetStatusChart"></canvas>
-        </div>
+      </div>
     </div>
-    
-    <div class="dashboard-alerts">
-        <h3>{% trans "ميزانيات تقترب من النفاد" %}</h3>
-        <table class="table table-striped">
-            <thead>
+  </div>
+
+  <!-- المصروفات الأخيرة وحالة الميزانية -->
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{% trans "أحدث المصروفات" %}</h5>
+          <a href="{% url 'finance:expense_list' %}" class="btn btn-sm btn-primary">{% trans "عرض الكل" %}</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
                 <tr>
-                    <th>{% trans "المبتعث" %}</th>
-                    <th>{% trans "إجمالي الميزانية" %}</th>
-                    <th>{% trans "المتبقي" %}</th>
-                    <th>{% trans "نسبة الصرف" %}</th>
-                    <th>{% trans "إجراءات" %}</th>
+                  <th>{% trans "التاريخ" %}</th>
+                  <th>{% trans "الفئة" %}</th>
+                  <th>{% trans "المبلغ" %}</th>
+                  <th>{% trans "الحالة" %}</th>
                 </tr>
-            </thead>
-            <tbody>
-                {% for budget in critical_budgets %}
+              </thead>
+              <tbody>
+                {% for expense in recent_expenses %}
                 <tr>
-                    <td>{{ budget.applicant }}</td>
-                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>
-                        <div class="progress">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ budget.spent_percentage }}%">
-                                {{ budget.spent_percentage|floatformat:1 }}%
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-sm btn-info">
-                            {% trans "عرض" %}
-                        </a>
-                    </td>
+                  <td>{{ expense.date|date:"Y-m-d" }}</td>
+                  <td>{{ expense.category.name }}</td>
+                  <td>{{ expense.amount|floatformat:2 }}</td>
+                  <td>
+                    {% if expense.status == 'approved' %}
+                    <span class="badge bg-success">{% trans "معتمد" %}</span>
+                    {% elif expense.status == 'pending' %}
+                    <span class="badge bg-warning text-dark">{% trans "قيد المراجعة" %}</span>
+                    {% else %}
+                    <span class="badge bg-danger">{% trans "مرفوض" %}</span>
+                    {% endif %}
+                  </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">{% trans "لا توجد ميزانيات حرجة حالياً" %}</td>
+                  <td colspan="4" class="text-center py-4">
+                    <i class="fas fa-info-circle text-muted mb-2"></i>
+                    <p class="mb-0">{% trans "لا توجد مصروفات حديثة" %}</p>
+                  </td>
                 </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
-    
-    <div class="dashboard-recent">
-        <h3>{% trans "أحدث المصروفات" %}</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>{% trans "المبتعث" %}</th>
-                    <th>{% trans "الفئة" %}</th>
-                    <th>{% trans "المبلغ" %}</th>
-                    <th>{% trans "التاريخ" %}</th>
-                    <th>{% trans "الحالة" %}</th>
-                    <th>{% trans "إجراءات" %}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for expense in latest_expenses %}
-                <tr>
-                    <td>{{ expense.budget.application.applicant.get_full_name }}</td>
-                    <td>{{ expense.category.name }}</td>
-                    <td>{{ expense.amount|floatformat:2 }} {% trans "ريال" %}</td>
-                    <td>{{ expense.date|date }}</td>
-                    <td>
-                        <span class="badge 
-                            {% if expense.status == 'approved' %}badge-success
-                            {% elif expense.status == 'rejected' %}badge-danger
-                            {% else %}badge-warning{% endif %}">
-                            {{ expense.get_status_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-sm btn-info">
-                            {% trans "عرض" %}
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center">{% trans "لا توجد مصروفات حديثة" %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{% trans "حالة الميزانيات" %}</h5>
+          <a href="{% url 'finance:budget_list' %}" class="btn btn-sm btn-primary">{% trans "عرض الكل" %}</a>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-5">
+              <div class="chart-container mb-3" style="height: 150px;">
+                <canvas id="budgetStatusChart"></canvas>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <tbody>
+                    <tr>
+                      <td><span class="badge bg-success me-2">{% trans "نشطة" %}</span></td>
+                      <td>{{ active_budgets }}</td>
+                      <td>{{ active_budget_percentage }}%</td>
+                    </tr>
+                    <tr>
+                      <td><span class="badge bg-warning text-dark me-2">{% trans "معلقة" %}</span></td>
+                      <td>{{ pending_budgets }}</td>
+                      <td>{{ pending_budget_percentage }}%</td>
+                    </tr>
+                    <tr>
+                      <td><span class="badge bg-secondary me-2">{% trans "مغلقة" %}</span></td>
+                      <td>{{ closed_budgets }}</td>
+                      <td>{{ closed_budget_percentage }}%</td>
+                    </tr>
+                    <tr class="fw-bold">
+                      <td>{% trans "المجموع" %}</td>
+                      <td>{{ total_budgets }}</td>
+                      <td>100%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
+{% endblock %}
 
 {% block scripts %}
 {{ block.super }}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // طلب بيانات الرسوم البيانية من API
-    fetch('{% url "finance:api_budget_summary" %}')
-        .then(response => response.json())
-        .then(data => {
-            createBudgetPieChart(data);
-        });
-        
-    fetch('{% url "finance:api_expense_categories" %}')
-        .then(response => response.json())
-        .then(data => {
-            createCategoryExpensesChart(data);
-        });
-        
-    fetch('{% url "finance:api_monthly_expenses" %}')
-        .then(response => response.json())
-        .then(data => {
-            createMonthlyExpensesChart(data);
-        });
-        
-    fetch('{% url "finance:api_budget_status" %}')
-        .then(response => response.json())
-        .then(data => {
-            createBudgetStatusChart(data);
-        });
-});
+  // بيانات تجريبية للمخططات (يجب استبدالها ببيانات حقيقية)
+  document.addEventListener('DOMContentLoaded', function() {
+    // بيانات للمخطط الشريطي
+    var monthlyData = {
+      data: [
+        { month: "يناير", value: 15000 },
+        { month: "فبراير", value: 18000 },
+        { month: "مارس", value: 22000 },
+        { month: "أبريل", value: 17000 },
+        { month: "مايو", value: 20000 },
+        { month: "يونيو", value: 25000 }
+      ]
+    };
+
+    // بيانات للمخطط الدائري للفئات
+    var categoryData = {
+      data: [
+        { name: "الرسوم الدراسية", value: 45000 },
+        { name: "السكن", value: 30000 },
+        { name: "المواصلات", value: 10000 },
+        { name: "الكتب والمراجع", value: 8000 },
+        { name: "المعيشة", value: 25000 },
+        { name: "أخرى", value: 12000 }
+      ]
+    };
+
+    // بيانات لمخطط حالة الميزانيات
+    var budgetStatusData = {
+      data: [
+        { name: "نشطة", value: 18 },
+        { name: "معلقة", value: 7 },
+        { name: "مغلقة", value: 5 }
+      ]
+    };
+
+    // إنشاء المخططات
+    if (typeof createMonthlyExpensesChart === 'function') {
+      createMonthlyExpensesChart(monthlyData);
+    }
+
+    if (typeof createCategoryExpensesChart === 'function') {
+      createCategoryExpensesChart({data: categoryData.data});
+    }
+
+    if (typeof createBudgetStatusChart === 'function') {
+      createBudgetStatusChart(budgetStatusData);
+    }
+  });
 </script>
-{% endblock %}
 {% endblock %}

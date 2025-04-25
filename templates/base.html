@@ -62,11 +62,11 @@
         </a>
     </li>
 
-{#    <li class="nav-item">#}
-{#        <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'announcements:announcement_list' %}">#}
-{#            {% trans "الإعلانات" %}#}
-{#        </a>#}
-{#    </li>#}
+    <li class="nav-item">
+        <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'announcements:announcement_list' %}">
+            {% trans "الإعلانات" %}
+        </a>
+    </li>
 
 {% if user.is_staff or perms.applications.view_application %}
 <li class="nav-item">
@@ -212,6 +212,16 @@
     </li>
     {% endif %}
     {% endif %}
+
+
+<!-- Add this to the navbar in templates/base.html after the existing <li> items -->
+{% if user.is_authenticated and perms.finance.view_scholarshipbudget %}
+<li class="nav-item">
+    <a class="nav-link {% if 'finance' in request.path %}active{% endif %}" href="{% url 'finance:home' %}">
+        <i class="fas fa-money-bill-wave me-1"></i> {% trans "الشؤون المالية" %}
+    </a>
+</li>
+{% endif %}
 
     <li class="nav-item">
         <a class="nav-link" href="#">

@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 {% load i18n %}
 {% load static %}
@@ -18,7 +17,7 @@
             </nav>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-8">
             <div class="card shadow-sm border-0 mb-4">
@@ -69,14 +68,14 @@
                             </table>
                         </div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <h5 class="text-primary">{% trans "خطاب الدوافع" %}</h5>
                         <div class="p-3 border rounded bg-light">
                             {{ application.motivation_letter|linebreaks }}
                         </div>
                     </div>
-                    
+
                     {% if application.research_proposal %}
                     <div class="mb-4">
                         <h5 class="text-primary">{% trans "مقترح البحث" %}</h5>
@@ -85,7 +84,7 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     <div class="mb-4">
                         <h5 class="text-primary">{% trans "خطاب القبول" %}</h5>
                         {% if application.acceptance_letter %}
@@ -99,7 +98,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+
                     {% if application.comments %}
                     <div class="mb-4">
                         <h5 class="text-primary">{% trans "ملاحظات إضافية" %}</h5>
@@ -108,7 +107,7 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     <div class="mb-4">
                         <h5 class="text-primary">{% trans "المستندات المرفقة" %}</h5>
                         {% if documents %}
@@ -148,7 +147,7 @@
                     </div>
                 </div>
             </div>
-            
+
             {% if logs %}
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-light">
@@ -193,7 +192,7 @@
             </div>
             {% endif %}
         </div>
-        
+
         <div class="col-md-4">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-light">
@@ -209,10 +208,10 @@
                             <p class="text-muted mb-0">{% trans "آخر تحديث:" %} {{ application.last_update|date:"Y-m-d H:i" }}</p>
                         </div>
                     </div>
-                    
-                    <div class="progress-track">
+
+                    <div class="progress-track" hidden>
                         <ul class="list-unstyled">
-                            {% for i in "12345"|make_list %}
+                            {% for i in "1234567890"|make_list|slice:":10" %}
                                 {% with order=i|add:"0" %}
                                 <li class="d-flex align-items-center {% if not forloop.last %}mb-3{% endif %}">
                                     <div class="me-3">
@@ -233,11 +232,21 @@
                                             {% elif order == 2 %}
                                                 {% trans "المراجعة الأولية" %}
                                             {% elif order == 3 %}
-                                                {% trans "التقييم" %}
+                                                {% trans "مطابق للشروط" %}
                                             {% elif order == 4 %}
-                                                {% trans "الموافقة النهائية" %}
+                                                {% trans "غير مطابق للشروط" %}
                                             {% elif order == 5 %}
-                                                {% trans "اكتمال الإجراءات" %}
+                                                {% trans "موافقة اللجنة العليا" %}
+                                            {% elif order == 6 %}
+                                                {% trans "رفض اللجنة العليا" %}
+                                            {% elif order == 7 %}
+                                                {% trans "موافقة مجلس الكلية" %}
+                                            {% elif order == 8 %}
+                                                {% trans "رفض مجلس الكلية" %}
+                                            {% elif order == 9 %}
+                                                {% trans "موافقة رئيس الجامعة" %}
+                                            {% elif order == 10 %}
+                                                {% trans "رفض رئيس الجامعة" %}
                                             {% endif %}
                                         </h6>
                                         {% if application.status.order == order %}
@@ -251,7 +260,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">{% trans "معلومات المتقدم" %}</h5>
@@ -270,7 +279,7 @@
                             <p class="text-muted mb-0">{{ application.applicant.profile.get_role_display }}</p>
                         </div>
                     </div>
-                    
+
                     <ul class="list-unstyled">
                         <li class="mb-2">
                             <i class="fas fa-envelope text-muted me-2"></i> {{ application.applicant.email }}
@@ -287,30 +296,10 @@
                     </ul>
                 </div>
             </div>
-            
-            <!-- للجان التقييم فقط -->
-            {% if user.profile.role == 'committee' or perms.evaluation.add_vote %}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">{% trans "إجراءات اللجنة" %}</h5>
-                </div>
-                <div class="card-body p-4">
-                    <a href="{% url 'evaluation:vote_create' application.id %}" class="btn btn-primary d-block mb-2">
-                        <i class="fas fa-vote-yea me-2"></i> {% trans "تصويت على الطلب" %}
-                    </a>
-                    
-                    {% if perms.evaluation.add_recommendation %}
-                    <a href="{% url 'evaluation:recommendation_create' application.id %}" class="btn btn-outline-primary d-block">
-                        <i class="fas fa-thumbs-up me-2"></i> {% trans "تقديم توصية" %}
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-            
+
             <!-- للمشرفين فقط -->
             {% if perms.applications.change_application %}
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">{% trans "إجراءات المشرف" %}</h5>
                 </div>
@@ -318,11 +307,31 @@
                     <a href="{% url 'applications:change_status' application.id %}" class="btn btn-primary d-block mb-2">
                         <i class="fas fa-exchange-alt me-2"></i> {% trans "تغيير حالة الطلب" %}
                     </a>
-                    
+
                     {% if perms.applications.delete_application %}
                     <a href="{% url 'applications:delete_application' application.id %}" class="btn btn-outline-danger d-block">
                         <i class="fas fa-trash-alt me-2"></i> {% trans "حذف الطلب" %}
                     </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- للإدارة المالية فقط -->
+            {% if perms.finance.add_scholarshipbudget and application.status.order >= 9 %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">{% trans "الإجراءات المالية" %}</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if application.budget %}
+                        <a href="{% url 'finance:budget_detail' application.budget.id %}" class="btn btn-primary d-block mb-2">
+                            <i class="fas fa-money-bill-wave me-2"></i> {% trans "عرض الميزانية" %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'finance:create_budget' application.id %}" class="btn btn-success d-block mb-2">
+                            <i class="fas fa-plus-circle me-2"></i> {% trans "إنشاء ميزانية جديدة" %}
+                        </a>
                     {% endif %}
                 </div>
             </div>

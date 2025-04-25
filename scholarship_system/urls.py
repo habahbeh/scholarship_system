@@ -23,6 +23,7 @@ urlpatterns += i18n_patterns(
     path('', include('applications.urls')),
     path('evaluation/', include('evaluation.urls')),
     path('dashboard/', include('dashboard.urls')),
+    path('finance/', include('finance.urls')),  # إضافة URLs الخاصة بالنظام المالي
     # ستضاف المزيد من التطبيقات لاحقاً
     prefix_default_language=True
 )

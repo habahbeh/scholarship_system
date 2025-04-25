@@ -18,9 +18,18 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Updated logo styling with white background */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+}
+
 .navbar-brand img {
     height: 40px;
     margin-right: 0.5rem;
+    background-color: white;
+    padding: 4px;
+    border-radius: 4px;
 }
 
 .nav-link {

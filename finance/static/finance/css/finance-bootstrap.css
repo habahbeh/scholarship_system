@@ -1,0 +1,155 @@
+/* ملف أنماط CSS للنظام المالي مع Bootstrap */
+
+/* توجيه RTL للغة العربية */
+body {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+}
+
+/* تخصيص القائمة الجانبية */
+.finance-sidebar {
+    border-radius: 0.5rem;
+}
+
+.finance-sidebar .nav-link {
+    color: #495057;
+    transition: all 0.3s ease;
+    padding-right: 1.5rem;
+}
+
+.finance-sidebar .nav-link:hover,
+.finance-sidebar .nav-link.active {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+    border-right: 3px solid #0d6efd;
+}
+
+.finance-sidebar .nav-link i {
+    width: 24px;
+    text-align: center;
+}
+
+/* تخصيص المحتوى */
+.finance-content {
+    border-radius: 0.5rem;
+    min-height: 80vh;
+}
+
+/* تخصيص بطاقات الإحصائيات */
+.card-body .display-5 {
+    font-weight: 600;
+}
+
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+/* تصميم قائمة البيانات */
+.list-group-item-action:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* تصميم البادج/Labels */
+.badge {
+    font-weight: 500;
+}
+
+/* تصميم شريط التقدم */
+.progress {
+    height: 0.8rem;
+    border-radius: 0.25rem;
+}
+
+/* تطويعات لأجهزة مختلفة */
+@media (max-width: 991.98px) {
+    .finance-sidebar {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .col-md-3.col-sm-6 {
+        margin-bottom: 1rem;
+    }
+
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* تصميم النماذج */
+.form-control {
+    padding: 0.5rem 0.75rem;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+/* تصميم لوحة المعلومات */
+.dashboard-header {
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* تصميم التقارير */
+.report-section {
+    margin-bottom: 2rem;
+}
+
+.report-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* تخصيص الأزرار */
+.btn {
+    border-radius: 0.25rem;
+    padding: 0.375rem 1rem;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* تخصيص الجداول */
+.table {
+    color: #212529;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* تخصيص البطاقات */
+.card {
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.card.shadow-sm:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}

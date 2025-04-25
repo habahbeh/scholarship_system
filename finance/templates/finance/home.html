@@ -3,67 +3,228 @@
 
 {% block finance_content %}
 <div class="finance-welcome">
-    <h2>{% trans "نظام الشؤون المالية للمبتعثين" %}</h2>
-    
-    <div class="finance-stats">
-        <div class="stats-card">
-            <h3>{% trans "الميزانيات" %}</h3>
-            <p class="stats-number">{{ total_budgets }}</p>
-            <p class="stats-label">{% trans "ميزانية نشطة:" %} {{ active_budgets }}</p>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">{% trans "نظام الشؤون المالية للمبتعثين" %}</h2>
+    <button class="btn btn-primary">
+      <i class="fas fa-plus-circle me-2"></i>{% trans "إضافة ميزانية جديدة" %}
+    </button>
+  </div>
+
+  <!-- بطاقات الإحصائيات -->
+  <div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card border-primary h-100 shadow-sm">
+        <div class="card-body text-center">
+          <div class="text-primary mb-2">
+            <i class="fas fa-wallet fa-3x"></i>
+          </div>
+          <h5 class="card-title">{% trans "الميزانيات" %}</h5>
+          <h3 class="display-5 mb-0">{{ total_budgets }}</h3>
+          <p class="text-muted">{% trans "ميزانية نشطة:" %} {{ active_budgets }}</p>
         </div>
-        
-        <div class="stats-card">
-            <h3>{% trans "المصروفات" %}</h3>
-            <p class="stats-number">{{ total_expenses }}</p>
-            <p class="stats-label">{% trans "قيد المراجعة:" %} {{ pending_expenses }}</p>
-        </div>
-        
-        <div class="stats-card">
-            <h3>{% trans "إجمالي الميزانيات" %}</h3>
-            <p class="stats-number">{{ total_budget_amount|floatformat:2 }}</p>
-            <p class="stats-label">{% trans "ريال سعودي" %}</p>
-        </div>
-        
-        <div class="stats-card">
-            <h3>{% trans "إجمالي المصروفات" %}</h3>
-            <p class="stats-number">{{ total_expense_amount|floatformat:2 }}</p>
-            <p class="stats-label">{% trans "ريال سعودي" %}</p>
-        </div>
+      </div>
     </div>
-    
-    <div class="finance-latest">
-        <div class="latest-budgets">
-            <h3>{% trans "أحدث الميزانيات" %}</h3>
-            <ul>
-                {% for budget in latest_budgets %}
-                <li>
-                    <a href="{% url 'finance:budget_detail' budget.id %}">
-                        {{ budget.application.applicant.get_full_name }} - {{ budget.total_amount }} {% trans "ريال" %}
-                    </a>
-                    <span class="budget-date">{{ budget.created_at|date }}</span>
-                </li>
-                {% empty %}
-                <li>{% trans "لا توجد ميزانيات حتى الآن" %}</li>
-                {% endfor %}
-            </ul>
+
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card border-success h-100 shadow-sm">
+        <div class="card-body text-center">
+          <div class="text-success mb-2">
+            <i class="fas fa-file-invoice-dollar fa-3x"></i>
+          </div>
+          <h5 class="card-title">{% trans "المصروفات" %}</h5>
+          <h3 class="display-5 mb-0">{{ total_expenses }}</h3>
+          <p class="text-muted">{% trans "قيد المراجعة:" %} {{ pending_expenses }}</p>
         </div>
-        
-        <div class="latest-expenses">
-            <h3>{% trans "أحدث المصروفات" %}</h3>
-            <ul>
-                {% for expense in latest_expenses %}
-                <li>
-                    <a href="{% url 'finance:expense_detail' expense.id %}">
-                        {{ expense.budget.application.applicant.get_full_name }} - {{ expense.amount }} {% trans "ريال" %}
-                    </a>
-                    <span class="expense-category">{{ expense.category.name }}</span>
-                    <span class="expense-date">{{ expense.date|date }}</span>
-                </li>
-                {% empty %}
-                <li>{% trans "لا توجد مصروفات حتى الآن" %}</li>
-                {% endfor %}
-            </ul>
-        </div>
+      </div>
     </div>
+
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card border-info h-100 shadow-sm">
+        <div class="card-body text-center">
+          <div class="text-info mb-2">
+            <i class="fas fa-coins fa-3x"></i>
+          </div>
+          <h5 class="card-title">{% trans "إجمالي الميزانيات" %}</h5>
+          <h3 class="display-5 mb-0">{{ total_budget_amount|floatformat:2 }}</h3>
+          <p class="text-muted">{% trans "ريال سعودي" %}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-3">
+      <div class="card border-warning h-100 shadow-sm">
+        <div class="card-body text-center">
+          <div class="text-warning mb-2">
+            <i class="fas fa-chart-line fa-3x"></i>
+          </div>
+          <h5 class="card-title">{% trans "إجمالي المصروفات" %}</h5>
+          <h3 class="display-5 mb-0">{{ total_expense_amount|floatformat:2 }}</h3>
+          <p class="text-muted">{% trans "ريال سعودي" %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مخططات ولوحات المعلومات -->
+  <div class="row mb-4">
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "ملخص الميزانية" %}</h5>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="budgetChartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="budgetChartDropdown">
+                <li><a class="dropdown-item" href="#">{% trans "تحديث" %}</a></li>
+                <li><a class="dropdown-item" href="#">{% trans "تصدير البيانات" %}</a></li>
+                <li><a class="dropdown-item" href="#">{% trans "عرض التفاصيل" %}</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="budgetPieChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "المصروفات الشهرية" %}</h5>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="expenseChartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="expenseChartDropdown">
+                <li><a class="dropdown-item" href="#">{% trans "تحديث" %}</a></li>
+                <li><a class="dropdown-item" href="#">{% trans "تصدير البيانات" %}</a></li>
+                <li><a class="dropdown-item" href="#">{% trans "عرض التفاصيل" %}</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="monthlyExpensesChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- أحدث البيانات -->
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "أحدث الميزانيات" %}</h5>
+            <a href="{% url 'finance:budget_list' %}" class="btn btn-sm btn-primary">{% trans "عرض الكل" %}</a>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for budget in latest_budgets %}
+            <a href="{% url 'finance:budget_detail' budget.id %}" class="list-group-item list-group-item-action">
+              <div class="d-flex w-100 justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">{{ budget.application.applicant.get_full_name }}</h6>
+                  <p class="mb-1 text-muted">{{ budget.total_amount }} {% trans "ريال" %}</p>
+                </div>
+                <small class="text-muted">{{ budget.created_at|date }}</small>
+              </div>
+            </a>
+            {% empty %}
+            <div class="list-group-item text-center py-4">
+              <i class="fas fa-info-circle text-muted mb-2 fa-2x"></i>
+              <p class="mb-0">{% trans "لا توجد ميزانيات حتى الآن" %}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{% trans "أحدث المصروفات" %}</h5>
+            <a href="{% url 'finance:expense_list' %}" class="btn btn-sm btn-primary">{% trans "عرض الكل" %}</a>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for expense in latest_expenses %}
+            <a href="{% url 'finance:expense_detail' expense.id %}" class="list-group-item list-group-item-action">
+              <div class="d-flex w-100 justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">{{ expense.budget.application.applicant.get_full_name }}</h6>
+                  <p class="mb-1 text-muted">
+                    {{ expense.amount }} {% trans "ريال" %}
+                    <span class="badge bg-info rounded-pill ms-2">{{ expense.category.name }}</span>
+                  </p>
+                </div>
+                <small class="text-muted">{{ expense.date|date }}</small>
+              </div>
+            </a>
+            {% empty %}
+            <div class="list-group-item text-center py-4">
+              <i class="fas fa-info-circle text-muted mb-2 fa-2x"></i>
+              <p class="mb-0">{% trans "لا توجد مصروفات حتى الآن" %}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+  // بيانات تجريبية للمخططات (يجب استبدالها ببيانات حقيقية)
+  document.addEventListener('DOMContentLoaded', function() {
+    // بيانات للمخطط الدائري
+    var budgetData = {
+      pie_data: [
+        { name: "الرسوم الدراسية", value: 45000 },
+        { name: "السكن", value: 30000 },
+        { name: "المواصلات", value: 10000 },
+        { name: "الكتب والمراجع", value: 8000 },
+        { name: "المعيشة", value: 25000 },
+        { name: "أخرى", value: 12000 }
+      ]
+    };
+
+    // بيانات للمخطط الشريطي
+    var expenseData = {
+      data: [
+        { month: "يناير", value: 15000 },
+        { month: "فبراير", value: 18000 },
+        { month: "مارس", value: 22000 },
+        { month: "أبريل", value: 17000 },
+        { month: "مايو", value: 20000 },
+        { month: "يونيو", value: 25000 }
+      ]
+    };
+
+    // إنشاء المخططات
+    if (typeof createBudgetPieChart === 'function') {
+      createBudgetPieChart(budgetData);
+    }
+
+    if (typeof createMonthlyExpensesChart === 'function') {
+      createMonthlyExpensesChart(expenseData);
+    }
+  });
+</script>
 {% endblock %}
