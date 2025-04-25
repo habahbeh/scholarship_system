@@ -59,4 +59,10 @@ urlpatterns = [
     path('api/expense-categories/', views.api_expense_categories, name='api_expense_categories'),
     path('api/monthly-expenses/', views.api_monthly_expenses, name='api_monthly_expenses'),
     path('api/budget-status/', views.api_budget_status, name='api_budget_status'),
+
+    # API endpoints for charts
+    path('api/monthly-expenses/', views.api_monthly_expenses, name='api_monthly_expenses'),
+    path('api/expense-categories/', views.api_expense_categories, name='api_expense_categories'),
+    path('api/budget-status/', views.api_budget_status, name='api_budget_status'),
+
 ]

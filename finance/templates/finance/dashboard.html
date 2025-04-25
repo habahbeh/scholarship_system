@@ -247,54 +247,53 @@
 
 {% block scripts %}
 {{ block.super }}
+
+    <script src="{% static 'finance/js/components/MonthlyExpensesChart.js' %}"></script>
+<script src="{% static 'finance/js/components/CategoryExpensesChart.js' %}"></script>
+<script src="{% static 'finance/js/components/BudgetStatusChart.js' %}"></script>
+
+
 <script>
   // بيانات تجريبية للمخططات (يجب استبدالها ببيانات حقيقية)
-  document.addEventListener('DOMContentLoaded', function() {
-    // بيانات للمخطط الشريطي
-    var monthlyData = {
-      data: [
-        { month: "يناير", value: 15000 },
-        { month: "فبراير", value: 18000 },
-        { month: "مارس", value: 22000 },
-        { month: "أبريل", value: 17000 },
-        { month: "مايو", value: 20000 },
-        { month: "يونيو", value: 25000 }
-      ]
-    };
+  // JavaScript for initializing the React components in the dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  // Get the chart containers
+  const monthlyExpensesContainer = document.getElementById('monthlyExpensesChart');
+  const categoryExpensesContainer = document.getElementById('categoryExpensesChart');
+  const budgetStatusContainer = document.getElementById('budgetStatusChart');
 
-    // بيانات للمخطط الدائري للفئات
-    var categoryData = {
-      data: [
-        { name: "الرسوم الدراسية", value: 45000 },
-        { name: "السكن", value: 30000 },
-        { name: "المواصلات", value: 10000 },
-        { name: "الكتب والمراجع", value: 8000 },
-        { name: "المعيشة", value: 25000 },
-        { name: "أخرى", value: 12000 }
-      ]
-    };
+  // Initialize React components if the containers exist
+  if (monthlyExpensesContainer && typeof ReactDOM !== 'undefined' && typeof MonthlyExpensesChart !== 'undefined') {
+    ReactDOM.render(React.createElement(MonthlyExpensesChart), monthlyExpensesContainer);
+  } else {
+    console.warn('Monthly expenses chart container or React component not found');
+  }
 
-    // بيانات لمخطط حالة الميزانيات
-    var budgetStatusData = {
-      data: [
-        { name: "نشطة", value: 18 },
-        { name: "معلقة", value: 7 },
-        { name: "مغلقة", value: 5 }
-      ]
-    };
+  if (categoryExpensesContainer && typeof ReactDOM !== 'undefined' && typeof CategoryExpensesChart !== 'undefined') {
+    ReactDOM.render(React.createElement(CategoryExpensesChart), categoryExpensesContainer);
+  } else {
+    console.warn('Category expenses chart container or React component not found');
+  }
 
-    // إنشاء المخططات
-    if (typeof createMonthlyExpensesChart === 'function') {
-      createMonthlyExpensesChart(monthlyData);
-    }
+  if (budgetStatusContainer && typeof ReactDOM !== 'undefined' && typeof BudgetStatusChart !== 'undefined') {
+    ReactDOM.render(React.createElement(BudgetStatusChart), budgetStatusContainer);
+  } else {
+    console.warn('Budget status chart container or React component not found');
+  }
 
-    if (typeof createCategoryExpensesChart === 'function') {
-      createCategoryExpensesChart({data: categoryData.data});
-    }
+  // Handle period selector change events
+  const periodSelector = document.getElementById('period-selector');
+  if (periodSelector) {
+    periodSelector.addEventListener('change', function(e) {
+      const period = e.target.value;
+      // You could use this to refresh data with different time periods
+      console.log('Period changed to:', period);
 
-    if (typeof createBudgetStatusChart === 'function') {
-      createBudgetStatusChart(budgetStatusData);
-    }
-  });
+      // Optionally trigger a custom event that your React components can listen for
+      const event = new CustomEvent('periodChanged', { detail: { period } });
+      document.dispatchEvent(event);
+    });
+  }
+});
 </script>
 {% endblock %}
