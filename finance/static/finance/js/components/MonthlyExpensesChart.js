@@ -1,6 +1,5 @@
 // يجب وضع هذا الملف في مجلد finance/static/finance/js/components/MonthlyExpensesChart.js
 
-// إضافة window لتصبح المتغيرات متاحة للمتصفح
 (function(window) {
   const { useState, useEffect } = React;
   const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
@@ -42,7 +41,7 @@
       const fetchMonthlyData = async () => {
         setLoading(true);
         try {
-          // Use the API endpoint from your Django views
+          // Use the API endpoint from Django views
           const response = await fetch(`/finance/api/monthly-expenses/?year=${selectedYear}`);
 
           if (!response.ok) {
@@ -91,18 +90,18 @@
       setSelectedYear(parseInt(e.target.value));
     };
 
-    // إضافة الإصغاء لحدث تغيير الفترة الزمنية من الواجهة الرئيسية
+    // Listen for period change event from the dashboard
     useEffect(() => {
       const handlePeriodChange = (event) => {
         const period = event.detail.period;
         if (period === 'yearly') {
-          // لا نفعل شيئًا لأن المكون يعرض بيانات سنوية بالفعل
+          // Do nothing as the component already shows yearly data
         } else if (period === 'quarterly') {
-          // يمكنك هنا تعديل طريقة عرض البيانات لتكون ربع سنوية
-          console.log("تغيير لعرض البيانات ربع السنوية");
+          // Could modify data display to be quarterly
+          console.log("Changed to display quarterly data");
         } else if (period === 'monthly') {
-          // يمكنك هنا تعديل طريقة عرض البيانات لتكون شهرية
-          console.log("تغيير لعرض البيانات الشهرية");
+          // Could modify data display to be monthly
+          console.log("Changed to display monthly data");
         }
       };
 
@@ -208,6 +207,6 @@
     );
   };
 
-  // إضافة المكون إلى النافذة (window) ليكون متاحًا للاستخدام من خلال ملف داشبورد
+  // Add the component to the window to make it available from the dashboard
   window.MonthlyExpensesChart = MonthlyExpensesChart;
 })(window);

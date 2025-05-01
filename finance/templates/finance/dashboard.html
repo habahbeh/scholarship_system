@@ -125,7 +125,6 @@
           </div>
         </div>
         <div class="card-body">
-          <!-- تغيير هنا: استبدلنا div React بعنصر div عادي -->
           <div class="chart-container" style="height: 300px;">
             <div id="monthlyExpensesChart"></div>
           </div>
@@ -248,50 +247,16 @@
 
 {% block scripts %}
 {{ block.super }}
-    <!-- Cargar Chart.js en lugar de React y Recharts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-
-    <!-- Cargar nuestros scripts de gráficas personalizados -->
-    <script src="{% static 'finance/js/monthly-expenses-chart.js' %}"></script>
-
-    <!-- Mantener estos scripts para los otros gráficos por ahora -->
+    <!-- تحميل مكتبات React و Recharts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.1.9/Recharts.min.js"></script>
+
+    <!-- تحميل مكونات المخططات -->
     <script src="{% static 'finance/js/components/CategoryExpensesChart.js' %}"></script>
     <script src="{% static 'finance/js/components/BudgetStatusChart.js' %}"></script>
+    <script src="{% static 'finance/js/components/MonthlyExpensesChart.js' %}"></script>
 
-<script>
-  // JavaScript para inicializar los componentes React restantes
-document.addEventListener('DOMContentLoaded', function() {
-  // Inicializar solo los gráficos de categoría y estado de presupuesto con React
-  const categoryExpensesContainer = document.getElementById('categoryExpensesChart');
-  const budgetStatusContainer = document.getElementById('budgetStatusChart');
-
-  if (categoryExpensesContainer && typeof ReactDOM !== 'undefined' && typeof CategoryExpensesChart !== 'undefined') {
-    ReactDOM.render(React.createElement(CategoryExpensesChart), categoryExpensesContainer);
-  } else {
-    console.warn('Category expenses chart container or React component not found');
-  }
-
-  if (budgetStatusContainer && typeof ReactDOM !== 'undefined' && typeof BudgetStatusChart !== 'undefined') {
-    ReactDOM.render(React.createElement(BudgetStatusChart), budgetStatusContainer);
-  } else {
-    console.warn('Budget status chart container or React component not found');
-  }
-
-  // Manejar eventos de cambio de período
-  const periodSelector = document.getElementById('period-selector');
-  if (periodSelector) {
-    periodSelector.addEventListener('change', function(e) {
-      const period = e.target.value;
-      console.log('Period changed to:', period);
-
-      // Disparar evento personalizado que nuestros scripts de gráficos pueden escuchar
-      const event = new CustomEvent('periodChanged', { detail: { period } });
-      document.dispatchEvent(event);
-    });
-  }
-});
-</script>
+    <!-- تحميل سكربت لوحة المعلومات -->
+    <script src="{% static 'finance/js/dashboard.js' %}"></script>
 {% endblock %}
