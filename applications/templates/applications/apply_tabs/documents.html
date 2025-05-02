@@ -1,0 +1,388 @@
+{% extends 'applications/apply_tabs/base_tabs.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block application_content %}
+<h4 class="mb-4">{% trans "المستندات المطلوبة" %}</h4>
+
+<div class="alert alert-info mb-4">
+  <i class="fas fa-info-circle me-2"></i>
+  {% trans "يرجى رفع المستندات المطلوبة. تأكد من رفع جميع المستندات الضرورية التي تدعم طلبك." %}
+</div>
+
+<form method="post" id="documentsForm" enctype="multipart/form-data">
+  {% csrf_token %}
+  
+  {{ formset.management_form }}
+  
+  <div class="row mb-4">
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">{% trans "المستندات المطلوبة" %}</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex align-items-center">
+              <div class="text-danger me-2">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <div>
+                <h6 class="mb-0">{% trans "السيرة الذاتية" %}</h6>
+                <small class="text-muted">{% trans "مطلوب" %}</small>
+              </div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <div class="text-primary me-2">
+                <i class="fas fa-id-card"></i>
+              </div>
+              <div>
+                <h6 class="mb-0">{% trans "إثبات الهوية" %}</h6>
+                <small class="text-muted">{% trans "مطلوب" %}</small>
+              </div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <div class="text-success me-2">
+                <i class="fas fa-graduation-cap"></i>
+              </div>
+              <div>
+                <h6 class="mb-0">{% trans "شهادة الثانوية العامة" %}</h6>
+                <small class="text-muted">{% trans "مطلوب" %}</small>
+              </div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <div class="text-info me-2">
+                <i class="fas fa-university"></i>
+              </div>
+              <div>
+                <h6 class="mb-0">{% trans "شهادة البكالوريوس" %}</h6>
+                <small class="text-muted">{% trans "مطلوب" %}</small>
+              </div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <div class="text-warning me-2">
+                <i class="fas fa-language"></i>
+              </div>
+              <div>
+                <h6 class="mb-0">{% trans "شهادة اختبار اللغة" %}</h6>
+                <small class="text-muted">{% trans "مطلوب" %}</small>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-8">
+      <div id="documents_formset">
+        {% for form in formset %}
+          <div class="document-row mb-3" data-form-index="{{ forloop.counter0 }}">
+            <div class="document-header">
+              <h5 class="mb-0 document-title">
+                {% if form.instance.pk %}
+                  {{ form.instance.get_document_type_display }}
+                {% else %}
+                  {% trans "مستند جديد" %}
+                {% endif %}
+              </h5>
+              <div>
+                <button type="button" class="btn btn-danger btn-sm delete-document" {% if forloop.first and formset|length == 1 %}style="display: none;"{% endif %}>
+                  <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
+                </button>
+              </div>
+            </div>
+            
+            {{ form.id }}
+            {{ form.DELETE.as_hidden }}
+            
+            <div class="card">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    {{ form.document_type|as_crispy_field }}
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    {{ form.name|as_crispy_field }}
+                  </div>
+                  
+                  <div class="col-md-12 mb-3">
+                    {{ form.description|as_crispy_field }}
+                  </div>
+                  
+                  <div class="col-md-12 mb-3">
+                    {{ form.file|as_crispy_field }}
+                  </div>
+                  
+                  <div class="col-md-12">
+                    <div class="form-check">
+                      {{ form.is_required.tag }}
+                      <label class="form-check-label" for="{{ form.is_required.id_for_label }}">
+                        {{ form.is_required.label }}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- مؤهل أكاديمي مرتبط (اختياري) -->
+                {% if academic_qualifications %}
+                <div class="row mt-3">
+                  <div class="col-md-12">
+                    <label class="form-label">{% trans "مرتبط بمؤهل أكاديمي" %}</label>
+                    <select class="form-select document-academic-qualification" name="academic_qualification_{{ forloop.counter0 }}">
+                      <option value="">{% trans "غير مرتبط بمؤهل" %}</option>
+                      {% for qual in academic_qualifications %}
+                      <option value="{{ qual.id }}" {% if form.instance.academic_qualification_id == qual.id %}selected{% endif %}>
+                        {% if qual.qualification_type == 'high_school' %}
+                        {{ qual.get_qualification_type_display }} - {{ qual.high_school_certificate_type }}
+                        {% elif qual.qualification_type == 'bachelors' %}
+                        {{ qual.get_qualification_type_display }} - {{ qual.major }} ({{ qual.institution_name }})
+                        {% elif qual.qualification_type == 'masters' %}
+                        {{ qual.get_qualification_type_display }} - {{ qual.major }} ({{ qual.institution_name }})
+                        {% else %}
+                        {{ qual.get_qualification_type_display }} - {{ qual.certificate_name }}
+                        {% endif %}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                {% endif %}
+                
+                <!-- كفاءة لغوية مرتبطة (اختياري) -->
+                {% if language_proficiencies %}
+                <div class="row mt-3">
+                  <div class="col-md-12">
+                    <label class="form-label">{% trans "مرتبط بكفاءة لغوية" %}</label>
+                    <select class="form-select document-language-proficiency" name="language_proficiency_{{ forloop.counter0 }}">
+                      <option value="">{% trans "غير مرتبط بلغة" %}</option>
+                      {% for lang in language_proficiencies %}
+                      <option value="{{ lang.id }}" {% if form.instance.language_proficiency_id == lang.id %}selected{% endif %}>
+                        {% if lang.is_english %}
+                        {% trans "اللغة الإنجليزية" %} - {{ lang.get_test_type_display }}
+                        {% else %}
+                        {% if lang.other_language == 'other' %}
+                        {{ lang.other_language_name }}
+                        {% else %}
+                        {{ lang.get_other_language_display }}
+                        {% endif %}
+                        {% endif %}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      
+      <div class="text-center my-4">
+        <button type="button" class="btn btn-success" id="add_document">
+          <i class="fas fa-plus me-1"></i> {% trans "إضافة مستند جديد" %}
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="d-flex justify-content-between mt-4">
+    <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=language" class="btn btn-outline-secondary btn-steps">
+      <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
+    </a>
+    <button type="submit" class="btn btn-primary btn-steps">
+      <i class="fas fa-arrow-left me-1"></i> {% trans "التالي: المعاينة" %}
+    </button>
+  </div>
+</form>
+
+<!-- عرض المستندات الحالية -->
+{% if application.documents.exists %}
+<div class="mt-5">
+  <h5 class="mb-3">{% trans "المستندات المرفوعة" %}</h5>
+  
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>{% trans "نوع المستند" %}</th>
+          <th>{% trans "الاسم" %}</th>
+          <th>{% trans "تاريخ الرفع" %}</th>
+          <th>{% trans "الحجم" %}</th>
+          <th>{% trans "الإجراءات" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for document in application.documents.all %}
+        <tr>
+          <td>{{ document.get_document_type_display }}</td>
+          <td>{{ document.name }}</td>
+          <td>{{ document.upload_date|date:"Y-m-d" }}</td>
+          <td>{{ document.file.size|filesizeformat }}</td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <a href="{{ document.file.url }}" class="btn btn-outline-primary" target="_blank" title="{% trans 'عرض' %}">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{% url 'applications:delete_document' document.id %}" class="btn btn-outline-danger" title="{% trans 'حذف' %}">
+                <i class="fas fa-trash"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block step_js %}
+// تغيير عنوان المستند حسب النوع المحدد
+function updateDocumentTitle(select) {
+  const documentRow = select.closest('.document-row');
+  const documentTitle = documentRow.querySelector('.document-title');
+  const selectedOption = select.options[select.selectedIndex];
+  
+  documentTitle.innerText = selectedOption.text;
+}
+
+// تنفيذ عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+  const formset = document.getElementById('documents_formset');
+  
+  // تحديد عدد النماذج الحالية والحد الأقصى
+  const totalFormsInput = document.getElementById('id_document_set-TOTAL_FORMS');
+  const maxNumForms = parseInt(document.getElementById('id_document_set-MAX_NUM_FORMS').value);
+  
+  // زر إضافة مستند جديد
+  const addDocumentBtn = document.getElementById('add_document');
+  
+  // إضافة مستمعي الأحداث لتغيير نوع المستند
+  formset.querySelectorAll('select[id$="-document_type"]').forEach(select => {
+    select.addEventListener('change', function() {
+      updateDocumentTitle(this);
+    });
+  });
+  
+  // إضافة مستند جديد
+  addDocumentBtn.addEventListener('click', function() {
+    const totalForms = parseInt(totalFormsInput.value);
+    
+    // التحقق من عدم تجاوز الحد الأقصى
+    if (totalForms < maxNumForms) {
+      // نسخ آخر نموذج
+      const lastForm = formset.querySelector('.document-row:last-child');
+      const newForm = lastForm.cloneNode(true);
+      
+      // تحديث المعرفات والأسماء
+      newForm.setAttribute('data-form-index', totalForms);
+      newForm.querySelectorAll('input, select, textarea').forEach(input => {
+        // استبدال الرقم في المعرف والاسم
+        const oldName = input.getAttribute('name');
+        const oldId = input.getAttribute('id');
+        
+        if (oldName) {
+          const newName = oldName.replace(/-\d+-/, `-${totalForms}-`);
+          input.setAttribute('name', newName);
+        }
+        
+        if (oldId) {
+          const newId = oldId.replace(/-\d+-/, `-${totalForms}-`);
+          input.setAttribute('id', newId);
+        }
+        
+        // إعادة تعيين القيم
+        if (input.type !== 'hidden') {
+          if (input.type === 'checkbox') {
+            input.checked = false;
+          } else if (input.type === 'file') {
+            // لا يمكن إعادة تعيين قيمة حقل الملف مباشرة - تجاهل
+          } else {
+            input.value = '';
+          }
+        }
+      });
+      
+      // إعادة تعيين المسميات
+      newForm.querySelectorAll('label').forEach(label => {
+        const forAttr = label.getAttribute('for');
+        if (forAttr) {
+          const newFor = forAttr.replace(/-\d+-/, `-${totalForms}-`);
+          label.setAttribute('for', newFor);
+        }
+      });
+      
+      // تحديث القوائم المنسدلة للربط
+      const academicQualSelect = newForm.querySelector('.document-academic-qualification');
+      if (academicQualSelect) {
+        academicQualSelect.setAttribute('name', `academic_qualification_${totalForms}`);
+        academicQualSelect.value = '';
+      }
+      
+      const languageProfSelect = newForm.querySelector('.document-language-proficiency');
+      if (languageProfSelect) {
+        languageProfSelect.setAttribute('name', `language_proficiency_${totalForms}`);
+        languageProfSelect.value = '';
+      }
+      
+      // إخفاء العنصر المخفي DELETE
+      const deleteCheckbox = newForm.querySelector('input[id$="-DELETE"]');
+      if (deleteCheckbox) {
+        deleteCheckbox.checked = false;
+      }
+      
+      // إعادة تعيين عنوان المستند
+      const documentTitle = newForm.querySelector('.document-title');
+      documentTitle.innerText = '{% trans "مستند جديد" %}';
+      
+      // إضافة المستمع لنوع المستند
+      const documentTypeSelect = newForm.querySelector('select[id$="-document_type"]');
+      documentTypeSelect.addEventListener('change', function() {
+        updateDocumentTitle(this);
+      });
+      
+      // إضافة مستمع لزر الحذف
+      const deleteBtn = newForm.querySelector('.delete-document');
+      deleteBtn.style.display = 'inline-block';
+      deleteBtn.addEventListener('click', function() {
+        deleteDocument(newForm);
+      });
+      
+      // إضافة النموذج الجديد للمستند
+      formset.appendChild(newForm);
+      
+      // تحديث عدد النماذج الكلي
+      totalFormsInput.value = totalForms + 1;
+    } else {
+      alert('{% trans "تم الوصول للحد الأقصى من المستندات" %}');
+    }
+  });
+  
+  // حذف مستند
+  function deleteDocument(row) {
+    const totalForms = parseInt(totalFormsInput.value);
+    
+    // إذا كان هناك أكثر من نموذج واحد
+    if (totalForms > 1) {
+      const deleteCheckbox = row.querySelector('input[id$="-DELETE"]');
+      if (deleteCheckbox) {
+        deleteCheckbox.checked = true;
+      }
+      row.style.display = 'none';
+    } else {
+      alert('{% trans "يجب إضافة مستند واحد على الأقل" %}');
+    }
+  }
+  
+  // إضافة مستمعي الأحداث لأزرار الحذف
+  formset.querySelectorAll('.delete-document').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const row = this.closest('.document-row');
+      deleteDocument(row);
+    });
+  });
+});
+{% endblock %}

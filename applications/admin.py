@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from .models import Application, Document, ApplicationStatus, ApplicationLog
+from .models import (
+    Application, Document, ApplicationStatus, ApplicationLog,
+    AcademicQualification, LanguageProficiency, ApprovalAttachment
+)
 
 
 class DocumentInline(admin.TabularInline):
@@ -20,11 +23,73 @@ class ApplicationLogInline(admin.TabularInline):
         return False
 
 
+class AcademicQualificationInline(admin.StackedInline):
+    """عرض المؤهلات الأكاديمية كجزء من الطلب في لوحة الإدارة"""
+    model = AcademicQualification
+    extra = 0
+    fieldsets = (
+        (None, {
+            'fields': ('qualification_type',)
+        }),
+        (_('الثانوية العامة'), {
+            'classes': ('collapse',),
+            'fields': ('high_school_certificate_type', 'high_school_branch', 'high_school_graduation_year',
+                       'high_school_gpa', 'high_school_country')
+        }),
+        (_('البكالوريوس'), {
+            'classes': ('collapse',),
+            'fields': ('bachelor_institution_name', 'bachelor_major', 'bachelor_graduation_year',
+                       'bachelor_gpa', 'bachelor_grade', 'bachelor_country', 'study_system', 'bachelor_type')
+        }),
+        (_('الماجستير'), {
+            'classes': ('collapse',),
+            'fields': ('masters_institution_name', 'masters_major', 'masters_graduation_year',
+                       'masters_gpa', 'masters_grade', 'masters_country', 'masters_system', 'study_language')
+        }),
+        (_('شهادة أخرى'), {
+            'classes': ('collapse',),
+            'fields': ('certificate_type', 'certificate_name', 'certificate_issuer', 'certificate_graduation_year')
+        }),
+        (_('معلومات إضافية'), {
+            'fields': ('additional_info',)
+        }),
+    )
+
+
+class LanguageProficiencyInline(admin.StackedInline):
+    """عرض الكفاءة اللغوية كجزء من الطلب في لوحة الإدارة"""
+    model = LanguageProficiency
+    extra = 0
+    fieldsets = (
+        (None, {
+            'fields': ('is_english',)
+        }),
+        (_('اللغة الإنجليزية'), {
+            'classes': ('collapse',),
+            'fields': ('test_type', 'other_test_name', 'test_date', 'overall_score', 'reference_number',
+                       'reading_score', 'listening_score', 'speaking_score', 'writing_score')
+        }),
+        (_('لغة أخرى'), {
+            'classes': ('collapse',),
+            'fields': ('other_language', 'other_language_name', 'proficiency_level')
+        }),
+        (_('معلومات إضافية'), {
+            'fields': ('additional_info',)
+        }),
+    )
+
+
+class ApprovalAttachmentInline(admin.TabularInline):
+    """عرض مرفقات الموافقات كجزء من الطلب في لوحة الإدارة"""
+    model = ApprovalAttachment
+    extra = 0
+
+
 @admin.register(ApplicationStatus)
 class ApplicationStatusAdmin(admin.ModelAdmin):
     """إدارة حالات الطلب"""
-    list_display = ('name', 'order', 'description')
-    list_editable = ('order',)
+    list_display = ('name', 'order', 'description', 'requires_attachment')
+    list_editable = ('order', 'requires_attachment')
     search_fields = ('name', 'description')
     ordering = ('order',)
 
@@ -37,7 +102,13 @@ class ApplicationAdmin(admin.ModelAdmin):
     search_fields = ('applicant__username', 'applicant__first_name', 'applicant__last_name', 'scholarship__title')
     date_hierarchy = 'application_date'
     readonly_fields = ('application_date', 'last_update')
-    inlines = [DocumentInline, ApplicationLogInline]
+    inlines = [
+        AcademicQualificationInline,
+        LanguageProficiencyInline,
+        DocumentInline,
+        ApprovalAttachmentInline,
+        ApplicationLogInline
+    ]
 
     # Enhancement 1: Add fieldsets for better organization
     fieldsets = (
@@ -49,6 +120,9 @@ class ApplicationAdmin(admin.ModelAdmin):
         }),
         (_('القبول'), {
             'fields': ('acceptance_letter', 'acceptance_university')
+        }),
+        (_('ملاحظات إدارية'), {
+            'fields': ('admin_notes',)
         }),
     )
 
@@ -73,12 +147,12 @@ class ApplicationAdmin(admin.ModelAdmin):
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
     """إدارة المستندات"""
-    list_display = ('name', 'application', 'upload_date', 'is_required')
-    list_filter = ('is_required', 'upload_date')
+    list_display = ('name', 'document_type', 'application', 'upload_date', 'is_required')
+    list_filter = ('document_type', 'is_required', 'upload_date')
     search_fields = ('name', 'description', 'application__id', 'application__applicant__username')
     date_hierarchy = 'upload_date'
     # Enhancement: Add autocomplete for application field
-    autocomplete_fields = ['application']
+    autocomplete_fields = ['application', 'academic_qualification', 'language_proficiency']
 
 
 @admin.register(ApplicationLog)
@@ -95,3 +169,135 @@ class ApplicationLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(AcademicQualification)
+class AcademicQualificationAdmin(admin.ModelAdmin):
+    """إدارة المؤهلات الأكاديمية"""
+    list_display = ('get_qualification_type_display', 'application', 'get_major_display', 'get_institution_display',
+                    'get_graduation_year_display')
+    list_filter = (
+    'qualification_type', 'high_school_graduation_year', 'bachelor_graduation_year', 'masters_graduation_year',
+    'certificate_graduation_year')
+    search_fields = ('application__id', 'application__applicant__username', 'bachelor_major', 'masters_major',
+                     'bachelor_institution_name', 'masters_institution_name')
+    autocomplete_fields = ['application']
+    fieldsets = (
+        (None, {
+            'fields': ('application', 'qualification_type')
+        }),
+        (_('الثانوية العامة'), {
+            'classes': ('collapse',),
+            'fields': ('high_school_certificate_type', 'high_school_branch', 'high_school_graduation_year',
+                       'high_school_gpa', 'high_school_country')
+        }),
+        (_('البكالوريوس'), {
+            'classes': ('collapse',),
+            'fields': ('bachelor_institution_name', 'bachelor_major', 'bachelor_graduation_year',
+                       'bachelor_gpa', 'bachelor_grade', 'bachelor_country', 'study_system', 'bachelor_type')
+        }),
+        (_('الماجستير'), {
+            'classes': ('collapse',),
+            'fields': ('masters_institution_name', 'masters_major', 'masters_graduation_year',
+                       'masters_gpa', 'masters_grade', 'masters_country', 'masters_system', 'study_language')
+        }),
+        (_('شهادة أخرى'), {
+            'classes': ('collapse',),
+            'fields': ('certificate_type', 'certificate_name', 'certificate_issuer', 'certificate_graduation_year')
+        }),
+        (_('معلومات إضافية'), {
+            'fields': ('additional_info',)
+        }),
+    )
+
+    def get_major_display(self, obj):
+        """عرض التخصص بناءً على نوع المؤهل"""
+        if obj.qualification_type == 'bachelor':
+            return obj.bachelor_major
+        elif obj.qualification_type == 'masters':
+            return obj.masters_major
+        return "-"
+
+    get_major_display.short_description = _("التخصص")
+
+    def get_institution_display(self, obj):
+        """عرض اسم المؤسسة بناءً على نوع المؤهل"""
+        if obj.qualification_type == 'bachelor':
+            return obj.bachelor_institution_name
+        elif obj.qualification_type == 'masters':
+            return obj.masters_institution_name
+        elif obj.qualification_type == 'other':
+            return obj.certificate_issuer
+        return "-"
+
+    get_institution_display.short_description = _("المؤسسة التعليمية")
+
+    def get_graduation_year_display(self, obj):
+        """عرض سنة التخرج بناءً على نوع المؤهل"""
+        if obj.qualification_type == 'high_school':
+            return obj.high_school_graduation_year
+        elif obj.qualification_type == 'bachelor':
+            return obj.bachelor_graduation_year
+        elif obj.qualification_type == 'masters':
+            return obj.masters_graduation_year
+        elif obj.qualification_type == 'other':
+            return obj.certificate_graduation_year
+        return "-"
+
+    get_graduation_year_display.short_description = _("سنة التخرج")
+
+
+@admin.register(LanguageProficiency)
+class LanguageProficiencyAdmin(admin.ModelAdmin):
+    """إدارة الكفاءة اللغوية"""
+    list_display = ('get_language_display', 'application', 'get_proficiency_display')
+    list_filter = ('is_english', 'test_type', 'other_language')
+    search_fields = ('application__id', 'application__applicant__username')
+    autocomplete_fields = ['application']
+    fieldsets = (
+        (None, {
+            'fields': ('application', 'is_english')
+        }),
+        (_('اللغة الإنجليزية'), {
+            'classes': ('collapse',),
+            'fields': ('test_type', 'other_test_name', 'test_date', 'overall_score', 'reference_number',
+                       'reading_score', 'listening_score', 'speaking_score', 'writing_score')
+        }),
+        (_('لغة أخرى'), {
+            'classes': ('collapse',),
+            'fields': ('other_language', 'other_language_name', 'proficiency_level')
+        }),
+        (_('معلومات إضافية'), {
+            'fields': ('additional_info',)
+        }),
+    )
+
+    def get_language_display(self, obj):
+        """عرض اسم اللغة بشكل مناسب"""
+        if obj.is_english:
+            return _("اللغة الإنجليزية")
+        else:
+            if obj.other_language == 'other':
+                return obj.other_language_name
+            return obj.get_other_language_display()
+
+    get_language_display.short_description = _("اللغة")
+
+    def get_proficiency_display(self, obj):
+        """عرض مستوى الإتقان بشكل مناسب"""
+        if obj.is_english:
+            return f"{obj.get_test_type_display()} ({obj.overall_score})"
+        else:
+            return obj.get_proficiency_level_display()
+
+    get_proficiency_display.short_description = _("مستوى الإتقان")
+
+
+@admin.register(ApprovalAttachment)
+class ApprovalAttachmentAdmin(admin.ModelAdmin):
+    """إدارة مرفقات الموافقات"""
+    list_display = ('application', 'get_approval_type_display', 'upload_date')
+    list_filter = ('approval_type', 'upload_date')
+    search_fields = ('application__id', 'application__applicant__username', 'notes')
+    date_hierarchy = 'upload_date'
+    autocomplete_fields = ['application']

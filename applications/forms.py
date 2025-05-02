@@ -1,6 +1,9 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Application, ApplicationStatus, ApprovalAttachment, Document
+from .models import (
+    Application, ApplicationStatus, ApprovalAttachment, Document,
+    AcademicQualification, LanguageProficiency
+)
 
 
 # New workflow forms
@@ -150,6 +153,7 @@ class PresidentApprovalForm(forms.Form):
 
         return cleaned_data
 
+
 # Standard application forms
 class ApplicationForm(forms.ModelForm):
     """نموذج التقديم على فرصة ابتعاث"""
@@ -262,3 +266,163 @@ class ApplicationFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': _('بحث...')})
     )
+
+
+# Forms for the tabbed application system
+class AcademicQualificationForm(forms.ModelForm):
+    """نموذج المؤهل الأكاديمي"""
+
+    class Meta:
+        model = AcademicQualification
+        exclude = ['application']
+        widgets = {
+            'qualification_type': forms.Select(attrs={'class': 'form-select qualification-type-select'}),
+            'high_school_certificate_type': forms.TextInput(attrs={'class': 'form-control high-school-field'}),
+            'high_school_branch': forms.TextInput(attrs={'class': 'form-control high-school-field'}),
+            'institution_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'major': forms.TextInput(attrs={'class': 'form-control'}),
+            'graduation_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1950', 'max': '2030'}),
+            'gpa': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'grade': forms.Select(attrs={'class': 'form-select'}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+            'study_system': forms.Select(attrs={'class': 'form-control bachelor-field'}),
+            'bachelor_type': forms.Select(attrs={'class': 'form-control bachelor-field'}),
+            'masters_system': forms.Select(attrs={'class': 'form-control masters-field'}),
+            'study_language': forms.Select(attrs={'class': 'form-control masters-field'}),
+            'certificate_type': forms.Select(attrs={'class': 'form-control other-certificate-field'}),
+            'certificate_name': forms.TextInput(attrs={'class': 'form-control other-certificate-field'}),
+            'certificate_issuer': forms.TextInput(attrs={'class': 'form-control other-certificate-field'}),
+            'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['qualification_type'].required = True
+
+        # عند تحرير مؤهل موجود، تعيين الحقول المطلوبة حسب نوع المؤهل
+        if self.instance.pk and self.instance.qualification_type:
+            if self.instance.qualification_type == 'high_school':
+                self.fields['high_school_certificate_type'].required = True
+                self.fields['high_school_branch'].required = True
+                self.fields['graduation_year'].required = True
+                self.fields['gpa'].required = True
+                self.fields['country'].required = True
+            elif self.instance.qualification_type == 'bachelors':
+                self.fields['institution_name'].required = True
+                self.fields['major'].required = True
+                self.fields['graduation_year'].required = True
+                self.fields['gpa'].required = True
+                self.fields['grade'].required = True
+                self.fields['country'].required = True
+                self.fields['study_system'].required = True
+                self.fields['bachelor_type'].required = True
+            elif self.instance.qualification_type == 'masters':
+                self.fields['institution_name'].required = True
+                self.fields['major'].required = True
+                self.fields['graduation_year'].required = True
+                self.fields['gpa'].required = True
+                self.fields['grade'].required = True
+                self.fields['country'].required = True
+                self.fields['masters_system'].required = True
+                self.fields['study_language'].required = True
+            elif self.instance.qualification_type == 'other':
+                self.fields['certificate_type'].required = True
+                self.fields['certificate_name'].required = True
+                self.fields['certificate_issuer'].required = True
+                self.fields['graduation_year'].required = True
+
+
+class LanguageProficiencyForm(forms.ModelForm):
+    """نموذج الكفاءة اللغوية"""
+
+    class Meta:
+        model = LanguageProficiency
+        exclude = ['application']
+        widgets = {
+            'is_english': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'test_type': forms.Select(attrs={'class': 'form-select english-field'}),
+            'other_test_name': forms.TextInput(attrs={'class': 'form-control english-field other-test-field'}),
+            'test_date': forms.DateInput(attrs={'class': 'form-control english-field', 'type': 'date'}),
+            'overall_score': forms.NumberInput(attrs={'class': 'form-control english-field', 'step': '0.1'}),
+            'reference_number': forms.TextInput(attrs={'class': 'form-control english-field'}),
+            'reading_score': forms.NumberInput(attrs={'class': 'form-control english-field', 'step': '0.1'}),
+            'listening_score': forms.NumberInput(attrs={'class': 'form-control english-field', 'step': '0.1'}),
+            'speaking_score': forms.NumberInput(attrs={'class': 'form-control english-field', 'step': '0.1'}),
+            'writing_score': forms.NumberInput(attrs={'class': 'form-control english-field', 'step': '0.1'}),
+            'other_language': forms.Select(attrs={'class': 'form-select other-language-field'}),
+            'other_language_name': forms.TextInput(
+                attrs={'class': 'form-control other-language-field other-language-name-field'}),
+            'proficiency_level': forms.Select(attrs={'class': 'form-select other-language-field'}),
+            'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # عند تحرير كفاءة لغوية موجودة، تعيين الحقول المطلوبة حسب نوع اللغة
+        if self.instance.pk:
+            if self.instance.is_english:
+                self.fields['test_type'].required = True
+                self.fields['test_date'].required = True
+                self.fields['overall_score'].required = True
+
+                # إذا كان نوع الاختبار "أخرى"، يكون حقل "اسم الاختبار الآخر" مطلوبًا
+                if self.instance.test_type == 'other':
+                    self.fields['other_test_name'].required = True
+            else:
+                self.fields['other_language'].required = True
+                self.fields['proficiency_level'].required = True
+
+                # إذا كانت اللغة "أخرى"، يكون حقل "اسم اللغة الأخرى" مطلوبًا
+                if self.instance.other_language == 'other':
+                    self.fields['other_language_name'].required = True
+
+
+class DocumentUploadForm(forms.ModelForm):
+    """نموذج رفع المستندات"""
+
+    class Meta:
+        model = Document
+        fields = ['document_type', 'name', 'description', 'file', 'is_required']
+        widgets = {
+            'document_type': forms.Select(attrs={'class': 'form-select'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'file': forms.FileInput(attrs={'class': 'form-control'}),
+            'is_required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class ApplicationTabsForm(forms.ModelForm):
+    """نموذج الطلب الرئيسي بالتبويبات"""
+
+    class Meta:
+        model = Application
+        fields = ['motivation_letter', 'research_proposal', 'comments', 'acceptance_letter', 'acceptance_university']
+        widgets = {
+            'motivation_letter': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'research_proposal': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'acceptance_letter': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'acceptance_university': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+# FormSets for tabbed application
+AcademicQualificationFormSet = forms.inlineformset_factory(
+    Application, AcademicQualification,
+    form=AcademicQualificationForm,
+    extra=1, can_delete=True
+)
+
+LanguageProficiencyFormSet = forms.inlineformset_factory(
+    Application, LanguageProficiency,
+    form=LanguageProficiencyForm,
+    extra=1, can_delete=True
+)
+
+DocumentFormSet = forms.inlineformset_factory(
+    Application, Document,
+    form=DocumentUploadForm,
+    extra=1, can_delete=True
+)

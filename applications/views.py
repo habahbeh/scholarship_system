@@ -12,10 +12,14 @@ from django.conf import settings
 import os
 
 from announcements.models import Scholarship
-from .models import Application, Document, ApplicationStatus, ApplicationLog, ApprovalAttachment
+from .models import (
+    Application, Document, ApplicationStatus, ApplicationLog, ApprovalAttachment,
+    AcademicQualification, LanguageProficiency
+)
 from .forms import (
     ApplicationForm, DocumentForm, DocumentUploadForm, ApplicationStatusForm, ApplicationFilterForm,
-    RequirementsCheckForm, HigherCommitteeApprovalForm, FacultyCouncilApprovalForm, PresidentApprovalForm
+    RequirementsCheckForm, HigherCommitteeApprovalForm, FacultyCouncilApprovalForm, PresidentApprovalForm,
+    ApplicationTabsForm, AcademicQualificationFormSet, LanguageProficiencyFormSet, DocumentFormSet
 )
 
 
@@ -469,7 +473,6 @@ def president_report(request):
 
 
 @login_required
-@login_required
 @permission_required('applications.view_application')
 def application_full_report(request, application_id):
     """تقرير تفصيلي لطلب معين مع جميع المرفقات"""
@@ -808,3 +811,321 @@ def delete_application(request, application_id):
         'application': application,
     }
     return render(request, 'applications/application_confirm_delete.html', context)
+
+
+# --- Tabbed Application System Views ---
+
+@login_required
+def apply_tabs(request, scholarship_id):
+    """التقديم على فرصة ابتعاث بنظام التبويبات"""
+    scholarship = get_object_or_404(Scholarship, id=scholarship_id)
+
+    # التحقق من أن الفرصة ما زالت متاحة
+    if not scholarship.is_active:
+        messages.error(request, _("انتهت مهلة التقديم لهذه الفرصة"))
+        return redirect('announcements:scholarship_detail', pk=scholarship.id)
+
+    # التحقق من أن المستخدم لم يتقدم مسبقًا
+    if Application.objects.filter(scholarship=scholarship, applicant=request.user).exists():
+        messages.warning(request, _("لقد تقدمت بالفعل لهذه الفرصة"))
+        return redirect('applications:my_applications')
+
+    # إنشاء طلب جديد أو الحصول على الطلب المؤقت الحالي
+    temp_application = request.session.get('temp_application_id')
+    if temp_application:
+        try:
+            application = Application.objects.get(id=temp_application, applicant=request.user, scholarship=scholarship)
+        except Application.DoesNotExist:
+            application = None
+    else:
+        application = None
+
+    # إذا لم يكن هناك طلب مؤقت، إنشاء طلب جديد
+    if not application:
+        # تعيين حالة الطلب الافتراضية
+        default_status = ApplicationStatus.objects.filter(order=1).first()
+        if not default_status:
+            default_status = ApplicationStatus.objects.create(name=_("تم التقديم"), order=1)
+
+        application = Application(
+            scholarship=scholarship,
+            applicant=request.user,
+            status=default_status
+        )
+        application.save()
+        request.session['temp_application_id'] = application.id
+
+    # الخطوة الحالية من الطلب
+    current_step = request.GET.get('step', 'personal')
+
+    context = {
+        'scholarship': scholarship,
+        'application': application,
+        'current_step': current_step,
+    }
+
+    # معالجة كل خطوة من خطوات الطلب
+    if current_step == 'personal':
+        return handle_personal_info_step(request, application, context)
+    elif current_step == 'academic':
+        return handle_academic_qualifications_step(request, application, context)
+    elif current_step == 'language':
+        return handle_language_proficiency_step(request, application, context)
+    elif current_step == 'documents':
+        return handle_documents_step(request, application, context)
+    elif current_step == 'preview':
+        return handle_preview_step(request, application, context)
+    elif current_step == 'submit':
+        return handle_submit_step(request, application, context)
+    else:
+        return handle_personal_info_step(request, application, context)
+
+
+def handle_personal_info_step(request, application, context):
+    """معالجة تبويب المعلومات الشخصية"""
+    if request.method == 'POST':
+        form = ApplicationTabsForm(request.POST, instance=application)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("تم حفظ المعلومات الشخصية بنجاح"))
+            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='academic')
+    else:
+        form = ApplicationTabsForm(instance=application)
+
+    context.update({
+        'form': form,
+        'title': _("المعلومات الشخصية"),
+    })
+    return render(request, 'applications/apply_tabs/personal_info.html', context)
+
+
+def handle_academic_qualifications_step(request, application, context):
+    """معالجة تبويب المؤهلات الأكاديمية"""
+    if request.method == 'POST':
+        formset = AcademicQualificationFormSet(request.POST, instance=application)
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, _("تم حفظ المؤهلات الأكاديمية بنجاح"))
+            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='language')
+    else:
+        formset = AcademicQualificationFormSet(instance=application)
+
+    context.update({
+        'formset': formset,
+        'title': _("المؤهلات الأكاديمية"),
+    })
+    return render(request, 'applications/apply_tabs/academic_qualifications.html', context)
+
+
+def handle_language_proficiency_step(request, application, context):
+    """معالجة تبويب الكفاءة اللغوية"""
+    if request.method == 'POST':
+        formset = LanguageProficiencyFormSet(request.POST, instance=application)
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, _("تم حفظ معلومات الكفاءة اللغوية بنجاح"))
+            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='documents')
+    else:
+        formset = LanguageProficiencyFormSet(instance=application)
+
+    context.update({
+        'formset': formset,
+        'title': _("الكفاءة اللغوية"),
+    })
+    return render(request, 'applications/apply_tabs/language_proficiency.html', context)
+
+
+def handle_documents_step(request, application, context):
+    """معالجة تبويب المستندات"""
+    if request.method == 'POST':
+        formset = DocumentFormSet(request.POST, request.FILES, instance=application)
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, _("تم حفظ المستندات بنجاح"))
+            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='preview')
+    else:
+        formset = DocumentFormSet(instance=application)
+
+    # الحصول على قائمة المؤهلات الأكاديمية والكفاءات اللغوية لربطها بالمستندات
+    academic_qualifications = AcademicQualification.objects.filter(application=application)
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+
+    context.update({
+        'formset': formset,
+        'title': _("المستندات المطلوبة"),
+        'academic_qualifications': academic_qualifications,
+        'language_proficiencies': language_proficiencies,
+    })
+    return render(request, 'applications/apply_tabs/documents.html', context)
+
+
+def handle_preview_step(request, application, context):
+    """معالجة تبويب المعاينة"""
+    academic_qualifications = AcademicQualification.objects.filter(application=application)
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+    documents = Document.objects.filter(application=application)
+
+    context.update({
+        'academic_qualifications': academic_qualifications,
+        'language_proficiencies': language_proficiencies,
+        'documents': documents,
+        'title': _("معاينة الطلب"),
+    })
+    return render(request, 'applications/apply_tabs/preview.html', context)
+
+
+def handle_submit_step(request, application, context):
+    """معالجة تبويب التقديم النهائي"""
+    # التحقق من اكتمال الطلب
+    is_complete = True
+    missing_fields = []
+
+    # التحقق من وجود معلومات شخصية
+    if not application.motivation_letter:
+        is_complete = False
+        missing_fields.append(_("خطاب الدوافع"))
+
+    # التحقق من وجود مؤهل أكاديمي واحد على الأقل
+    if not AcademicQualification.objects.filter(application=application).exists():
+        is_complete = False
+        missing_fields.append(_("المؤهلات الأكاديمية"))
+
+    # التحقق من وجود كفاءة لغوية واحدة على الأقل
+    if not LanguageProficiency.objects.filter(application=application, is_english=True).exists():
+        is_complete = False
+        missing_fields.append(_("الكفاءة اللغوية في اللغة الإنجليزية"))
+
+    # التحقق من وجود المستندات المطلوبة
+    required_document_types = ['cv', 'personal_id', 'high_school_certificate', 'bachelors_certificate']
+    existing_document_types = Document.objects.filter(application=application).values_list('document_type', flat=True)
+
+    for doc_type in required_document_types:
+        if doc_type not in existing_document_types:
+            is_complete = False
+            doc_type_display = dict(Document.DOCUMENT_TYPE_CHOICES).get(doc_type, doc_type)
+            missing_fields.append(doc_type_display)
+
+    if request.method == 'POST' and is_complete:
+        # تحديث حالة الطلب
+        default_status = ApplicationStatus.objects.filter(order=1).first()
+        if not default_status:
+            default_status = ApplicationStatus.objects.create(name=_("تم التقديم"), order=1)
+
+        application.status = default_status
+        application.application_date = timezone.now()
+        application.save()
+
+        # إنشاء سجل للطلب
+        ApplicationLog.objects.create(
+            application=application,
+            to_status=default_status,
+            created_by=request.user,
+            comment=_("تم إنشاء الطلب")
+        )
+
+        # حذف رقم الطلب المؤقت من الجلسة
+        if 'temp_application_id' in request.session:
+            del request.session['temp_application_id']
+
+        messages.success(request, _("تم تقديم طلبك بنجاح"))
+        return redirect('applications:application_detail', application_id=application.id)
+
+    context.update({
+        'is_complete': is_complete,
+        'missing_fields': missing_fields,
+        'title': _("تقديم الطلب"),
+    })
+    return render(request, 'applications/apply_tabs/submit.html', context)
+
+
+@login_required
+def update_application_tabs(request, application_id):
+    """تحديث الطلب بنظام التبويبات"""
+    application = get_object_or_404(Application, id=application_id, applicant=request.user)
+
+    # التحقق من أن الطلب ما زال قابل للتعديل
+    if application.status.order > 2:  # إذا تجاوزت الحالة مرحلة المراجعة الأولية
+        messages.error(request, _("لا يمكن تعديل هذا الطلب في مرحلته الحالية"))
+        return redirect('applications:application_detail', application_id=application.id)
+
+    # الخطوة الحالية من الطلب
+    current_step = request.GET.get('step', 'personal')
+
+    context = {
+        'scholarship': application.scholarship,
+        'application': application,
+        'current_step': current_step,
+        'is_update': True,
+    }
+
+    # معالجة كل خطوة من خطوات الطلب
+    if current_step == 'personal':
+        return handle_personal_info_step(request, application, context)
+    elif current_step == 'academic':
+        return handle_academic_qualifications_step(request, application, context)
+    elif current_step == 'language':
+        return handle_language_proficiency_step(request, application, context)
+    elif current_step == 'documents':
+        return handle_documents_step(request, application, context)
+    elif current_step == 'preview':
+        return handle_preview_step(request, application, context)
+    elif current_step == 'submit':
+        return handle_update_submit_step(request, application, context)
+    else:
+        return handle_personal_info_step(request, application, context)
+
+
+def handle_update_submit_step(request, application, context):
+    """معالجة تبويب تحديث الطلب النهائي"""
+    # التحقق من اكتمال الطلب (نفس المنطق كما في handle_submit_step)
+    is_complete = True
+    missing_fields = []
+
+    # التحقق من وجود معلومات شخصية
+    if not application.motivation_letter:
+        is_complete = False
+        missing_fields.append(_("خطاب الدوافع"))
+
+    # التحقق من وجود مؤهل أكاديمي واحد على الأقل
+    if not AcademicQualification.objects.filter(application=application).exists():
+        is_complete = False
+        missing_fields.append(_("المؤهلات الأكاديمية"))
+
+    # التحقق من وجود كفاءة لغوية واحدة على الأقل
+    if not LanguageProficiency.objects.filter(application=application, is_english=True).exists():
+        is_complete = False
+        missing_fields.append(_("الكفاءة اللغوية في اللغة الإنجليزية"))
+
+    # التحقق من وجود المستندات المطلوبة
+    required_document_types = ['cv', 'personal_id', 'high_school_certificate', 'bachelors_certificate']
+    existing_document_types = Document.objects.filter(application=application).values_list('document_type', flat=True)
+
+    for doc_type in required_document_types:
+        if doc_type not in existing_document_types:
+            is_complete = False
+            doc_type_display = dict(Document.DOCUMENT_TYPE_CHOICES).get(doc_type, doc_type)
+            missing_fields.append(doc_type_display)
+
+    if request.method == 'POST' and is_complete:
+        # تحديث الطلب
+        application.last_update = timezone.now()
+        application.save()
+
+        # إنشاء سجل للتحديث
+        ApplicationLog.objects.create(
+            application=application,
+            from_status=application.status,
+            to_status=application.status,
+            created_by=request.user,
+            comment=_("تم تحديث الطلب")
+        )
+
+        messages.success(request, _("تم تحديث طلبك بنجاح"))
+        return redirect('applications:application_detail', application_id=application.id)
+
+    context.update({
+        'is_complete': is_complete,
+        'missing_fields': missing_fields,
+        'title': _("تحديث الطلب"),
+    })
+    return render(request, 'applications/apply_tabs/submit.html', context)
