@@ -13,133 +13,161 @@
 
 <form method="post" id="academicForm">
   {% csrf_token %}
-  
+
   {{ formset.management_form }}
-  
+
   <div id="academic_qualifications_formset">
     {% for form in formset %}
-      <div class="qualification-row" data-form-index="{{ forloop.counter0 }}">
-        <div class="qualification-header">
-          <h5 class="mb-0 qualification-title">{% trans "مؤهل جديد" %}</h5>
+      <div class="qualification-row border rounded p-4 mb-4 bg-light" data-form-index="{{ forloop.counter0 }}">
+        <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0 qualification-title fw-bold">
+            {% if forloop.counter %}مؤهل #{{ forloop.counter }}{% else %}مؤهل جديد{% endif %}
+          </h5>
           <div>
             <button type="button" class="btn btn-danger btn-sm delete-qualification" {% if forloop.first and formset|length == 1 %}style="display: none;"{% endif %}>
               <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
             </button>
           </div>
         </div>
-        
+
         {{ form.id }}
         {{ form.DELETE.as_hidden }}
-        
-        <div class="row mb-3">
-          <div class="col-md-12">
-            {{ form.qualification_type|as_crispy_field }}
-          </div>
+
+        <!-- نخفي حقل نوع المؤهل ونضع له قيمة افتراضية -->
+        <div style="display:none;">
+          {{ form.qualification_type }}
         </div>
-        
+
         <!-- حقول الثانوية العامة -->
-        <div class="high-school-fields">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              {{ form.high_school_certificate_type|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.high_school_branch|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.graduation_year|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.gpa|as_crispy_field }}
-            </div>
-            <div class="col-md-12 mb-3">
-              {{ form.country|as_crispy_field }}
+        <div class="card mb-4">
+          <div class="card-header bg-secondary text-white py-2">
+            <h6 class="mb-0">{% trans "الثانوية العامة" %}</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.high_school_certificate_type|as_crispy_field }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.high_school_branch|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.high_school_graduation_year|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.high_school_gpa|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.high_school_country|as_crispy_field }}
+              </div>
             </div>
           </div>
         </div>
-        
+
         <!-- حقول البكالوريوس -->
-        <div class="bachelor-fields">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              {{ form.institution_name|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.major|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.graduation_year|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.gpa|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.grade|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.country|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.study_system|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.bachelor_type|as_crispy_field }}
+        <div class="card mb-4">
+          <div class="card-header bg-success text-white py-2">
+            <h6 class="mb-0">{% trans "البكالوريوس" %}</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.bachelor_institution_name|as_crispy_field }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.bachelor_major|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.bachelor_graduation_year|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.bachelor_gpa|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.bachelor_grade|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.bachelor_country|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.study_system|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.bachelor_type|as_crispy_field }}
+              </div>
             </div>
           </div>
         </div>
-        
+
         <!-- حقول الماجستير -->
-        <div class="masters-fields">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              {{ form.institution_name|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.major|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.graduation_year|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.gpa|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.grade|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.country|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.masters_system|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.study_language|as_crispy_field }}
+        <div class="card mb-4">
+          <div class="card-header bg-info text-white py-2">
+            <h6 class="mb-0">{% trans "الماجستير" %}</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.masters_institution_name|as_crispy_field }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.masters_major|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.masters_graduation_year|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.masters_gpa|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.masters_grade|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.masters_country|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.masters_system|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.study_language|as_crispy_field }}
+              </div>
             </div>
           </div>
         </div>
-        
+
         <!-- حقول الشهادات الأخرى -->
-        <div class="other-certificate-fields">
-          <div class="row">
-            <div class="col-md-4 mb-3">
-              {{ form.certificate_type|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.certificate_name|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.certificate_issuer|as_crispy_field }}
-            </div>
-            <div class="col-md-4 mb-3">
-              {{ form.graduation_year|as_crispy_field }}
+        <div class="card mb-4">
+          <div class="card-header bg-warning text-dark py-2">
+            <h6 class="mb-0">{% trans "شهادة أخرى" %}</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                {{ form.certificate_type|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.certificate_name|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.certificate_issuer|as_crispy_field }}
+              </div>
+              <div class="col-md-4 mb-3">
+                {{ form.certificate_graduation_year|as_crispy_field }}
+              </div>
             </div>
           </div>
         </div>
 
         <!-- معلومات إضافية -->
-        <div class="row mt-3">
-          <div class="col-md-12">
-            {{ form.additional_info|as_crispy_field }}
+        <div class="card">
+          <div class="card-header bg-dark text-white py-2">
+            <h6 class="mb-0">{% trans "معلومات إضافية" %}</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                {{ form.additional_info|as_crispy_field }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -164,36 +192,6 @@
 {% endblock %}
 
 {% block step_js %}
-// تغيير حقول المؤهلات حسب النوع المحدد
-function toggleQualificationFields() {
-  const qualificationRows = document.querySelectorAll('.qualification-row');
-
-  qualificationRows.forEach(row => {
-    const qualificationTypeSelect = row.querySelector('select[id$="-qualification_type"]');
-    const selectedType = qualificationTypeSelect.value;
-
-    // إخفاء جميع الحقول
-    row.querySelectorAll('.high-school-fields, .bachelor-fields, .masters-fields, .other-certificate-fields').forEach(fieldsDiv => {
-      fieldsDiv.style.display = 'none';
-    });
-
-    // عرض الحقول المناسبة حسب النوع المحدد
-    if (selectedType === 'high_school') {
-      row.querySelector('.high-school-fields').style.display = 'block';
-      row.querySelector('.qualification-title').innerText = '{% trans "الثانوية العامة" %}';
-    } else if (selectedType === 'bachelors') {
-      row.querySelector('.bachelor-fields').style.display = 'block';
-      row.querySelector('.qualification-title').innerText = '{% trans "البكالوريوس" %}';
-    } else if (selectedType === 'masters') {
-      row.querySelector('.masters-fields').style.display = 'block';
-      row.querySelector('.qualification-title').innerText = '{% trans "الماجستير" %}';
-    } else if (selectedType === 'other') {
-      row.querySelector('.other-certificate-fields').style.display = 'block';
-      row.querySelector('.qualification-title').innerText = '{% trans "شهادة أخرى" %}';
-    }
-  });
-}
-
 // تنفيذ عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
   const formset = document.getElementById('academic_qualifications_formset');
@@ -205,12 +203,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // زر إضافة مؤهل جديد
   const addQualificationBtn = document.getElementById('add_qualification');
 
-  // تنفيذ toggleQualificationFields عند بدء الصفحة
-  toggleQualificationFields();
-
-  // إضافة مستمعي الأحداث لتغيير نوع المؤهل
+  // تعيين قيمة افتراضية لحقل نوع المؤهل (مخفي الآن)
   formset.querySelectorAll('select[id$="-qualification_type"]').forEach(select => {
-    select.addEventListener('change', toggleQualificationFields);
+    // نضع قيمة افتراضية للحقل المخفي حتى لا يسبب مشاكل عند الإرسال
+    if (select.value === '') {
+      select.value = 'high_school';
+    }
   });
 
   // إضافة مؤهل جديد
@@ -261,9 +259,15 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteCheckbox.checked = false;
       }
 
-      // إضافة المستمع لنوع المؤهل
-      const newTypeSelect = newForm.querySelector('select[id$="-qualification_type"]');
-      newTypeSelect.addEventListener('change', toggleQualificationFields);
+      // تعيين قيمة افتراضية لحقل نوع المؤهل (مخفي)
+      const qualificationTypeSelect = newForm.querySelector('select[id$="-qualification_type"]');
+      if (qualificationTypeSelect) {
+        qualificationTypeSelect.value = 'high_school';
+      }
+
+      // تحديث رقم المؤهل في العنوان
+      const qualificationTitle = newForm.querySelector('.qualification-title');
+      qualificationTitle.innerText = 'مؤهل #' + (totalForms + 1);
 
       // إضافة مستمع لزر الحذف
       const deleteBtn = newForm.querySelector('.delete-qualification');
@@ -277,9 +281,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // تحديث عدد النماذج الكلي
       totalFormsInput.value = totalForms + 1;
-
-      // تنفيذ toggleQualificationFields بعد إضافة النموذج
-      toggleQualificationFields();
     } else {
       alert('{% trans "تم الوصول للحد الأقصى من المؤهلات" %}');
     }

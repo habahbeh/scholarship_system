@@ -10,6 +10,7 @@ from django.utils import timezone
 import weasyprint
 from django.conf import settings
 import os
+from django.urls import reverse
 
 from announcements.models import Scholarship
 from .models import (
@@ -820,51 +821,70 @@ def apply_tabs(request, scholarship_id):
     """التقديم على فرصة ابتعاث بنظام التبويبات"""
     scholarship = get_object_or_404(Scholarship, id=scholarship_id)
 
+    # Get temp application ID from session first
+    temp_application_id = request.session.get(f'temp_application_{scholarship_id}')
+
     # التحقق من أن الفرصة ما زالت متاحة
     if not scholarship.is_active:
         messages.error(request, _("انتهت مهلة التقديم لهذه الفرصة"))
         return redirect('announcements:scholarship_detail', pk=scholarship.id)
 
-    # التحقق من أن المستخدم لم يتقدم مسبقًا
-    if Application.objects.filter(scholarship=scholarship, applicant=request.user).exists():
+    # Check for submitted (non-temporary) applications for this scholarship
+    existing_application = Application.objects.filter(
+        scholarship=scholarship,
+        applicant=request.user,
+        status__order__gt=1  # Only consider non-temporary applications
+    ).first()
+
+    if existing_application:
         messages.warning(request, _("لقد تقدمت بالفعل لهذه الفرصة"))
-        return redirect('applications:my_applications')
+        return redirect('applications:application_detail', application_id=existing_application.id)
 
-    # إنشاء طلب جديد أو الحصول على الطلب المؤقت الحالي
-    temp_application = request.session.get('temp_application_id')
-    if temp_application:
+    # Get or create temporary application
+    application = None
+    if temp_application_id:
         try:
-            application = Application.objects.get(id=temp_application, applicant=request.user, scholarship=scholarship)
+            application = Application.objects.get(
+                id=temp_application_id,
+                applicant=request.user,
+                scholarship=scholarship
+            )
         except Application.DoesNotExist:
-            application = None
-    else:
-        application = None
+            pass
 
-    # إذا لم يكن هناك طلب مؤقت، إنشاء طلب جديد
     if not application:
-        # تعيين حالة الطلب الافتراضية
-        default_status = ApplicationStatus.objects.filter(order=1).first()
-        if not default_status:
-            default_status = ApplicationStatus.objects.create(name=_("تم التقديم"), order=1)
+        # Get or create default status for temporary applications
+        temp_status = ApplicationStatus.objects.filter(order=0).first()
+        if not temp_status:
+            temp_status = ApplicationStatus.objects.create(
+                name=_("مسودة"),
+                order=0,
+                description=_("طلب قيد الإنشاء")
+            )
 
+        # Create new temporary application
         application = Application(
             scholarship=scholarship,
             applicant=request.user,
-            status=default_status
+            status=temp_status
         )
         application.save()
-        request.session['temp_application_id'] = application.id
 
-    # الخطوة الحالية من الطلب
+        # Store application ID in session with scholarship-specific key
+        request.session[f'temp_application_{scholarship_id}'] = application.id
+
+    # Get current step from query parameters
     current_step = request.GET.get('step', 'personal')
 
+    # Prepare context
     context = {
         'scholarship': scholarship,
         'application': application,
         'current_step': current_step,
+        'is_update': False,
     }
 
-    # معالجة كل خطوة من خطوات الطلب
+    # Handle each step
     if current_step == 'personal':
         return handle_personal_info_step(request, application, context)
     elif current_step == 'academic':
@@ -881,6 +901,7 @@ def apply_tabs(request, scholarship_id):
         return handle_personal_info_step(request, application, context)
 
 
+
 def handle_personal_info_step(request, application, context):
     """معالجة تبويب المعلومات الشخصية"""
     if request.method == 'POST':
@@ -888,7 +909,9 @@ def handle_personal_info_step(request, application, context):
         if form.is_valid():
             form.save()
             messages.success(request, _("تم حفظ المعلومات الشخصية بنجاح"))
-            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='academic')
+            # Construct the URL with query parameter
+            url = f"/ar/apply-tabs/{application.scholarship.id}/?step=academic"
+            return redirect(url)
     else:
         form = ApplicationTabsForm(instance=application)
 
@@ -915,7 +938,22 @@ def handle_academic_qualifications_step(request, application, context):
         'title': _("المؤهلات الأكاديمية"),
     })
     return render(request, 'applications/apply_tabs/academic_qualifications.html', context)
+def handle_academic_qualifications_step(request, application, context):
+    """معالجة تبويب المؤهلات الأكاديمية"""
+    if request.method == 'POST':
+        formset = AcademicQualificationFormSet(request.POST, instance=application)
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, _("تم حفظ المؤهلات الأكاديمية بنجاح"))
+            return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=language")
+    else:
+        formset = AcademicQualificationFormSet(instance=application)
 
+    context.update({
+        'formset': formset,
+        'title': _("المؤهلات الأكاديمية"),
+    })
+    return render(request, 'applications/apply_tabs/academic_qualifications.html', context)
 
 def handle_language_proficiency_step(request, application, context):
     """معالجة تبويب الكفاءة اللغوية"""
@@ -924,7 +962,7 @@ def handle_language_proficiency_step(request, application, context):
         if formset.is_valid():
             formset.save()
             messages.success(request, _("تم حفظ معلومات الكفاءة اللغوية بنجاح"))
-            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='documents')
+            return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=documents")
     else:
         formset = LanguageProficiencyFormSet(instance=application)
 
@@ -934,7 +972,6 @@ def handle_language_proficiency_step(request, application, context):
     })
     return render(request, 'applications/apply_tabs/language_proficiency.html', context)
 
-
 def handle_documents_step(request, application, context):
     """معالجة تبويب المستندات"""
     if request.method == 'POST':
@@ -942,7 +979,7 @@ def handle_documents_step(request, application, context):
         if formset.is_valid():
             formset.save()
             messages.success(request, _("تم حفظ المستندات بنجاح"))
-            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='preview')
+            return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=preview")
     else:
         formset = DocumentFormSet(instance=application)
 
@@ -957,7 +994,6 @@ def handle_documents_step(request, application, context):
         'language_proficiencies': language_proficiencies,
     })
     return render(request, 'applications/apply_tabs/documents.html', context)
-
 
 def handle_preview_step(request, application, context):
     """معالجة تبويب المعاينة"""
@@ -1006,26 +1042,34 @@ def handle_submit_step(request, application, context):
             missing_fields.append(doc_type_display)
 
     if request.method == 'POST' and is_complete:
-        # تحديث حالة الطلب
-        default_status = ApplicationStatus.objects.filter(order=1).first()
-        if not default_status:
-            default_status = ApplicationStatus.objects.create(name=_("تم التقديم"), order=1)
+        # Get the "submitted" status (order=1)
+        submitted_status = ApplicationStatus.objects.filter(order=1).first()
+        if not submitted_status:
+            submitted_status = ApplicationStatus.objects.create(
+                name=_("تم التقديم"),
+                order=1,
+                description=_("تم تقديم الطلب")
+            )
 
-        application.status = default_status
+        # Update application status from temporary to submitted
+        old_status = application.status
+        application.status = submitted_status
         application.application_date = timezone.now()
         application.save()
 
-        # إنشاء سجل للطلب
+        # Create application log
         ApplicationLog.objects.create(
             application=application,
-            to_status=default_status,
+            from_status=old_status,
+            to_status=submitted_status,
             created_by=request.user,
-            comment=_("تم إنشاء الطلب")
+            comment=_("تم تقديم الطلب")
         )
 
-        # حذف رقم الطلب المؤقت من الجلسة
-        if 'temp_application_id' in request.session:
-            del request.session['temp_application_id']
+        # Remove temporary application ID from session
+        scholarship_id = application.scholarship.id
+        if f'temp_application_{scholarship_id}' in request.session:
+            del request.session[f'temp_application_{scholarship_id}']
 
         messages.success(request, _("تم تقديم طلبك بنجاح"))
         return redirect('applications:application_detail', application_id=application.id)
@@ -1036,7 +1080,6 @@ def handle_submit_step(request, application, context):
         'title': _("تقديم الطلب"),
     })
     return render(request, 'applications/apply_tabs/submit.html', context)
-
 
 @login_required
 def update_application_tabs(request, application_id):
