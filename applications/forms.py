@@ -299,6 +299,9 @@ class AcademicQualificationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['qualification_type'].required = True
 
+        # إضافة قيمة افتراضية إذا كان مطلوبًا
+        if not self.instance.pk and not self.initial.get('qualification_type'):
+            self.initial['qualification_type'] = 'high_school'
         # عند تحرير مؤهل موجود، تعيين الحقول المطلوبة حسب نوع المؤهل
         if self.instance.pk and self.instance.qualification_type:
             if self.instance.qualification_type == 'high_school':

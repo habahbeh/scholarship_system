@@ -930,11 +930,14 @@ def handle_academic_qualifications_step(request, application, context):
             # حفظ البيانات
             instances = formset.save(commit=False)
 
-            # تعيين قيم افتراضية ضرورية (مثل نوع المؤهل) إذا كانت فارغة
+            # التأكد من أن كل نموذج له نوع مؤهل
             for instance in instances:
                 if not instance.qualification_type:
-                    instance.qualification_type = 'high_school'
+                    instance.qualification_type = 'bachelors'  # القيمة الافتراضية
                 instance.save()
+
+            # حفظ علاقات M2M إذا وجدت
+            formset.save_m2m()
 
             # حذف المؤهلات المحددة للحذف
             for obj in formset.deleted_objects:
@@ -943,16 +946,18 @@ def handle_academic_qualifications_step(request, application, context):
             messages.success(request, _("تم حفظ المؤهلات الأكاديمية بنجاح"))
             return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=language")
         else:
-            # طباعة أخطاء النموذج للتصحيح
+            # عرض رسائل الخطأ للمستخدم
             for form in formset:
-                print(form.errors)
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{form.fields[field].label}: {error}")
     else:
         # التحقق من وجود مؤهلات أكاديمية
         existing_qualifications = AcademicQualification.objects.filter(application=application).exists()
 
         if not existing_qualifications:
             # إذا لم تكن هناك مؤهلات، قم بإنشاء نموذج واحد فارغ
-            formset = AcademicQualificationFormSet(instance=application, initial=[{'qualification_type': 'high_school'}])
+            formset = AcademicQualificationFormSet(instance=application, initial=[{'qualification_type': 'bachelors'}])
         else:
             formset = AcademicQualificationFormSet(instance=application)
 
