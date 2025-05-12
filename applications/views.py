@@ -903,12 +903,12 @@ def apply_tabs(request, scholarship_id):
 
 
 def handle_personal_info_step(request, application, context):
-    """معالجة تبويب المعلومات الشخصية"""
+    """معالجة تبويب المعلومات الأساسية"""
     if request.method == 'POST':
         form = ApplicationTabsForm(request.POST, instance=application)
         if form.is_valid():
             form.save()
-            messages.success(request, _("تم حفظ المعلومات الشخصية بنجاح"))
+            messages.success(request, _("تم حفظ المعلومات الأساسية بنجاح"))
             # Construct the URL with query parameter
             url = f"/ar/apply-tabs/{application.scholarship.id}/?step=academic"
             return redirect(url)
@@ -917,7 +917,7 @@ def handle_personal_info_step(request, application, context):
 
     context.update({
         'form': form,
-        'title': _("المعلومات الشخصية"),
+        'title': _("المعلومات الأساسية"),
     })
     return render(request, 'applications/apply_tabs/personal_info.html', context)
 
@@ -927,33 +927,43 @@ def handle_academic_qualifications_step(request, application, context):
     if request.method == 'POST':
         formset = AcademicQualificationFormSet(request.POST, instance=application)
         if formset.is_valid():
-            formset.save()
-            messages.success(request, _("تم حفظ المؤهلات الأكاديمية بنجاح"))
-            return redirect('applications:apply_tabs', scholarship_id=application.scholarship.id, step='language')
-    else:
-        formset = AcademicQualificationFormSet(instance=application)
+            # حفظ البيانات
+            instances = formset.save(commit=False)
 
-    context.update({
-        'formset': formset,
-        'title': _("المؤهلات الأكاديمية"),
-    })
-    return render(request, 'applications/apply_tabs/academic_qualifications.html', context)
-def handle_academic_qualifications_step(request, application, context):
-    """معالجة تبويب المؤهلات الأكاديمية"""
-    if request.method == 'POST':
-        formset = AcademicQualificationFormSet(request.POST, instance=application)
-        if formset.is_valid():
-            formset.save()
+            # تعيين قيم افتراضية ضرورية (مثل نوع المؤهل) إذا كانت فارغة
+            for instance in instances:
+                if not instance.qualification_type:
+                    instance.qualification_type = 'high_school'
+                instance.save()
+
+            # حذف المؤهلات المحددة للحذف
+            for obj in formset.deleted_objects:
+                obj.delete()
+
             messages.success(request, _("تم حفظ المؤهلات الأكاديمية بنجاح"))
             return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=language")
+        else:
+            # طباعة أخطاء النموذج للتصحيح
+            for form in formset:
+                print(form.errors)
     else:
-        formset = AcademicQualificationFormSet(instance=application)
+        # التحقق من وجود مؤهلات أكاديمية
+        existing_qualifications = AcademicQualification.objects.filter(application=application).exists()
+
+        if not existing_qualifications:
+            # إذا لم تكن هناك مؤهلات، قم بإنشاء نموذج واحد فارغ
+            formset = AcademicQualificationFormSet(instance=application, initial=[{'qualification_type': 'high_school'}])
+        else:
+            formset = AcademicQualificationFormSet(instance=application)
 
     context.update({
         'formset': formset,
         'title': _("المؤهلات الأكاديمية"),
     })
+
     return render(request, 'applications/apply_tabs/academic_qualifications.html', context)
+
+
 
 def handle_language_proficiency_step(request, application, context):
     """معالجة تبويب الكفاءة اللغوية"""

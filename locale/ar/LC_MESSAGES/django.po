@@ -496,7 +496,7 @@ msgstr ""
 
 #: accounts/templates/accounts/profile.html:44
 #: accounts/templates/accounts/profile_edit.html:48
-msgid "المعلومات الشخصية"
+msgid "المعلومات الأساسية"
 msgstr ""
 
 #: accounts/templates/accounts/profile.html:47

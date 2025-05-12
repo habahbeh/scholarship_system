@@ -135,7 +135,7 @@
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if current_step == 'personal' %}active{% endif %} {% if application.motivation_letter %}completed{% endif %}"
                href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal">
-              <span class="step-number">1</span> {% trans "المعلومات الشخصية" %}
+              <span class="step-number">1</span> {% trans "المعلومات الأساسية" %}
             </a>
           </li>
           <li class="nav-item" role="presentation">
@@ -229,7 +229,11 @@
   document.addEventListener('DOMContentLoaded', function() {
     // إظهار/إخفاء حقل اسم الجامعة عند تغيير حالة خطاب القبول
     const acceptanceCheckbox = document.getElementById('id_acceptance_letter');
-    const universityField = document.getElementById('id_acceptance_university').closest('.form-group');
+    //const universityField = document.getElementById('id_acceptance_university').closest('.form-group');
+
+    const universityElement = document.getElementById('id_acceptance_university');
+    const universityField = universityElement ? universityElement.closest('.form-group') : null;
+
 
     if (acceptanceCheckbox && universityField) {
       function toggleUniversityField() {

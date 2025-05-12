@@ -10,10 +10,10 @@
   {% trans "مراجعة المعلومات قبل تقديم الطلب. تأكد من صحة جميع البيانات المدخلة والمستندات المرفقة." %}
 </div>
 
-<!-- المعلومات الشخصية -->
+<!-- المعلومات الأساسية -->
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light d-flex justify-content-between">
-    <h5 class="mb-0">{% trans "المعلومات الشخصية" %}</h5>
+    <h5 class="mb-0">{% trans "المعلومات الأساسية" %}</h5>
     <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal" class="btn btn-sm btn-outline-primary">
       <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
     </a>
