@@ -950,13 +950,13 @@ def handle_academic_qualifications_step(request, application, context):
             for form in formset:
                 for field, errors in form.errors.items():
                     for error in errors:
-                        messages.error(request, f"{form.fields[field].label}: {error}")
+                        messages.error(request, f"{field}: {error}")
     else:
         # التحقق من وجود مؤهلات أكاديمية
         existing_qualifications = AcademicQualification.objects.filter(application=application).exists()
 
         if not existing_qualifications:
-            # إذا لم تكن هناك مؤهلات، قم بإنشاء نموذج واحد فارغ
+            # إنشاء نموذج فارغ مع نوع المؤهل الافتراضي
             formset = AcademicQualificationFormSet(instance=application, initial=[{'qualification_type': 'bachelors'}])
         else:
             formset = AcademicQualificationFormSet(instance=application)
@@ -967,7 +967,6 @@ def handle_academic_qualifications_step(request, application, context):
     })
 
     return render(request, 'applications/apply_tabs/academic_qualifications.html', context)
-
 
 
 def handle_language_proficiency_step(request, application, context):

@@ -276,64 +276,36 @@ class AcademicQualificationForm(forms.ModelForm):
         model = AcademicQualification
         exclude = ['application']
         widgets = {
-            'qualification_type': forms.Select(attrs={'class': 'form-select qualification-type-select'}),
-            'high_school_certificate_type': forms.TextInput(attrs={'class': 'form-control high-school-field'}),
-            'high_school_branch': forms.TextInput(attrs={'class': 'form-control high-school-field'}),
+            'qualification_type': forms.HiddenInput(),  # تغيير الحقل إلى حقل مخفي
+            'high_school_certificate_type': forms.TextInput(attrs={'class': 'form-control'}),
+            'high_school_branch': forms.TextInput(attrs={'class': 'form-control'}),
             'institution_name': forms.TextInput(attrs={'class': 'form-control'}),
             'major': forms.TextInput(attrs={'class': 'form-control'}),
             'graduation_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1950', 'max': '2030'}),
             'gpa': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
             'grade': forms.Select(attrs={'class': 'form-select'}),
             'country': forms.TextInput(attrs={'class': 'form-control'}),
-            'study_system': forms.Select(attrs={'class': 'form-control bachelor-field'}),
-            'bachelor_type': forms.Select(attrs={'class': 'form-control bachelor-field'}),
-            'masters_system': forms.Select(attrs={'class': 'form-control masters-field'}),
-            'study_language': forms.Select(attrs={'class': 'form-control masters-field'}),
-            'certificate_type': forms.Select(attrs={'class': 'form-control other-certificate-field'}),
-            'certificate_name': forms.TextInput(attrs={'class': 'form-control other-certificate-field'}),
-            'certificate_issuer': forms.TextInput(attrs={'class': 'form-control other-certificate-field'}),
+            'study_system': forms.Select(attrs={'class': 'form-control'}),
+            'bachelor_type': forms.Select(attrs={'class': 'form-control'}),
+            'masters_system': forms.Select(attrs={'class': 'form-control'}),
+            'study_language': forms.Select(attrs={'class': 'form-control'}),
+            'certificate_type': forms.Select(attrs={'class': 'form-control'}),
+            'certificate_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'certificate_issuer': forms.TextInput(attrs={'class': 'form-control'}),
             'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['qualification_type'].required = True
 
-        # إضافة قيمة افتراضية إذا كان مطلوبًا
+        # تعيين قيمة افتراضية لحقل نوع المؤهل
         if not self.instance.pk and not self.initial.get('qualification_type'):
-            self.initial['qualification_type'] = 'high_school'
-        # عند تحرير مؤهل موجود، تعيين الحقول المطلوبة حسب نوع المؤهل
-        if self.instance.pk and self.instance.qualification_type:
-            if self.instance.qualification_type == 'high_school':
-                self.fields['high_school_certificate_type'].required = True
-                self.fields['high_school_branch'].required = True
-                self.fields['graduation_year'].required = True
-                self.fields['gpa'].required = True
-                self.fields['country'].required = True
-            elif self.instance.qualification_type == 'bachelors':
-                self.fields['institution_name'].required = True
-                self.fields['major'].required = True
-                self.fields['graduation_year'].required = True
-                self.fields['gpa'].required = True
-                self.fields['grade'].required = True
-                self.fields['country'].required = True
-                self.fields['study_system'].required = True
-                self.fields['bachelor_type'].required = True
-            elif self.instance.qualification_type == 'masters':
-                self.fields['institution_name'].required = True
-                self.fields['major'].required = True
-                self.fields['graduation_year'].required = True
-                self.fields['gpa'].required = True
-                self.fields['grade'].required = True
-                self.fields['country'].required = True
-                self.fields['masters_system'].required = True
-                self.fields['study_language'].required = True
-            elif self.instance.qualification_type == 'other':
-                self.fields['certificate_type'].required = True
-                self.fields['certificate_name'].required = True
-                self.fields['certificate_issuer'].required = True
-                self.fields['graduation_year'].required = True
+            self.initial['qualification_type'] = 'bachelors'
 
+        # جعل الحقول غير مطلوبة للسماح بإدخال جزئي للبيانات
+        for field_name in self.fields:
+            if field_name != 'qualification_type':  # حقل نوع المؤهل يبقى مطلوباً
+                self.fields[field_name].required = False
 
 class LanguageProficiencyForm(forms.ModelForm):
     """نموذج الكفاءة اللغوية"""

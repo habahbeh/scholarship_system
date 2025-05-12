@@ -9,7 +9,7 @@
 {% if not application.academicqualification_set.all %}
     <div class="alert alert-info mb-4">
         <i class="fas fa-info-circle me-2"></i>
-        {% trans "يرجى إضافة مؤهلاتك الأكاديمية. يجب إضافة الثانوية العامة والبكالوريوس على الأقل." %}
+        {% trans "يرجى إضافة مؤهلاتك الأكاديمية. يجب إضافة معلومات الثانوية العامة والبكالوريوس على الأقل." %}
     </div>
 {% endif %}
 
@@ -20,7 +20,7 @@
 
   <div id="academic_qualifications_formset">
     {% for form in formset %}
-      <div class="qualification-row border rounded p-4 mb-4 bg-light" data-form-index="{{ forloop.counter0 }}">
+      <div class="qualification-row border rounded p-4 mb-4 bg-light">
         <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0 qualification-title fw-bold">
             {% if forloop.counter %}مؤهل #{{ forloop.counter }}{% else %}مؤهل جديد{% endif %}
@@ -40,145 +40,66 @@
           {{ form.qualification_type }}
         </div>
 
-        <!-- عرض جميع الحقول بغض النظر عن نوع المؤهل -->
+        <!-- جميع الحقول لجميع أنواع المؤهلات -->
         <div class="row">
-          <!-- قسم الثانوية العامة -->
-          <div class="col-md-12 mb-3">
-            <div class="card">
-              <div class="card-header bg-secondary text-white py-2">
-                <h6 class="mb-0">{% trans "الثانوية العامة" %}</h6>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    {{ form.high_school_certificate_type|as_crispy_field }}
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    {{ form.high_school_branch|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.high_school_graduation_year|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.high_school_gpa|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.high_school_country|as_crispy_field }}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- حقول مشتركة -->
+          <div class="col-md-6 mb-3">
+            {{ form.institution_name|as_crispy_field }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.major|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.graduation_year|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.gpa|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.grade|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.country|as_crispy_field }}
           </div>
 
-          <!-- قسم البكالوريوس -->
-          <div class="col-md-12 mb-3">
-            <div class="card">
-              <div class="card-header bg-success text-white py-2">
-                <h6 class="mb-0">{% trans "البكالوريوس" %}</h6>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    {{ form.bachelor_institution_name|as_crispy_field }}
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    {{ form.bachelor_major|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.bachelor_graduation_year|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.bachelor_gpa|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.bachelor_grade|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.bachelor_country|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.study_system|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.bachelor_type|as_crispy_field }}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- حقول الثانوية العامة -->
+          <div class="col-md-4 mb-3">
+            {{ form.high_school_certificate_type|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.high_school_branch|as_crispy_field }}
           </div>
 
-          <!-- قسم الماجستير -->
-          <div class="col-md-12 mb-3">
-            <div class="card">
-              <div class="card-header bg-info text-white py-2">
-                <h6 class="mb-0">{% trans "الماجستير" %}</h6>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    {{ form.masters_institution_name|as_crispy_field }}
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    {{ form.masters_major|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.masters_graduation_year|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.masters_gpa|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.masters_grade|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.masters_country|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.masters_system|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.study_language|as_crispy_field }}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- حقول البكالوريوس -->
+          <div class="col-md-4 mb-3">
+            {{ form.study_system|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.bachelor_type|as_crispy_field }}
           </div>
 
-          <!-- قسم الشهادات الأخرى -->
-          <div class="col-md-12 mb-3">
-            <div class="card">
-              <div class="card-header bg-warning text-dark py-2">
-                <h6 class="mb-0">{% trans "شهادة أخرى" %}</h6>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-4 mb-3">
-                    {{ form.certificate_type|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.certificate_name|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.certificate_issuer|as_crispy_field }}
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    {{ form.certificate_graduation_year|as_crispy_field }}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <!-- حقول الماجستير -->
+          <div class="col-md-4 mb-3">
+            {{ form.masters_system|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.study_language|as_crispy_field }}
+          </div>
+
+          <!-- حقول الشهادات الأخرى -->
+          <div class="col-md-4 mb-3">
+            {{ form.certificate_type|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.certificate_name|as_crispy_field }}
+          </div>
+          <div class="col-md-4 mb-3">
+            {{ form.certificate_issuer|as_crispy_field }}
           </div>
 
           <!-- معلومات إضافية -->
           <div class="col-md-12">
-            <div class="card">
-              <div class="card-header bg-dark text-white py-2">
-                <h6 class="mb-0">{% trans "معلومات إضافية" %}</h6>
-              </div>
-              <div class="card-body">
-                {{ form.additional_info|as_crispy_field }}
-              </div>
-            </div>
+            {{ form.additional_info|as_crispy_field }}
           </div>
         </div>
       </div>
