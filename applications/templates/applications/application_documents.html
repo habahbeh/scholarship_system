@@ -67,6 +67,7 @@
                                     <tr>
                                         <th>{% trans "نوع المستند" %}</th>
                                         <th>{% trans "الوصف" %}</th>
+                                        <th>{% trans "المؤهل المرتبط" %}</th>
                                         <th>{% trans "تاريخ الرفع" %}</th>
                                         <th>{% trans "الإجراءات" %}</th>
                                     </tr>
@@ -76,6 +77,21 @@
                                     <tr>
                                         <td>{{ document.name }}</td>
                                         <td>{{ document.description|default:"-" }}</td>
+                                        <td>
+                                            {% if document.high_school_qualification %}
+                                                <span class="badge bg-info">{% trans "الثانوية العامة" %}</span>
+                                            {% elif document.bachelor_qualification %}
+                                                <span class="badge bg-info">{% trans "البكالوريوس" %}</span>
+                                            {% elif document.master_qualification %}
+                                                <span class="badge bg-info">{% trans "الماجستير" %}</span>
+                                            {% elif document.other_certificate %}
+                                                <span class="badge bg-info">{% trans "شهادة أخرى" %}</span>
+                                            {% elif document.language_proficiency %}
+                                                <span class="badge bg-info">{% trans "كفاءة لغوية" %}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{% trans "عام" %}</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ document.upload_date|date:"Y-m-d" }}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
@@ -98,7 +114,7 @@
                             {% trans "لم يتم رفع أي مستندات حتى الآن." %}
                         </div>
                     {% endif %}
-                    
+
                     <div class="d-grid gap-2 mt-4">
                         <a href="{% url 'applications:application_detail' application.id %}" class="btn btn-success">
                             <i class="fas fa-check-circle me-1"></i> {% trans "إكمال الطلب" %}
@@ -107,7 +123,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-light">
@@ -115,76 +131,30 @@
                 </div>
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <div class="d-flex">
-                                <div class="me-2">
-                                    <i class="fas fa-file-pdf text-danger"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">{% trans "السيرة الذاتية" %}</h6>
-                                    <small class="text-muted">{% trans "سيرة ذاتية محدثة توضح خبراتك ومؤهلاتك." %}</small>
-                                </div>
-                            </div>
+                        <li class="list-group-item {% if 'cv' in document_types %}list-group-item-success{% endif %}">
+                            <i class="fas {% if 'cv' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+                            {% trans "السيرة الذاتية" %}
                         </li>
-                        <li class="list-group-item">
-                            <div class="d-flex">
-                                <div class="me-2">
-                                    <i class="fas fa-file-alt text-primary"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">{% trans "كشف الدرجات" %}</h6>
-                                    <small class="text-muted">{% trans "كشف درجات رسمي لآخر شهادة علمية." %}</small>
-                                </div>
-                            </div>
+                        <li class="list-group-item {% if 'personal_id' in document_types %}list-group-item-success{% endif %}">
+                            <i class="fas {% if 'personal_id' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+                            {% trans "إثبات الهوية" %}
                         </li>
-                        <li class="list-group-item">
-                            <div class="d-flex">
-                                <div class="me-2">
-                                    <i class="fas fa-graduation-cap text-success"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">{% trans "الشهادة العلمية" %}</h6>
-                                    <small class="text-muted">{% trans "صورة من الشهادة العلمية الأخيرة." %}</small>
-                                </div>
-                            </div>
+                        <li class="list-group-item {% if 'high_school_certificate' in document_types %}list-group-item-success{% endif %}">
+                            <i class="fas {% if 'high_school_certificate' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+                            {% trans "شهادة الثانوية العامة" %}
                         </li>
-                        <li class="list-group-item">
-                            <div class="d-flex">
-                                <div class="me-2">
-                                    <i class="fas fa-id-card text-secondary"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">{% trans "إثبات الهوية" %}</h6>
-                                    <small class="text-muted">{% trans "صورة من الهوية الشخصية أو جواز السفر." %}</small>
-                                </div>
-                            </div>
+                        <li class="list-group-item {% if 'bachelors_certificate' in document_types %}list-group-item-success{% endif %}">
+                            <i class="fas {% if 'bachelors_certificate' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+                            {% trans "شهادة البكالوريوس" %}
                         </li>
-                        <li class="list-group-item">
-                            <div class="d-flex">
-                                <div class="me-2">
-                                    <i class="fas fa-language text-info"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">{% trans "شهادة اللغة" %}</h6>
-                                    <small class="text-muted">{% trans "شهادة إجادة اللغة الإنجليزية مثل TOEFL أو IELTS." %}</small>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="list-group-item">
-                            <div class="d-flex">
-                                <div class="me-2">
-                                    <i class="fas fa-university text-warning"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1">{% trans "خطاب القبول" %}</h6>
-                                    <small class="text-muted">{% trans "إن وجد، أرفق خطاب القبول من الجامعة." %}</small>
-                                </div>
-                            </div>
+                        <li class="list-group-item {% if 'language_certificate' in document_types %}list-group-item-success{% endif %}">
+                            <i class="fas {% if 'language_certificate' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+                            {% trans "شهادة اللغة" %}
                         </li>
                     </ul>
                 </div>
             </div>
-            
+
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">{% trans "إرشادات" %}</h5>
@@ -205,7 +175,7 @@
                         </li>
                         <li class="mb-2">
                             <i class="fas fa-check-circle text-success me-2"></i>
-                            {% trans "تأكد من رفع جميع المستندات المطلوبة." %}
+                            {% trans "يمكنك ربط المستند بالمؤهل المناسب لتنظيم أفضل." %}
                         </li>
                     </ul>
                 </div>
@@ -213,4 +183,29 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block js %}
+<script>
+// تحديث قائمة المستندات المطلوبة عند تغيير نوع المستند
+document.addEventListener('DOMContentLoaded', function() {
+    var docTypeSelect = document.getElementById('id_document_type');
+    if (docTypeSelect) {
+        docTypeSelect.addEventListener('change', function() {
+            // تحديث الوصف أو الاسم تلقائياً بناءً على نوع المستند
+            updateDocumentName();
+        });
+    }
+
+    function updateDocumentName() {
+        var docTypeSelect = document.getElementById('id_document_type');
+        var nameInput = document.getElementById('id_name');
+
+        if (docTypeSelect && nameInput && docTypeSelect.selectedIndex > 0) {
+            var selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+            nameInput.value = selectedOption.text;
+        }
+    }
+});
+</script>
 {% endblock %}

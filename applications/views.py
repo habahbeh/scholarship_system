@@ -19,7 +19,7 @@ from .models import (
     LanguageProficiency
 )
 from .forms import (
-    ApplicationForm, DocumentForm, DocumentUploadForm, ApplicationStatusForm, ApplicationFilterForm,
+    DocumentForm, DocumentUploadForm, ApplicationStatusForm, ApplicationFilterForm,
     RequirementsCheckForm, HigherCommitteeApprovalForm, FacultyCouncilApprovalForm, PresidentApprovalForm,
     ApplicationTabsForm, HighSchoolQualificationFormSet, BachelorQualificationFormSet,
     MasterQualificationFormSet, OtherCertificateFormSet, LanguageProficiencyFormSet, DocumentFormSet
@@ -541,54 +541,6 @@ def application_full_report(request, application_id):
 
 # --- Standard Application Views ---
 
-@login_required
-def apply(request, scholarship_id):
-    """التقديم على فرصة ابتعاث"""
-    scholarship = get_object_or_404(Scholarship, id=scholarship_id)
-
-    # التحقق من أن الفرصة ما زالت متاحة
-    if not scholarship.is_active:
-        messages.error(request, _("انتهت مهلة التقديم لهذه الفرصة"))
-        return redirect('announcements:scholarship_detail', pk=scholarship.id)
-
-    # التحقق من أن المستخدم لم يتقدم مسبقًا
-    if Application.objects.filter(scholarship=scholarship, applicant=request.user).exists():
-        messages.warning(request, _("لقد تقدمت بالفعل لهذه الفرصة"))
-        return redirect('applications:my_applications')
-
-    if request.method == 'POST':
-        form = ApplicationForm(request.POST)
-        if form.is_valid():
-            application = form.save(commit=False)
-            application.scholarship = scholarship
-            application.applicant = request.user
-
-            # تعيين حالة الطلب الافتراضية
-            default_status = ApplicationStatus.objects.filter(order=1).first()
-            if not default_status:
-                default_status = ApplicationStatus.objects.create(name=_("تم التقديم"), order=1)
-            application.status = default_status
-
-            application.save()
-
-            # إنشاء سجل للطلب
-            ApplicationLog.objects.create(
-                application=application,
-                to_status=default_status,
-                created_by=request.user,
-                comment=_("تم إنشاء الطلب")
-            )
-
-            messages.success(request, _("تم تقديم طلبك بنجاح"))
-            return redirect('applications:application_documents', application_id=application.id)
-    else:
-        form = ApplicationForm()
-
-    context = {
-        'form': form,
-        'scholarship': scholarship,
-    }
-    return render(request, 'applications/application_form.html', context)
 
 
 @login_required
@@ -596,8 +548,23 @@ def application_documents(request, application_id):
     """إدارة مستندات الطلب"""
     application = get_object_or_404(Application, id=application_id, applicant=request.user)
 
+    # الحصول على المؤهلات الأكاديمية المختلفة والكفاءات اللغوية لربطها بالمستندات
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+
+    # استخراج أنواع المستندات الموجودة للتحقق من المستندات المطلوبة
+    document_types = list(Document.objects.filter(application=application).values_list('document_type', flat=True))
+
+    # الحصول على المستندات المرفوعة
+    documents = Document.objects.filter(application=application)
+
     if request.method == 'POST':
+        # استخدام نموذج DocumentUploadForm القديم أو تكييف DocumentFormSet للاستخدام هنا
         form = DocumentUploadForm(request.POST, request.FILES)
+
         if form.is_valid():
             document_type = form.cleaned_data['document_type']
             description = form.cleaned_data['description']
@@ -606,29 +573,58 @@ def application_documents(request, application_id):
             # استخراج نوع المستند من الخيارات
             document_type_display = dict(form.fields['document_type'].choices)[document_type]
 
-            # إنشاء المستند
-            Document.objects.create(
+            # إنشاء المستند مع إمكانية الربط بالمؤهلات
+            document = Document(
                 application=application,
+                document_type=document_type,
                 name=document_type_display,
                 description=description,
                 file=file,
-                is_required=True if document_type in ['cv', 'transcript', 'certificate'] else False
+                is_required=True if document_type in ['cv', 'personal_id', 'high_school_certificate', 'bachelors_certificate', 'language_certificate'] else False
             )
+
+            # إضافة العلاقات بالمؤهلات إذا تم تحديدها
+            high_school_id = request.POST.get('high_school_qualification')
+            bachelor_id = request.POST.get('bachelor_qualification')
+            master_id = request.POST.get('master_qualification')
+            other_id = request.POST.get('other_certificate')
+            language_id = request.POST.get('language_proficiency')
+
+            if high_school_id and high_school_id != '':
+                document.high_school_qualification_id = high_school_id
+
+            if bachelor_id and bachelor_id != '':
+                document.bachelor_qualification_id = bachelor_id
+
+            if master_id and master_id != '':
+                document.master_qualification_id = master_id
+
+            if other_id and other_id != '':
+                document.other_certificate_id = other_id
+
+            if language_id and language_id != '':
+                document.language_proficiency_id = language_id
+
+            document.save()
 
             messages.success(request, _("تم رفع المستند بنجاح"))
             return redirect('applications:application_documents', application_id=application.id)
     else:
+        # تهيئة نموذج DocumentUploadForm
         form = DocumentUploadForm()
-
-    documents = Document.objects.filter(application=application)
 
     context = {
         'form': form,
         'application': application,
         'documents': documents,
+        'document_types': document_types,
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
+        'language_proficiencies': language_proficiencies,
     }
     return render(request, 'applications/application_documents.html', context)
-
 
 @login_required
 def delete_document(request, document_id):
@@ -689,9 +685,15 @@ def application_detail(request, application_id):
     master_qualifications = application.master_qualifications.all()
     other_certificates = application.other_certificates.all()
 
+    # الحصول على الكفاءات اللغوية
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+
     # الحصول على المستندات وسجلات الطلب
     documents = Document.objects.filter(application=application)
     logs = ApplicationLog.objects.filter(application=application).order_by('-created_at')
+
+    # تصنيف وإعداد المستندات حسب النوع
+    document_types = list(documents.values_list('document_type', flat=True))
 
     context = {
         'application': application,
@@ -699,37 +701,13 @@ def application_detail(request, application_id):
         'bachelor_qualifications': bachelor_qualifications,
         'master_qualifications': master_qualifications,
         'other_certificates': other_certificates,
+        'language_proficiencies': language_proficiencies,
         'documents': documents,
+        'document_types': document_types,
         'logs': logs,
     }
     return render(request, 'applications/application_detail.html', context)
 
-
-@login_required
-def update_application(request, application_id):
-    """تحديث معلومات الطلب"""
-    application = get_object_or_404(Application, id=application_id, applicant=request.user)
-
-    # التحقق من أن الطلب ما زال قابل للتعديل
-    if application.status.order > 2:  # إذا تجاوزت الحالة مرحلة المراجعة الأولية
-        messages.error(request, _("لا يمكن تعديل هذا الطلب في مرحلته الحالية"))
-        return redirect('applications:application_detail', application_id=application.id)
-
-    if request.method == 'POST':
-        form = ApplicationForm(request.POST, instance=application)
-        if form.is_valid():
-            form.save()
-            messages.success(request, _("تم تحديث معلومات الطلب بنجاح"))
-            return redirect('applications:application_detail', application_id=application.id)
-    else:
-        form = ApplicationForm(instance=application)
-
-    context = {
-        'form': form,
-        'application': application,
-        'is_update': True,
-    }
-    return render(request, 'applications/application_form.html', context)
 
 
 @login_required

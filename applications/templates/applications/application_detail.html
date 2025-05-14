@@ -25,18 +25,16 @@
                     <h3 class="mb-0">{% trans "تفاصيل الطلب" %}</h3>
                     <div>
                         {% if application.status.order <= 2 %}
-                        <a href="{% url 'applications:update_application' application.id %}" class="btn btn-light me-2">
+                        <a href="{% url 'applications:update_application_tabs' application.id %}" class="btn btn-light me-2">
                             <i class="fas fa-edit me-1"></i> {% trans "تعديل" %}
                         </a>
                         {% endif %}
-                        <a href="{% url 'applications:application_documents' application.id %}" class="btn btn-light">
-                            <i class="fas fa-file-alt me-1"></i> {% trans "المستندات" %}
-                        </a>
                     </div>
                 </div>
                 <div class="card-body p-4">
+                    <!-- معلومات أساسية للطلب -->
                     <div class="mb-4">
-                        <h5 class="text-primary">{% trans "معلومات الطلب" %}</h5>
+                        <h5 class="text-primary mb-3">{% trans "معلومات الطلب" %}</h5>
                         <div class="table-responsive">
                             <table class="table table-bordered">
                                 <tbody>
@@ -69,24 +67,27 @@
                         </div>
                     </div>
 
+                    <!-- خطاب الدوافع -->
                     <div class="mb-4">
-                        <h5 class="text-primary">{% trans "خطاب الدوافع" %}</h5>
+                        <h5 class="text-primary mb-3">{% trans "خطاب الدوافع" %}</h5>
                         <div class="p-3 border rounded bg-light">
                             {{ application.motivation_letter|linebreaks }}
                         </div>
                     </div>
 
+                    <!-- مقترح البحث (إذا وجد) -->
                     {% if application.research_proposal %}
                     <div class="mb-4">
-                        <h5 class="text-primary">{% trans "مقترح البحث" %}</h5>
+                        <h5 class="text-primary mb-3">{% trans "مقترح البحث" %}</h5>
                         <div class="p-3 border rounded bg-light">
                             {{ application.research_proposal|linebreaks }}
                         </div>
                     </div>
                     {% endif %}
 
+                    <!-- معلومات القبول -->
                     <div class="mb-4">
-                        <h5 class="text-primary">{% trans "خطاب القبول" %}</h5>
+                        <h5 class="text-primary mb-3">{% trans "خطاب القبول" %}</h5>
                         {% if application.acceptance_letter %}
                             <div class="p-3 border rounded bg-light">
                                 <p><i class="fas fa-check-circle text-success me-2"></i> {% trans "نعم، لدي قبول مبدئي" %}</p>
@@ -99,17 +100,364 @@
                         {% endif %}
                     </div>
 
+                    <!-- ملاحظات إضافية (إذا وجدت) -->
                     {% if application.comments %}
                     <div class="mb-4">
-                        <h5 class="text-primary">{% trans "ملاحظات إضافية" %}</h5>
+                        <h5 class="text-primary mb-3">{% trans "ملاحظات إضافية" %}</h5>
                         <div class="p-3 border rounded bg-light">
                             {{ application.comments|linebreaks }}
                         </div>
                     </div>
                     {% endif %}
 
+                    <!-- المؤهلات الأكاديمية -->
                     <div class="mb-4">
-                        <h5 class="text-primary">{% trans "المستندات المرفقة" %}</h5>
+                        <h5 class="text-primary mb-3">{% trans "المؤهلات الأكاديمية" %}</h5>
+
+                        <!-- الثانوية العامة -->
+                        {% if high_school_qualifications %}
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">{% trans "الثانوية العامة" %}</h6>
+                            {% for qualification in high_school_qualifications %}
+                            <div class="p-3 border rounded bg-light mb-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "نوع الشهادة:" %}</strong> {{ qualification.certificate_type }}
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "الفرع/التخصص:" %}</strong> {{ qualification.branch }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "سنة التخرج:" %}</strong> {{ qualification.graduation_year }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "المعدل:" %}</strong> {{ qualification.gpa }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "بلد الدراسة:" %}</strong> {{ qualification.country }}
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "لغة الدراسة:" %}</strong> {{ qualification.get_study_language_display }}
+                                    </div>
+                                    {% if qualification.additional_info %}
+                                    <div class="col-md-12">
+                                        <strong>{% trans "معلومات إضافية:" %}</strong> {{ qualification.additional_info }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <!-- المستندات المرتبطة -->
+                                {% with related_docs=qualification.documents.all %}
+                                {% if related_docs %}
+                                <div class="mt-2 p-2 bg-info bg-opacity-10 border border-info rounded">
+                                    <h6 class="mb-2">{% trans "المستندات المرفقة" %}</h6>
+                                    <div class="row">
+                                        {% for doc in related_docs %}
+                                        <div class="col-md-6 mb-2">
+                                            <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file-pdf text-danger me-1"></i> {{ doc.name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- البكالوريوس -->
+                        {% if bachelor_qualifications %}
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">{% trans "البكالوريوس" %}</h6>
+                            {% for qualification in bachelor_qualifications %}
+                            <div class="p-3 border rounded bg-light mb-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "الجامعة/المؤسسة:" %}</strong> {{ qualification.institution_name }}
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "التخصص:" %}</strong> {{ qualification.major }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "سنة التخرج:" %}</strong> {{ qualification.graduation_year }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "المعدل:" %}</strong> {{ qualification.gpa }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "التقدير:" %}</strong> {{ qualification.get_grade_display }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "بلد الدراسة:" %}</strong> {{ qualification.country }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "نظام الدراسة:" %}</strong> {{ qualification.get_study_system_display }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "نوع الشهادة:" %}</strong> {{ qualification.get_bachelor_type_display }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "لغة الدراسة:" %}</strong> {{ qualification.get_study_language_display }}
+                                    </div>
+                                    {% if qualification.additional_info %}
+                                    <div class="col-md-12">
+                                        <strong>{% trans "معلومات إضافية:" %}</strong> {{ qualification.additional_info }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <!-- المستندات المرتبطة -->
+                                {% with related_docs=qualification.documents.all %}
+                                {% if related_docs %}
+                                <div class="mt-2 p-2 bg-info bg-opacity-10 border border-info rounded">
+                                    <h6 class="mb-2">{% trans "المستندات المرفقة" %}</h6>
+                                    <div class="row">
+                                        {% for doc in related_docs %}
+                                        <div class="col-md-6 mb-2">
+                                            <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file-pdf text-danger me-1"></i> {{ doc.name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- الماجستير -->
+                        {% if master_qualifications %}
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">{% trans "الماجستير" %}</h6>
+                            {% for qualification in master_qualifications %}
+                            <div class="p-3 border rounded bg-light mb-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "الجامعة/المؤسسة:" %}</strong> {{ qualification.institution_name }}
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "التخصص:" %}</strong> {{ qualification.major }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "سنة التخرج:" %}</strong> {{ qualification.graduation_year }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "المعدل:" %}</strong> {{ qualification.gpa }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "التقدير:" %}</strong> {{ qualification.get_grade_display }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "بلد الدراسة:" %}</strong> {{ qualification.country }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "نظام الدراسة:" %}</strong> {{ qualification.get_masters_system_display }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "لغة الدراسة:" %}</strong> {{ qualification.get_study_language_display }}
+                                    </div>
+                                    {% if qualification.additional_info %}
+                                    <div class="col-md-12">
+                                        <strong>{% trans "معلومات إضافية:" %}</strong> {{ qualification.additional_info }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <!-- المستندات المرتبطة -->
+                                {% with related_docs=qualification.documents.all %}
+                                {% if related_docs %}
+                                <div class="mt-2 p-2 bg-info bg-opacity-10 border border-info rounded">
+                                    <h6 class="mb-2">{% trans "المستندات المرفقة" %}</h6>
+                                    <div class="row">
+                                        {% for doc in related_docs %}
+                                        <div class="col-md-6 mb-2">
+                                            <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file-pdf text-danger me-1"></i> {{ doc.name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- شهادات أخرى -->
+                        {% if other_certificates %}
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">{% trans "شهادات أخرى" %}</h6>
+                            {% for certificate in other_certificates %}
+                            <div class="p-3 border rounded bg-light mb-3">
+                                <div class="row">
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "نوع الشهادة:" %}</strong> {{ certificate.get_certificate_type_display }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "اسم الشهادة:" %}</strong> {{ certificate.certificate_name }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "الجهة المانحة:" %}</strong> {{ certificate.certificate_issuer }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "سنة التخرج:" %}</strong> {{ certificate.graduation_year }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "بلد الدراسة:" %}</strong> {{ certificate.country }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "لغة الدراسة:" %}</strong> {{ certificate.get_study_language_display }}
+                                    </div>
+                                    {% if certificate.additional_info %}
+                                    <div class="col-md-12">
+                                        <strong>{% trans "معلومات إضافية:" %}</strong> {{ certificate.additional_info }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <!-- المستندات المرتبطة -->
+                                {% with related_docs=certificate.documents.all %}
+                                {% if related_docs %}
+                                <div class="mt-2 p-2 bg-info bg-opacity-10 border border-info rounded">
+                                    <h6 class="mb-2">{% trans "المستندات المرفقة" %}</h6>
+                                    <div class="row">
+                                        {% for doc in related_docs %}
+                                        <div class="col-md-6 mb-2">
+                                            <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file-pdf text-danger me-1"></i> {{ doc.name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if not high_school_qualifications and not bachelor_qualifications and not master_qualifications and not other_certificates %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> {% trans "لا توجد مؤهلات أكاديمية مسجلة بعد." %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- الكفاءة اللغوية -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">{% trans "الكفاءة اللغوية" %}</h5>
+
+                        {% if language_proficiencies %}
+                            {% for proficiency in language_proficiencies %}
+                            <div class="p-3 border rounded bg-light mb-3">
+                                <h6 class="mb-3">
+                                    {% if proficiency.is_english %}
+                                    {% trans "اللغة الإنجليزية" %}
+                                    {% else %}
+                                    {{ proficiency.get_other_language_display }}
+                                    {% if proficiency.other_language == 'other' %}
+                                    ({{ proficiency.other_language_name }})
+                                    {% endif %}
+                                    {% endif %}
+                                </h6>
+
+                                <div class="row">
+                                    {% if proficiency.is_english %}
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "نوع الاختبار:" %}</strong>
+                                        {{ proficiency.get_test_type_display }}
+                                        {% if proficiency.test_type == 'other' %}
+                                        ({{ proficiency.other_test_name }})
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "تاريخ الاختبار:" %}</strong> {{ proficiency.test_date }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "الدرجة الكلية:" %}</strong> {{ proficiency.overall_score }}
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <strong>{% trans "الرقم المرجعي:" %}</strong> {{ proficiency.reference_number|default:"-" }}
+                                    </div>
+
+                                    {% if proficiency.reading_score or proficiency.listening_score or proficiency.speaking_score or proficiency.writing_score %}
+                                    <div class="col-md-12 mt-2">
+                                        <h6>{% trans "الدرجات التفصيلية" %}</h6>
+                                        <div class="row">
+                                            {% if proficiency.reading_score %}
+                                            <div class="col-md-3 mb-2">
+                                                <strong>{% trans "القراءة:" %}</strong> {{ proficiency.reading_score }}
+                                            </div>
+                                            {% endif %}
+
+                                            {% if proficiency.listening_score %}
+                                            <div class="col-md-3 mb-2">
+                                                <strong>{% trans "الاستماع:" %}</strong> {{ proficiency.listening_score }}
+                                            </div>
+                                            {% endif %}
+
+                                            {% if proficiency.speaking_score %}
+                                            <div class="col-md-3 mb-2">
+                                                <strong>{% trans "المحادثة:" %}</strong> {{ proficiency.speaking_score }}
+                                            </div>
+                                            {% endif %}
+
+                                            {% if proficiency.writing_score %}
+                                            <div class="col-md-3 mb-2">
+                                                <strong>{% trans "الكتابة:" %}</strong> {{ proficiency.writing_score }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% else %}
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{% trans "مستوى الإتقان:" %}</strong> {{ proficiency.get_proficiency_level_display }}
+                                    </div>
+                                    {% endif %}
+
+                                    {% if proficiency.additional_info %}
+                                    <div class="col-md-12">
+                                        <strong>{% trans "معلومات إضافية:" %}</strong> {{ proficiency.additional_info }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- المستندات المرتبطة بالكفاءة اللغوية -->
+                                {% with related_docs=proficiency.documents.all %}
+                                {% if related_docs %}
+                                <div class="mt-2 p-2 bg-info bg-opacity-10 border border-info rounded">
+                                    <h6 class="mb-2">{% trans "المستندات المرفقة" %}</h6>
+                                    <div class="row">
+                                        {% for doc in related_docs %}
+                                        <div class="col-md-6 mb-2">
+                                            <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file-pdf text-danger me-1"></i> {{ doc.name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i> {% trans "لا توجد كفاءات لغوية مسجلة بعد." %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- المستندات العامة -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">{% trans "المستندات العامة" %}</h5>
                         {% if documents %}
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle">
@@ -118,29 +466,38 @@
                                             <th>{% trans "نوع المستند" %}</th>
                                             <th>{% trans "الوصف" %}</th>
                                             <th>{% trans "تاريخ الرفع" %}</th>
-                                            <th>{% trans "الإجراءات" %}</th>
+                                            <th>{% trans "العرض" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for document in documents %}
+                                        {% if not document.high_school_qualification and not document.bachelor_qualification and not document.master_qualification and not document.other_certificate and not document.language_proficiency %}
                                         <tr>
                                             <td>{{ document.name }}</td>
                                             <td>{{ document.description|default:"-" }}</td>
                                             <td>{{ document.upload_date|date:"Y-m-d" }}</td>
                                             <td>
-                                                <a href="{{ document.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="{% trans 'عرض' %}">
-                                                    <i class="fas fa-eye"></i>
+                                                <a href="{{ document.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                    <i class="fas fa-eye"></i> {% trans "عرض" %}
                                                 </a>
                                             </td>
                                         </tr>
+                                        {% endif %}
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- زر رفع مستندات إضافية -->
+                            <div class="mt-3">
+                                <a href="{% url 'applications:application_documents' application.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-file-upload me-1"></i> {% trans "رفع مستندات إضافية" %}
+                                </a>
+                            </div>
                         {% else %}
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                {% trans "لم يتم رفع أي مستندات حتى الآن." %}
+                                {% trans "لم يتم رفع أي مستندات عامة حتى الآن." %}
                                 <a href="{% url 'applications:application_documents' application.id %}" class="alert-link">{% trans "رفع المستندات الآن؟" %}</a>
                             </div>
                         {% endif %}
@@ -148,6 +505,7 @@
                 </div>
             </div>
 
+            <!-- سجل التغييرات -->
             {% if logs %}
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-light">
@@ -194,6 +552,7 @@
         </div>
 
         <div class="col-md-4">
+            <!-- حالة الطلب -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">{% trans "حالة الطلب" %}</h5>
@@ -208,59 +567,10 @@
                             <p class="text-muted mb-0">{% trans "آخر تحديث:" %} {{ application.last_update|date:"Y-m-d H:i" }}</p>
                         </div>
                     </div>
-
-                    <div class="progress-track" hidden>
-                        <ul class="list-unstyled">
-                            {% for i in "1234567890"|make_list|slice:":10" %}
-                                {% with order=i|add:"0" %}
-                                <li class="d-flex align-items-center {% if not forloop.last %}mb-3{% endif %}">
-                                    <div class="me-3">
-                                        <span class="progress-marker {% if application.status.order >= order %}bg-success{% else %}bg-light border{% endif %} rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                            {% if application.status.order > order %}
-                                                <i class="fas fa-check text-white"></i>
-                                            {% elif application.status.order == order %}
-                                                <i class="fas fa-sync-alt text-white fa-spin"></i>
-                                            {% else %}
-                                                <span class="text-muted">{{ order }}</span>
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 {% if application.status.order < order %}text-muted{% endif %}">
-                                            {% if order == 1 %}
-                                                {% trans "تقديم الطلب" %}
-                                            {% elif order == 2 %}
-                                                {% trans "المراجعة الأولية" %}
-                                            {% elif order == 3 %}
-                                                {% trans "مطابق للشروط" %}
-                                            {% elif order == 4 %}
-                                                {% trans "غير مطابق للشروط" %}
-                                            {% elif order == 5 %}
-                                                {% trans "موافقة اللجنة العليا" %}
-                                            {% elif order == 6 %}
-                                                {% trans "رفض اللجنة العليا" %}
-                                            {% elif order == 7 %}
-                                                {% trans "موافقة مجلس الكلية" %}
-                                            {% elif order == 8 %}
-                                                {% trans "رفض مجلس الكلية" %}
-                                            {% elif order == 9 %}
-                                                {% trans "موافقة رئيس الجامعة" %}
-                                            {% elif order == 10 %}
-                                                {% trans "رفض رئيس الجامعة" %}
-                                            {% endif %}
-                                        </h6>
-                                        {% if application.status.order == order %}
-                                        <p class="text-muted small mb-0">{% trans "الحالة الحالية" %}</p>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                {% endwith %}
-                            {% endfor %}
-                        </ul>
-                    </div>
                 </div>
             </div>
 
+            <!-- معلومات المتقدم -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">{% trans "معلومات المتقدم" %}</h5>
@@ -312,26 +622,6 @@
                     <a href="{% url 'applications:delete_application' application.id %}" class="btn btn-outline-danger d-block">
                         <i class="fas fa-trash-alt me-2"></i> {% trans "حذف الطلب" %}
                     </a>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- للإدارة المالية فقط -->
-            {% if perms.finance.add_scholarshipbudget and application.status.order >= 9 %}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">{% trans "الإجراءات المالية" %}</h5>
-                </div>
-                <div class="card-body p-4">
-                    {% if application.budget %}
-                        <a href="{% url 'finance:budget_detail' application.budget.id %}" class="btn btn-primary d-block mb-2">
-                            <i class="fas fa-money-bill-wave me-2"></i> {% trans "عرض الميزانية" %}
-                        </a>
-                    {% else %}
-                        <a href="{% url 'finance:create_budget' application.id %}" class="btn btn-success d-block mb-2">
-                            <i class="fas fa-plus-circle me-2"></i> {% trans "إنشاء ميزانية جديدة" %}
-                        </a>
                     {% endif %}
                 </div>
             </div>

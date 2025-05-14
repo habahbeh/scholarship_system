@@ -155,20 +155,6 @@ class PresidentApprovalForm(forms.Form):
         return cleaned_data
 
 
-# Standard application forms
-class ApplicationForm(forms.ModelForm):
-    """نموذج التقديم على فرصة ابتعاث"""
-
-    class Meta:
-        model = Application
-        fields = ['motivation_letter', 'research_proposal', 'comments', 'acceptance_letter', 'acceptance_university']
-        widgets = {
-            'motivation_letter': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
-            'research_proposal': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
-            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'acceptance_letter': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'acceptance_university': forms.TextInput(attrs={'class': 'form-control'}),
-        }
 
 
 class DocumentForm(forms.ModelForm):
