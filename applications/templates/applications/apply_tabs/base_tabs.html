@@ -1,260 +1,70 @@
 {% extends 'base.html' %}
 {% load i18n %}
 {% load static %}
-{% load crispy_forms_tags %}
-
-{% block title %}
-{% if is_update %}
-{% trans "تعديل طلب ابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}
-{% else %}
-{% trans "التقديم على فرصة ابتعاث" %} - {% trans "نظام الابتعاث الإلكتروني" %}
-{% endif %}
-{% endblock %}
-
-{% block extra_css %}
-<style>
-  .nav-tabs .nav-link {
-    border-radius: 0;
-    color: #6c757d !important;
-    position: relative;
-  }
-
-
-
-
-  .nav-tabs .nav-link.active {
-    color: #495057;
-    background-color: #fff;
-    border-color: #dee2e6 #dee2e6 #fff;
-    border-bottom: 3px solid #007bff;
-  }
-
-  .nav-tabs .nav-link .step-number {
-    display: inline-block;
-    width: 30px;
-    height: 30px;
-    line-height: 30px;
-    text-align: center;
-    border-radius: 50%;
-    background-color: #e9ecef;
-    margin-left: 10px;
-  }
-
-  .nav-tabs .nav-link.active .step-number,
-  .nav-tabs .nav-link.completed .step-number {
-    background-color: #007bff;
-    color: white;
-  }
-
-  .nav-tabs .nav-link.completed {
-    color: #28a745;
-  }
-
-  .nav-tabs .nav-link.completed:after {
-    content: "\f00c";
-    font-family: "Font Awesome 5 Free";
-    font-weight: 900;
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    color: #28a745;
-  }
-
-  .qualification-row, .language-row, .document-row {
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 15px;
-    background-color: #f8f9fa;
-  }
-
-  .qualification-header, .language-header, .document-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  .form-section {
-    padding: 20px;
-    border: 1px solid #dee2e6;
-    border-radius: 0 0 5px 5px;
-    background-color: #fff;
-  }
-
-  .btn-steps {
-    min-width: 100px;
-  }
-
-  .required-field label:after {
-    content: " *";
-    color: red;
-  }
-
-
-</style>
-{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <div class="row">
-    <div class="col-12 mb-4">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "الرئيسية" %}</a></li>
-          {% if is_update %}
-            <li class="breadcrumb-item"><a href="{% url 'applications:my_applications' %}">{% trans "طلباتي" %}</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'applications:application_detail' application.id %}">{% trans "طلب" %} #{{ application.id }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{% trans "تعديل" %}</li>
-          {% else %}
-            <li class="breadcrumb-item"><a href="{% url 'announcements:scholarship_list' %}">{% trans "فرص الابتعاث" %}</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'announcements:scholarship_detail' scholarship.id %}">{{ scholarship.title }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{% trans "التقديم" %}</li>
-          {% endif %}
-        </ol>
-      </nav>
-    </div>
-  </div>
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- تبويبات الخطوات الرئيسية -->
+            <div class="list-group application-steps mb-4">
+                <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal"
+                   class="list-group-item list-group-item-action {% if current_step == 'personal' %}active{% endif %}">
+                    <i class="fas fa-user me-2"></i> {% trans "المعلومات الأساسية" %}
+                </a>
+                <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=academic"
+                   class="list-group-item list-group-item-action {% if current_step == 'academic' %}active{% endif %}">
+                    <i class="fas fa-graduation-cap me-2"></i> {% trans "المؤهلات الأكاديمية" %}
+                </a>
+                <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=language"
+                   class="list-group-item list-group-item-action {% if current_step == 'language' %}active{% endif %}">
+                    <i class="fas fa-language me-2"></i> {% trans "الكفاءة اللغوية" %}
+                </a>
+                <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=documents"
+                   class="list-group-item list-group-item-action {% if current_step == 'documents' %}active{% endif %}">
+                    <i class="fas fa-file-alt me-2"></i> {% trans "المستندات المطلوبة" %}
+                </a>
+                <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=preview"
+                   class="list-group-item list-group-item-action {% if current_step == 'preview' %}active{% endif %}">
+                    <i class="fas fa-eye me-2"></i> {% trans "معاينة الطلب" %}
+                </a>
+                <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=submit"
+                   class="list-group-item list-group-item-action {% if current_step == 'submit' %}active{% endif %}">
+                    <i class="fas fa-paper-plane me-2"></i> {% trans "تقديم الطلب" %}
+                </a>
+            </div>
 
-  <div class="row">
-    <div class="col-lg-9">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-3">
-          <h3 class="mb-0">
-            {% if is_update %}
-              {% trans "تعديل طلب ابتعاث" %}
-            {% else %}
-              {% trans "التقديم على فرصة ابتعاث" %}
-            {% endif %}
-          </h3>
-        </div>
-
-        <!-- شريط التبويبات -->
-        <ul class="nav nav-tabs" id="applicationTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <a class="nav-link {% if current_step == 'personal' %}active{% endif %} {% if application.motivation_letter %}completed{% endif %}"
-               href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal">
-              <span class="step-number">1</span> {% trans "المعلومات الأساسية" %}
-            </a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link {% if current_step == 'academic' %}active{% endif %} {% if application.academic_qualifications.exists %}completed{% endif %}"
-               href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=academic">
-              <span class="step-number">2</span> {% trans "المؤهلات الأكاديمية" %}
-            </a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link {% if current_step == 'language' %}active{% endif %} {% if application.language_proficiencies.exists %}completed{% endif %}"
-               href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=language">
-              <span class="step-number">3</span> {% trans "الكفاءة اللغوية" %}
-            </a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link {% if current_step == 'documents' %}active{% endif %} {% if application.documents.exists %}completed{% endif %}"
-               href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=documents">
-              <span class="step-number">4</span> {% trans "المستندات" %}
-            </a>
-          </li>
-          <li class="nav-item" role="presentation">
-            <a class="nav-link {% if current_step == 'preview' or current_step == 'submit' %}active{% endif %}"
-               href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=preview">
-              <span class="step-number">5</span> {% trans "المعاينة والتقديم" %}
-            </a>
-          </li>
-        </ul>
-
-        <div class="card-body p-0">
-          <div class="tab-content">
-            <div class="tab-pane fade show active">
-              <div class="form-section">
-                {% if messages %}
-                <div class="messages mb-4">
-                  {% for message in messages %}
-                  <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                  </div>
-                  {% endfor %}
+            <!-- معلومات الطلب -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{% trans "معلومات الطلب" %}</h5>
                 </div>
-                {% endif %}
-
-                {% block application_content %}
-                <!-- محتوى الطلب سيتم تضمينه هنا -->
-                {% endblock %}
-              </div>
+                <div class="card-body">
+                    <p><strong>{% trans "فرصة الابتعاث:" %}</strong> {{ scholarship.title }}</p>
+                    <p><strong>{% trans "التخصص:" %}</strong> {{ scholarship.major }}</p>
+                    <p><strong>{% trans "الجهة:" %}</strong> {{ scholarship.destination }}</p>
+                    <p><strong>{% trans "آخر موعد للتقديم:" %}</strong> {{ scholarship.deadline|date:"Y-m-d" }}</p>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">{{ title|default:_("طلب ابتعاث") }}</h4>
+                </div>
+                <div class="card-body">
+                    {% block application_content %}{% endblock %}
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="col-lg-3">
-      <div class="card shadow-sm border-0 mb-4 sticky-top" style="top: 20px;">
-        <div class="card-header bg-light">
-          <h5 class="mb-0">{% trans "معلومات الفرصة" %}</h5>
-        </div>
-        <div class="card-body">
-          <h6 class="text-primary">{{ scholarship.title }}</h6>
-          <p class="small text-muted">{{ scholarship.short_description }}</p>
-
-          <div class="mb-3">
-            <div class="d-flex justify-content-between mb-2">
-              <span>{% trans "نوع الابتعاث:" %}</span>
-              <span class="badge bg-primary">{{ scholarship.scholarship_type.name }}</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>{% trans "تاريخ البدء:" %}</span>
-              <span>{{ scholarship.start_date|date:"Y-m-d" }}</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span>{% trans "آخر موعد للتقديم:" %}</span>
-              <span class="text-danger fw-bold">{{ scholarship.deadline|date:"Y-m-d" }}</span>
-            </div>
-          </div>
-
-          <div class="alert alert-info small mb-0">
-            <i class="fas fa-info-circle me-2"></i>
-            {% trans "يرجى التأكد من إكمال جميع الخطوات وإرفاق جميع المستندات المطلوبة قبل تقديم الطلب." %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block js %}
 <script>
-  // تنفيذ عند تحميل الصفحة
-  document.addEventListener('DOMContentLoaded', function() {
-    // إظهار/إخفاء حقل اسم الجامعة عند تغيير حالة خطاب القبول
-    const acceptanceCheckbox = document.getElementById('id_acceptance_letter');
-    //const universityField = document.getElementById('id_acceptance_university').closest('.form-group');
-
-    const universityElement = document.getElementById('id_acceptance_university');
-    const universityField = universityElement ? universityElement.closest('.form-group') : null;
-
-
-    if (acceptanceCheckbox && universityField) {
-      function toggleUniversityField() {
-        if (acceptanceCheckbox.checked) {
-          universityField.style.display = 'block';
-        } else {
-          universityField.style.display = 'none';
-        }
-      }
-
-      // التحقق من الحالة الأولية
-      toggleUniversityField();
-
-      acceptanceCheckbox.addEventListener('change', toggleUniversityField);
-    }
-
-    // المزيد من الكود للتعامل مع النماذج الديناميكية سيتم إضافته لاحقًا
-  });
-
-  {% block step_js %}
-  // كود جافاسكريبت خاص بكل خطوة
-  {% endblock %}
+// كود JavaScript مشترك لجميع التبويبات
+{% block step_js %}{% endblock %}
 </script>
 {% endblock %}

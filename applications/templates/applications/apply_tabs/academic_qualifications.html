@@ -6,244 +6,421 @@
 {% block application_content %}
 <h4 class="mb-4">{% trans "المؤهلات الأكاديمية" %}</h4>
 
-{% if not application.academicqualification_set.all %}
+{% if qualifications_stats.high_school == 0 and qualifications_stats.bachelors == 0 %}
     <div class="alert alert-info mb-4">
         <i class="fas fa-info-circle me-2"></i>
         {% trans "يرجى إضافة مؤهلاتك الأكاديمية. يجب إضافة معلومات الثانوية العامة والبكالوريوس على الأقل." %}
     </div>
 {% endif %}
 
-<form method="post" id="academicForm">
-  {% csrf_token %}
+<!-- تبويبات لأنواع المؤهلات المختلفة -->
+<ul class="nav nav-tabs mb-4" id="qualificationTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == 'high_school' %}active{% endif %}" id="high-school-tab" data-bs-toggle="tab" data-bs-target="#high-school" type="button" role="tab">
+      الثانوية العامة {% if qualifications_stats.high_school > 0 %}<span class="badge bg-primary">{{ qualifications_stats.high_school }}</span>{% endif %}
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == 'bachelors' %}active{% endif %}" id="bachelors-tab" data-bs-toggle="tab" data-bs-target="#bachelors" type="button" role="tab">
+      البكالوريوس {% if qualifications_stats.bachelors > 0 %}<span class="badge bg-primary">{{ qualifications_stats.bachelors }}</span>{% endif %}
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == 'masters' %}active{% endif %}" id="masters-tab" data-bs-toggle="tab" data-bs-target="#masters" type="button" role="tab">
+      الماجستير {% if qualifications_stats.masters > 0 %}<span class="badge bg-primary">{{ qualifications_stats.masters }}</span>{% endif %}
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == 'other' %}active{% endif %}" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab">
+      شهادات أخرى {% if qualifications_stats.other > 0 %}<span class="badge bg-primary">{{ qualifications_stats.other }}</span>{% endif %}
+    </button>
+  </li>
+</ul>
 
-  {{ formset.management_form }}
+<div class="tab-content" id="qualificationTabsContent">
+  <!-- تبويب الثانوية العامة -->
+  <div class="tab-pane fade {% if active_tab == 'high_school' %}show active{% endif %}" id="high-school" role="tabpanel">
+    <form method="post" id="highSchoolForm">
+      {% csrf_token %}
+      <input type="hidden" name="qualification_type" value="high_school">
 
-  <div id="academic_qualifications_formset">
-    {% for form in formset %}
-      <div class="qualification-row border rounded p-4 mb-4 bg-light">
-        <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0 qualification-title fw-bold">
-            {% if forloop.counter %}مؤهل #{{ forloop.counter }}{% else %}مؤهل جديد{% endif %}
-          </h5>
-          <div>
-            <button type="button" class="btn btn-danger btn-sm delete-qualification" {% if forloop.first and formset|length == 1 %}style="display: none;"{% endif %}>
-              <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
-            </button>
-          </div>
-        </div>
+      {{ high_school_formset.management_form }}
 
-        {{ form.id }}
-        {{ form.DELETE.as_hidden }}
+      <div id="high_school_formset">
+        {% for form in high_school_formset %}
+          <div class="qualification-row border rounded p-4 mb-4 bg-light">
+            <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0 qualification-title fw-bold">الثانوية العامة #{{ forloop.counter }}</h5>
+              <div>
+                <button type="button" class="btn btn-danger btn-sm delete-qualification" {% if forloop.first and high_school_formset|length == 1 %}style="display: none;"{% endif %}>
+                  <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
+                </button>
+              </div>
+            </div>
 
-        <!-- نضع حقل نوع المؤهل مخفيًا مع قيمة افتراضية -->
-        <div style="display:none;">
-          {{ form.qualification_type }}
-        </div>
+            {{ form.id }}
+            {{ form.DELETE.as_hidden }}
 
-        <!-- جميع الحقول لجميع أنواع المؤهلات -->
-        <div class="row">
-          <!-- حقول مشتركة -->
-          <div class="col-md-6 mb-3">
-            {{ form.institution_name|as_crispy_field }}
+            <div class="row">
+              <div class="col-md-4 mb-3">{{ form.certificate_type|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.branch|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.gpa|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+            </div>
           </div>
-          <div class="col-md-6 mb-3">
-            {{ form.major|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.graduation_year|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.gpa|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.grade|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.country|as_crispy_field }}
-          </div>
-
-          <!-- حقول الثانوية العامة -->
-          <div class="col-md-4 mb-3">
-            {{ form.high_school_certificate_type|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.high_school_branch|as_crispy_field }}
-          </div>
-
-          <!-- حقول البكالوريوس -->
-          <div class="col-md-4 mb-3">
-            {{ form.study_system|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.bachelor_type|as_crispy_field }}
-          </div>
-
-          <!-- حقول الماجستير -->
-          <div class="col-md-4 mb-3">
-            {{ form.masters_system|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.study_language|as_crispy_field }}
-          </div>
-
-          <!-- حقول الشهادات الأخرى -->
-          <div class="col-md-4 mb-3">
-            {{ form.certificate_type|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.certificate_name|as_crispy_field }}
-          </div>
-          <div class="col-md-4 mb-3">
-            {{ form.certificate_issuer|as_crispy_field }}
-          </div>
-
-          <!-- معلومات إضافية -->
-          <div class="col-md-12">
-            {{ form.additional_info|as_crispy_field }}
-          </div>
-        </div>
+        {% endfor %}
       </div>
-    {% endfor %}
+
+      <div class="text-center my-4">
+        <button type="button" class="btn btn-success" id="add_high_school">
+          <i class="fas fa-plus me-1"></i> {% trans "إضافة شهادة ثانوية" %}
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal" class="btn btn-outline-secondary btn-steps">
+          <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-steps">
+          <i class="fas fa-save me-1"></i> {% trans "حفظ ومتابعة" %}
+        </button>
+      </div>
+    </form>
   </div>
 
-  <div class="text-center my-4">
-    <button type="button" class="btn btn-success" id="add_qualification">
-      <i class="fas fa-plus me-1"></i> {% trans "إضافة مؤهل جديد" %}
-    </button>
+  <!-- تبويب البكالوريوس -->
+  <div class="tab-pane fade {% if active_tab == 'bachelors' %}show active{% endif %}" id="bachelors" role="tabpanel">
+    <form method="post" id="bachelorsForm">
+      {% csrf_token %}
+      <input type="hidden" name="qualification_type" value="bachelors">
+
+      {{ bachelor_formset.management_form }}
+
+      <div id="bachelor_formset">
+        {% for form in bachelor_formset %}
+          <div class="qualification-row border rounded p-4 mb-4 bg-light">
+            <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0 qualification-title fw-bold">البكالوريوس #{{ forloop.counter }}</h5>
+              <div>
+                <button type="button" class="btn btn-danger btn-sm delete-qualification" {% if forloop.first and bachelor_formset|length == 1 %}style="display: none;"{% endif %}>
+                  <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
+                </button>
+              </div>
+            </div>
+
+            {{ form.id }}
+            {{ form.DELETE.as_hidden }}
+
+            <div class="row">
+              <div class="col-md-6 mb-3">{{ form.institution_name|as_crispy_field }}</div>
+              <div class="col-md-6 mb-3">{{ form.major|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.gpa|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.grade|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.study_system|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.bachelor_type|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-center my-4">
+        <button type="button" class="btn btn-success" id="add_bachelor">
+          <i class="fas fa-plus me-1"></i> {% trans "إضافة شهادة بكالوريوس" %}
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal" class="btn btn-outline-secondary btn-steps">
+          <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-steps">
+          <i class="fas fa-save me-1"></i> {% trans "حفظ ومتابعة" %}
+        </button>
+      </div>
+    </form>
   </div>
 
-  <div class="d-flex justify-content-between mt-4">
-    <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal" class="btn btn-outline-secondary btn-steps">
-      <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
-    </a>
-    <button type="submit" class="btn btn-primary btn-steps">
-      <i class="fas fa-arrow-left me-1"></i> {% trans "التالي: الكفاءة اللغوية" %}
-    </button>
+  <!-- تبويب الماجستير -->
+  <div class="tab-pane fade {% if active_tab == 'masters' %}show active{% endif %}" id="masters" role="tabpanel">
+    <form method="post" id="mastersForm">
+      {% csrf_token %}
+      <input type="hidden" name="qualification_type" value="masters">
+
+      {{ master_formset.management_form }}
+
+      <div id="master_formset">
+        {% for form in master_formset %}
+          <div class="qualification-row border rounded p-4 mb-4 bg-light">
+            <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0 qualification-title fw-bold">الماجستير #{{ forloop.counter }}</h5>
+              <div>
+                <button type="button" class="btn btn-danger btn-sm delete-qualification" {% if forloop.first and master_formset|length == 1 %}style="display: none;"{% endif %}>
+                  <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
+                </button>
+              </div>
+            </div>
+
+            {{ form.id }}
+            {{ form.DELETE.as_hidden }}
+
+            <div class="row">
+              <div class="col-md-6 mb-3">{{ form.institution_name|as_crispy_field }}</div>
+              <div class="col-md-6 mb-3">{{ form.major|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.gpa|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.grade|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.masters_system|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-center my-4">
+        <button type="button" class="btn btn-success" id="add_master">
+          <i class="fas fa-plus me-1"></i> {% trans "إضافة شهادة ماجستير" %}
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal" class="btn btn-outline-secondary btn-steps">
+          <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-steps">
+          <i class="fas fa-save me-1"></i> {% trans "حفظ ومتابعة" %}
+        </button>
+      </div>
+    </form>
   </div>
-</form>
+
+  <!-- تبويب الشهادات الأخرى -->
+  <div class="tab-pane fade {% if active_tab == 'other' %}show active{% endif %}" id="other" role="tabpanel">
+    <form method="post" id="otherForm">
+      {% csrf_token %}
+      <input type="hidden" name="qualification_type" value="other">
+
+      {{ other_certificate_formset.management_form }}
+
+      <div id="other_certificate_formset">
+        {% for form in other_certificate_formset %}
+          <div class="qualification-row border rounded p-4 mb-4 bg-light">
+            <div class="qualification-header d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0 qualification-title fw-bold">شهادة أخرى #{{ forloop.counter }}</h5>
+              <div>
+                <button type="button" class="btn btn-danger btn-sm delete-qualification" {% if forloop.first and other_certificate_formset|length == 1 %}style="display: none;"{% endif %}>
+                  <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
+                </button>
+              </div>
+            </div>
+
+            {{ form.id }}
+            {{ form.DELETE.as_hidden }}
+
+            <div class="row">
+              <div class="col-md-4 mb-3">{{ form.certificate_type|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.certificate_name|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.certificate_issuer|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-center my-4">
+        <button type="button" class="btn btn-success" id="add_other">
+          <i class="fas fa-plus me-1"></i> {% trans "إضافة شهادة أخرى" %}
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=personal" class="btn btn-outline-secondary btn-steps">
+          <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-steps">
+          <i class="fas fa-save me-1"></i> {% trans "حفظ ومتابعة" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block step_js %}
 // تنفيذ عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-  const formset = document.getElementById('academic_qualifications_formset');
+  // منطق التبديل بين التبويبات
+  const tabLinks = document.querySelectorAll('#qualificationTabs .nav-link');
+  tabLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      // تحديث التبويب النشط
+      document.querySelectorAll('#qualificationTabs .nav-link').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
 
-  // تحديد عدد النماذج الحالية والحد الأقصى
-  const totalFormsInput = document.getElementById('id_academicqualification_set-TOTAL_FORMS');
-  const maxNumForms = parseInt(document.getElementById('id_academicqualification_set-MAX_NUM_FORMS').value);
+      // إخفاء كل المحتوى
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('show', 'active');
+      });
 
-  // زر إضافة مؤهل جديد
-  const addQualificationBtn = document.getElementById('add_qualification');
-
-  // تعيين قيمة افتراضية لحقل نوع المؤهل (المخفي)
-  formset.querySelectorAll('select[id$="-qualification_type"]').forEach(select => {
-    // نضع قيمة افتراضية للحقل المخفي حتى لا يسبب مشاكل عند الإرسال
-    if (select.value === '') {
-      select.value = 'bachelors';  // تغيير القيمة الافتراضية إلى البكالوريوس
-    }
+      // إظهار المحتوى المرتبط بالتبويب
+      const target = document.querySelector(this.getAttribute('data-bs-target'));
+      target.classList.add('show', 'active');
+    });
   });
 
-  // إضافة مؤهل جديد
-  addQualificationBtn.addEventListener('click', function() {
-    const totalForms = parseInt(totalFormsInput.value);
+  // منطق إضافة وحذف المؤهلات للثانوية العامة
+  setupFormset('high_school', 'add_high_school', 'الثانوية العامة');
 
-    // التحقق من عدم تجاوز الحد الأقصى
-    if (totalForms < maxNumForms) {
-      // نسخ آخر نموذج
-      const lastForm = formset.querySelector('.qualification-row:last-child');
-      const newForm = lastForm.cloneNode(true);
+  // منطق إضافة وحذف البكالوريوس
+  setupFormset('bachelor', 'add_bachelor', 'البكالوريوس');
 
-      // تحديث المعرفات والأسماء
-      newForm.setAttribute('data-form-index', totalForms);
-      newForm.querySelectorAll('input, select, textarea').forEach(input => {
-        // استبدال الرقم في المعرف والاسم
-        const oldName = input.getAttribute('name');
-        const oldId = input.getAttribute('id');
+  // منطق إضافة وحذف الماجستير
+  setupFormset('master', 'add_master', 'الماجستير');
 
-        if (oldName) {
-          const newName = oldName.replace(/-\d+-/, `-${totalForms}-`);
-          input.setAttribute('name', newName);
+  // منطق إضافة وحذف الشهادات الأخرى
+  setupFormset('other_certificate', 'add_other', 'شهادة أخرى');
+
+  // دالة مساعدة لإعداد وظائف الإضافة والحذف
+  function setupFormset(formsetPrefix, addBtnId, titleText) {
+    const addBtn = document.getElementById(addBtnId);
+    if (!addBtn) return; // التأكد من وجود الزر
+
+    // تحديد عدد النماذج الحالية والحد الأقصى
+    const totalFormsInput = document.getElementById(`id_${formsetPrefix}_set-TOTAL_FORMS`);
+    const maxNumForms = parseInt(document.getElementById(`id_${formsetPrefix}_set-MAX_NUM_FORMS`).value || '1000');
+
+    // زر إضافة مؤهل جديد
+    addBtn.addEventListener('click', function() {
+      const totalForms = parseInt(totalFormsInput.value);
+
+      // التحقق من عدم تجاوز الحد الأقصى
+      if (totalForms < maxNumForms) {
+        // الحصول على آخر نموذج
+        const formset = document.getElementById(`${formsetPrefix}_formset`);
+        const lastForm = formset.querySelector('.qualification-row:last-child');
+
+        // نسخ النموذج
+        const newForm = lastForm.cloneNode(true);
+
+        // تحديث المعرفات والأسماء
+        updateFormIds(newForm, formsetPrefix, totalForms);
+
+        // تحديث عنوان المؤهل
+        const title = newForm.querySelector('.qualification-title');
+        if (title) {
+            title.textContent = `${titleText} #${totalForms + 1}`;
         }
 
-        if (oldId) {
-          const newId = oldId.replace(/-\d+-/, `-${totalForms}-`);
-          input.setAttribute('id', newId);
+        // إفراغ القيم
+        clearFormValues(newForm);
+
+        // التأكد من إظهار زر الحذف
+        const deleteBtn = newForm.querySelector('.delete-qualification');
+        if (deleteBtn) {
+            deleteBtn.style.display = 'inline-block';
+            deleteBtn.addEventListener('click', function() {
+                deleteQualification(newForm, formset);
+            });
         }
 
-        // إعادة تعيين القيم
-        if (input.type !== 'hidden' && input.name !== `academicqualification_set-${totalForms}-qualification_type`) {
-          if (input.tagName === 'SELECT') {
-            input.selectedIndex = 0;
-          } else {
-            input.value = '';
-          }
-        }
-      });
+        // إضافة النموذج للصفحة
+        formset.appendChild(newForm);
 
-      // إعادة تعيين المسميات
-      newForm.querySelectorAll('label').forEach(label => {
-        const forAttr = label.getAttribute('for');
-        if (forAttr) {
-          const newFor = forAttr.replace(/-\d+-/, `-${totalForms}-`);
-          label.setAttribute('for', newFor);
-        }
-      });
-
-      // إخفاء العنصر المخفي DELETE
-      const deleteCheckbox = newForm.querySelector('input[id$="-DELETE"]');
-      if (deleteCheckbox) {
-        deleteCheckbox.checked = false;
+        // تحديث عدد النماذج
+        totalFormsInput.value = totalForms + 1;
+      } else {
+        alert('{% trans "تم الوصول للحد الأقصى من المؤهلات" %}');
       }
+    });
 
-      // تعيين قيمة افتراضية لحقل نوع المؤهل (مخفي)
-      const qualificationTypeSelect = newForm.querySelector(`select[id$="-${totalForms}-qualification_type"]`);
-      if (qualificationTypeSelect) {
-        qualificationTypeSelect.value = 'bachelors';  // تعيين القيمة الافتراضية
-      }
-
-      // تحديث رقم المؤهل في العنوان
-      const qualificationTitle = newForm.querySelector('.qualification-title');
-      qualificationTitle.innerText = 'مؤهل #' + (totalForms + 1);
-
-      // إضافة مستمع لزر الحذف
-      const deleteBtn = newForm.querySelector('.delete-qualification');
-      deleteBtn.style.display = 'inline-block';
-      deleteBtn.addEventListener('click', function() {
-        deleteQualification(newForm);
+    // إضافة مستمعي الأحداث لأزرار الحذف الموجودة
+    const formset = document.getElementById(`${formsetPrefix}_formset`);
+    if (formset) {
+      formset.querySelectorAll('.delete-qualification').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const row = this.closest('.qualification-row');
+          deleteQualification(row, formset);
+        });
       });
-
-      // إضافة النموذج الجديد للمستند
-      formset.appendChild(newForm);
-
-      // تحديث عدد النماذج الكلي
-      totalFormsInput.value = totalForms + 1;
-    } else {
-      alert('{% trans "تم الوصول للحد الأقصى من المؤهلات" %}');
-    }
-  });
-
-  // حذف مؤهل
-  function deleteQualification(row) {
-    const totalForms = parseInt(totalFormsInput.value);
-
-    // إذا كان هناك أكثر من نموذج واحد
-    if (totalForms > 1) {
-      const deleteCheckbox = row.querySelector('input[id$="-DELETE"]');
-      if (deleteCheckbox) {
-        deleteCheckbox.checked = true;
-      }
-      row.style.display = 'none';
-    } else {
-      alert('{% trans "يجب إضافة مؤهل واحد على الأقل" %}');
     }
   }
 
-  // إضافة مستمعي الأحداث لأزرار الحذف
-  formset.querySelectorAll('.delete-qualification').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const row = this.closest('.qualification-row');
-      deleteQualification(row);
+  // دالة لحذف مؤهل
+  function deleteQualification(row, formset) {
+    // تحديد عدد النماذج المرئية
+    const visibleRows = Array.from(formset.querySelectorAll('.qualification-row')).filter(
+      r => r.style.display !== 'none'
+    );
+
+    // إذا كان هذا النموذج الوحيد المتبقي، لا نسمح بحذفه
+    if (visibleRows.length <= 1 && visibleRows.includes(row)) {
+      alert('{% trans "يجب إضافة مؤهل واحد على الأقل" %}');
+      return;
+    }
+
+    // تعليم النموذج للحذف وإخفاءه
+    const deleteCheckbox = row.querySelector('input[id$="-DELETE"]');
+    if (deleteCheckbox) {
+      deleteCheckbox.checked = true;
+    }
+    row.style.display = 'none';
+  }
+
+  // دالة لتحديث معرفات النموذج
+  function updateFormIds(form, prefix, newIndex) {
+    form.querySelectorAll('input, select, textarea, label').forEach(element => {
+      // تحديث السمة name
+      if (element.hasAttribute('name')) {
+        const name = element.getAttribute('name');
+        const newName = name.replace(new RegExp(`${prefix}_set-\\d+-`), `${prefix}_set-${newIndex}-`);
+        element.setAttribute('name', newName);
+      }
+
+      // تحديث السمة id
+      if (element.hasAttribute('id')) {
+        const id = element.getAttribute('id');
+        const newId = id.replace(new RegExp(`id_${prefix}_set-\\d+-`), `id_${prefix}_set-${newIndex}-`);
+        element.setAttribute('id', newId);
+      }
+
+      // تحديث السمة for للعلامات
+      if (element.tagName === 'LABEL' && element.hasAttribute('for')) {
+        const forAttr = element.getAttribute('for');
+        const newFor = forAttr.replace(new RegExp(`id_${prefix}_set-\\d+-`), `id_${prefix}_set-${newIndex}-`);
+        element.setAttribute('for', newFor);
+      }
     });
-  });
+  }
+
+  // دالة لإفراغ قيم النموذج
+  function clearFormValues(form) {
+    form.querySelectorAll('input, select, textarea').forEach(input => {
+      if (input.type === 'checkbox') {
+        // التعامل مع صناديق الاختيار
+        if (input.name.includes('DELETE')) {
+          input.checked = false;
+        } else {
+          input.checked = input.defaultChecked;
+        }
+      } else if (input.type === 'hidden' && input.name.includes('id')) {
+        // تفريغ معرف السجل
+        input.value = '';
+      } else if (input.type !== 'hidden' && input.getAttribute('name') && !input.getAttribute('name').includes('TOTAL_FORMS')) {
+        // تفريغ القيم العادية
+        input.value = '';
+      }
+    });
+  }
 });
 {% endblock %}

@@ -15,16 +15,18 @@ from django.urls import reverse
 from announcements.models import Scholarship
 from .models import (
     Application, Document, ApplicationStatus, ApplicationLog, ApprovalAttachment,
-    AcademicQualification, LanguageProficiency
+    HighSchoolQualification, BachelorQualification, MasterQualification, OtherCertificate,
+    LanguageProficiency
 )
 from .forms import (
     ApplicationForm, DocumentForm, DocumentUploadForm, ApplicationStatusForm, ApplicationFilterForm,
     RequirementsCheckForm, HigherCommitteeApprovalForm, FacultyCouncilApprovalForm, PresidentApprovalForm,
-    ApplicationTabsForm, AcademicQualificationFormSet, LanguageProficiencyFormSet, DocumentFormSet
+    ApplicationTabsForm, HighSchoolQualificationFormSet, BachelorQualificationFormSet,
+    MasterQualificationFormSet, OtherCertificateFormSet, LanguageProficiencyFormSet, DocumentFormSet
 )
 
 
-# --- New Workflow Views ---check_requirements
+# --- New Workflow Views ---
 
 @login_required
 @permission_required('applications.view_application')
@@ -495,12 +497,30 @@ def application_full_report(request, application_id):
         approval_type='president'
     ).order_by('-upload_date').first()
 
+    # الحصول على المؤهلات الأكاديمية المختلفة لهذا الطلب
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
+
+    # الحصول على الكفاءات اللغوية
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+
+    # الحصول على المستندات
+    documents = Document.objects.filter(application=application)
+
     context = {
         'application': application,
         'attachments': attachments,
         'higher_committee_attachment': higher_committee_attachment,
         'faculty_council_attachment': faculty_council_attachment,
         'president_attachment': president_attachment,
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
+        'language_proficiencies': language_proficiencies,
+        'documents': documents,
         'title': _("تقرير تفصيلي لطلب ابتعاث"),
         'date': timezone.now()
     }
@@ -663,11 +683,22 @@ def application_detail(request, application_id):
     else:
         application = get_object_or_404(Application, id=application_id, applicant=request.user)
 
+    # الحصول على المؤهلات الأكاديمية المختلفة
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
+
+    # الحصول على المستندات وسجلات الطلب
     documents = Document.objects.filter(application=application)
     logs = ApplicationLog.objects.filter(application=application).order_by('-created_at')
 
     context = {
         'application': application,
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
         'documents': documents,
         'logs': logs,
     }
@@ -901,7 +932,6 @@ def apply_tabs(request, scholarship_id):
         return handle_personal_info_step(request, application, context)
 
 
-
 def handle_personal_info_step(request, application, context):
     """معالجة تبويب المعلومات الأساسية"""
     if request.method == 'POST':
@@ -925,15 +955,22 @@ def handle_personal_info_step(request, application, context):
 def handle_academic_qualifications_step(request, application, context):
     """معالجة تبويب المؤهلات الأكاديمية"""
     if request.method == 'POST':
-        formset = AcademicQualificationFormSet(request.POST, instance=application)
+        # تحديد التبويب الفرعي النشط (نوع المؤهل)
+        active_tab = request.POST.get('qualification_type', 'high_school')
+
+        if active_tab == 'high_school':
+            formset = HighSchoolQualificationFormSet(request.POST, instance=application, prefix='high_school')
+        elif active_tab == 'bachelors':
+            formset = BachelorQualificationFormSet(request.POST, instance=application, prefix='bachelors')
+        elif active_tab == 'masters':
+            formset = MasterQualificationFormSet(request.POST, instance=application, prefix='masters')
+        else:  # 'other'
+            formset = OtherCertificateFormSet(request.POST, instance=application, prefix='other')
+
         if formset.is_valid():
             # حفظ البيانات
             instances = formset.save(commit=False)
-
-            # التأكد من أن كل نموذج له نوع مؤهل
             for instance in instances:
-                if not instance.qualification_type:
-                    instance.qualification_type = 'bachelors'  # القيمة الافتراضية
                 instance.save()
 
             # حفظ علاقات M2M إذا وجدت
@@ -952,17 +989,30 @@ def handle_academic_qualifications_step(request, application, context):
                     for error in errors:
                         messages.error(request, f"{field}: {error}")
     else:
-        # التحقق من وجود مؤهلات أكاديمية
-        existing_qualifications = AcademicQualification.objects.filter(application=application).exists()
+        # تحديد التبويب النشط (نوع المؤهل) من الطلب
+        active_tab = request.GET.get('qualification_type', 'high_school')
 
-        if not existing_qualifications:
-            # إنشاء نموذج فارغ مع نوع المؤهل الافتراضي
-            formset = AcademicQualificationFormSet(instance=application, initial=[{'qualification_type': 'bachelors'}])
-        else:
-            formset = AcademicQualificationFormSet(instance=application)
+        # تجهيز جميع النماذج لجميع أنواع المؤهلات
+        high_school_formset = HighSchoolQualificationFormSet(instance=application, prefix='high_school')
+        bachelor_formset = BachelorQualificationFormSet(instance=application, prefix='bachelors')
+        master_formset = MasterQualificationFormSet(instance=application, prefix='masters')
+        other_certificate_formset = OtherCertificateFormSet(instance=application, prefix='other')
+
+    # إحصاءات عن المؤهلات الموجودة
+    qualifications_stats = {
+        'high_school': application.high_school_qualifications.count(),
+        'bachelors': application.bachelor_qualifications.count(),
+        'masters': application.master_qualifications.count(),
+        'other': application.other_certificates.count(),
+    }
 
     context.update({
-        'formset': formset,
+        'high_school_formset': high_school_formset,
+        'bachelor_formset': bachelor_formset,
+        'master_formset': master_formset,
+        'other_certificate_formset': other_certificate_formset,
+        'active_tab': active_tab,
+        'qualifications_stats': qualifications_stats,
         'title': _("المؤهلات الأكاديمية"),
     })
 
@@ -986,6 +1036,7 @@ def handle_language_proficiency_step(request, application, context):
     })
     return render(request, 'applications/apply_tabs/language_proficiency.html', context)
 
+
 def handle_documents_step(request, application, context):
     """معالجة تبويب المستندات"""
     if request.method == 'POST':
@@ -997,26 +1048,41 @@ def handle_documents_step(request, application, context):
     else:
         formset = DocumentFormSet(instance=application)
 
-    # الحصول على قائمة المؤهلات الأكاديمية والكفاءات اللغوية لربطها بالمستندات
-    academic_qualifications = AcademicQualification.objects.filter(application=application)
+    # الحصول على قائمة المؤهلات الأكاديمية المختلفة والكفاءات اللغوية لربطها بالمستندات
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
     language_proficiencies = LanguageProficiency.objects.filter(application=application)
 
     context.update({
         'formset': formset,
         'title': _("المستندات المطلوبة"),
-        'academic_qualifications': academic_qualifications,
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
         'language_proficiencies': language_proficiencies,
     })
     return render(request, 'applications/apply_tabs/documents.html', context)
 
+
 def handle_preview_step(request, application, context):
     """معالجة تبويب المعاينة"""
-    academic_qualifications = AcademicQualification.objects.filter(application=application)
+    # الحصول على المؤهلات الأكاديمية المختلفة
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
+
     language_proficiencies = LanguageProficiency.objects.filter(application=application)
     documents = Document.objects.filter(application=application)
 
     context.update({
-        'academic_qualifications': academic_qualifications,
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
         'language_proficiencies': language_proficiencies,
         'documents': documents,
         'title': _("معاينة الطلب"),
@@ -1030,23 +1096,34 @@ def handle_submit_step(request, application, context):
     is_complete = True
     missing_fields = []
 
-    # التحقق من وجود معلومات شخصية
+    # 1. التحقق من وجود معلومات شخصية
     if not application.motivation_letter:
         is_complete = False
         missing_fields.append(_("خطاب الدوافع"))
 
-    # التحقق من وجود مؤهل أكاديمي واحد على الأقل
-    if not AcademicQualification.objects.filter(application=application).exists():
+    # 2. التحقق من وجود مؤهلات أكاديمية مطلوبة
+    # التحقق من وجود شهادة الثانوية العامة
+    if not application.high_school_qualifications.exists():
         is_complete = False
-        missing_fields.append(_("المؤهلات الأكاديمية"))
+        missing_fields.append(_("مؤهل الثانوية العامة"))
 
-    # التحقق من وجود كفاءة لغوية واحدة على الأقل
+    # التحقق من وجود شهادة البكالوريوس
+    if not application.bachelor_qualifications.exists():
+        is_complete = False
+        missing_fields.append(_("مؤهل البكالوريوس"))
+
+    # 3. التحقق من وجود كفاءة لغوية في اللغة الإنجليزية
     if not LanguageProficiency.objects.filter(application=application, is_english=True).exists():
         is_complete = False
         missing_fields.append(_("الكفاءة اللغوية في اللغة الإنجليزية"))
 
-    # التحقق من وجود المستندات المطلوبة
-    required_document_types = ['cv', 'personal_id', 'high_school_certificate', 'bachelors_certificate']
+    # 4. التحقق من وجود المستندات المطلوبة
+    required_document_types = [
+        'cv',
+        'personal_id',
+        'high_school_certificate',
+        'bachelors_certificate'
+    ]
     existing_document_types = Document.objects.filter(application=application).values_list('document_type', flat=True)
 
     for doc_type in required_document_types:
@@ -1055,8 +1132,9 @@ def handle_submit_step(request, application, context):
             doc_type_display = dict(Document.DOCUMENT_TYPE_CHOICES).get(doc_type, doc_type)
             missing_fields.append(doc_type_display)
 
+    # 5. إذا كان الطلب كاملا ويتم النقر على زر التقديم
     if request.method == 'POST' and is_complete:
-        # Get the "submitted" status (order=1)
+        # الحصول على حالة "تم التقديم" (order=1)
         submitted_status = ApplicationStatus.objects.filter(order=1).first()
         if not submitted_status:
             submitted_status = ApplicationStatus.objects.create(
@@ -1065,13 +1143,13 @@ def handle_submit_step(request, application, context):
                 description=_("تم تقديم الطلب")
             )
 
-        # Update application status from temporary to submitted
+        # تحديث حالة الطلب من مؤقتة إلى مقدمة
         old_status = application.status
         application.status = submitted_status
         application.application_date = timezone.now()
         application.save()
 
-        # Create application log
+        # إنشاء سجل للطلب
         ApplicationLog.objects.create(
             application=application,
             from_status=old_status,
@@ -1080,7 +1158,7 @@ def handle_submit_step(request, application, context):
             comment=_("تم تقديم الطلب")
         )
 
-        # Remove temporary application ID from session
+        # إزالة معرف الطلب المؤقت من الجلسة
         scholarship_id = application.scholarship.id
         if f'temp_application_{scholarship_id}' in request.session:
             del request.session[f'temp_application_{scholarship_id}']
@@ -1088,12 +1166,32 @@ def handle_submit_step(request, application, context):
         messages.success(request, _("تم تقديم طلبك بنجاح"))
         return redirect('applications:application_detail', application_id=application.id)
 
+    # إعداد سياق العرض
     context.update({
         'is_complete': is_complete,
         'missing_fields': missing_fields,
         'title': _("تقديم الطلب"),
     })
+
+    # عرض ملخص الطلب
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+    documents = Document.objects.filter(application=application)
+
+    context.update({
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
+        'language_proficiencies': language_proficiencies,
+        'documents': documents,
+    })
+
     return render(request, 'applications/apply_tabs/submit.html', context)
+
 
 @login_required
 def update_application_tabs(request, application_id):
@@ -1143,18 +1241,27 @@ def handle_update_submit_step(request, application, context):
         is_complete = False
         missing_fields.append(_("خطاب الدوافع"))
 
-    # التحقق من وجود مؤهل أكاديمي واحد على الأقل
-    if not AcademicQualification.objects.filter(application=application).exists():
+    # التحقق من وجود مؤهلات أكاديمية مطلوبة
+    if not application.high_school_qualifications.exists():
         is_complete = False
-        missing_fields.append(_("المؤهلات الأكاديمية"))
+        missing_fields.append(_("مؤهل الثانوية العامة"))
 
-    # التحقق من وجود كفاءة لغوية واحدة على الأقل
+    if not application.bachelor_qualifications.exists():
+        is_complete = False
+        missing_fields.append(_("مؤهل البكالوريوس"))
+
+    # التحقق من وجود كفاءة لغوية في اللغة الإنجليزية
     if not LanguageProficiency.objects.filter(application=application, is_english=True).exists():
         is_complete = False
         missing_fields.append(_("الكفاءة اللغوية في اللغة الإنجليزية"))
 
     # التحقق من وجود المستندات المطلوبة
-    required_document_types = ['cv', 'personal_id', 'high_school_certificate', 'bachelors_certificate']
+    required_document_types = [
+        'cv',
+        'personal_id',
+        'high_school_certificate',
+        'bachelors_certificate'
+    ]
     existing_document_types = Document.objects.filter(application=application).values_list('document_type', flat=True)
 
     for doc_type in required_document_types:
@@ -1180,9 +1287,24 @@ def handle_update_submit_step(request, application, context):
         messages.success(request, _("تم تحديث طلبك بنجاح"))
         return redirect('applications:application_detail', application_id=application.id)
 
+    # إعداد سياق العرض لمعاينة الطلب
+    high_school_qualifications = application.high_school_qualifications.all()
+    bachelor_qualifications = application.bachelor_qualifications.all()
+    master_qualifications = application.master_qualifications.all()
+    other_certificates = application.other_certificates.all()
+    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+    documents = Document.objects.filter(application=application)
+
     context.update({
         'is_complete': is_complete,
         'missing_fields': missing_fields,
+        'high_school_qualifications': high_school_qualifications,
+        'bachelor_qualifications': bachelor_qualifications,
+        'master_qualifications': master_qualifications,
+        'other_certificates': other_certificates,
+        'language_proficiencies': language_proficiencies,
+        'documents': documents,
         'title': _("تحديث الطلب"),
     })
+
     return render(request, 'applications/apply_tabs/submit.html', context)

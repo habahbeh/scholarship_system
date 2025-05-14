@@ -2,7 +2,8 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import (
     Application, ApplicationStatus, ApprovalAttachment, Document,
-    AcademicQualification, LanguageProficiency
+    HighSchoolQualification, BachelorQualification, MasterQualification, OtherCertificate,
+    LanguageProficiency
 )
 
 
@@ -269,16 +270,31 @@ class ApplicationFilterForm(forms.Form):
 
 
 # Forms for the tabbed application system
-class AcademicQualificationForm(forms.ModelForm):
-    """نموذج المؤهل الأكاديمي"""
+# نماذج المؤهلات الأكاديمية الجديدة
+class HighSchoolQualificationForm(forms.ModelForm):
+    """نموذج الثانوية العامة"""
 
     class Meta:
-        model = AcademicQualification
+        model = HighSchoolQualification
         exclude = ['application']
         widgets = {
-            'qualification_type': forms.HiddenInput(),  # تغيير الحقل إلى حقل مخفي
-            'high_school_certificate_type': forms.TextInput(attrs={'class': 'form-control'}),
-            'high_school_branch': forms.TextInput(attrs={'class': 'form-control'}),
+            'certificate_type': forms.TextInput(attrs={'class': 'form-control'}),
+            'branch': forms.TextInput(attrs={'class': 'form-control'}),
+            'graduation_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1950', 'max': '2030'}),
+            'gpa': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+            'study_language': forms.Select(attrs={'class': 'form-control'}),
+            'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class BachelorQualificationForm(forms.ModelForm):
+    """نموذج البكالوريوس"""
+
+    class Meta:
+        model = BachelorQualification
+        exclude = ['application']
+        widgets = {
             'institution_name': forms.TextInput(attrs={'class': 'form-control'}),
             'major': forms.TextInput(attrs={'class': 'form-control'}),
             'graduation_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1950', 'max': '2030'}),
@@ -287,25 +303,46 @@ class AcademicQualificationForm(forms.ModelForm):
             'country': forms.TextInput(attrs={'class': 'form-control'}),
             'study_system': forms.Select(attrs={'class': 'form-control'}),
             'bachelor_type': forms.Select(attrs={'class': 'form-control'}),
-            'masters_system': forms.Select(attrs={'class': 'form-control'}),
             'study_language': forms.Select(attrs={'class': 'form-control'}),
-            'certificate_type': forms.Select(attrs={'class': 'form-control'}),
-            'certificate_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'certificate_issuer': forms.TextInput(attrs={'class': 'form-control'}),
             'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-        # تعيين قيمة افتراضية لحقل نوع المؤهل
-        if not self.instance.pk and not self.initial.get('qualification_type'):
-            self.initial['qualification_type'] = 'bachelors'
+class MasterQualificationForm(forms.ModelForm):
+    """نموذج الماجستير"""
 
-        # جعل الحقول غير مطلوبة للسماح بإدخال جزئي للبيانات
-        for field_name in self.fields:
-            if field_name != 'qualification_type':  # حقل نوع المؤهل يبقى مطلوباً
-                self.fields[field_name].required = False
+    class Meta:
+        model = MasterQualification
+        exclude = ['application']
+        widgets = {
+            'institution_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'major': forms.TextInput(attrs={'class': 'form-control'}),
+            'graduation_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1950', 'max': '2030'}),
+            'gpa': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'grade': forms.Select(attrs={'class': 'form-select'}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+            'masters_system': forms.Select(attrs={'class': 'form-control'}),
+            'study_language': forms.Select(attrs={'class': 'form-control'}),
+            'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class OtherCertificateForm(forms.ModelForm):
+    """نموذج الشهادات الأخرى"""
+
+    class Meta:
+        model = OtherCertificate
+        exclude = ['application']
+        widgets = {
+            'certificate_type': forms.Select(attrs={'class': 'form-control'}),
+            'certificate_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'certificate_issuer': forms.TextInput(attrs={'class': 'form-control'}),
+            'graduation_year': forms.NumberInput(attrs={'class': 'form-control', 'min': '1950', 'max': '2030'}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+            'study_language': forms.Select(attrs={'class': 'form-control'}),
+            'additional_info': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
 
 class LanguageProficiencyForm(forms.ModelForm):
     """نموذج الكفاءة اللغوية"""
@@ -358,14 +395,34 @@ class DocumentUploadForm(forms.ModelForm):
 
     class Meta:
         model = Document
-        fields = ['document_type', 'name', 'description', 'file', 'is_required']
+        fields = ['document_type', 'name', 'description', 'file', 'is_required',
+                  'high_school_qualification', 'bachelor_qualification', 'master_qualification', 'other_certificate']
         widgets = {
             'document_type': forms.Select(attrs={'class': 'form-select'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'file': forms.FileInput(attrs={'class': 'form-control'}),
             'is_required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'high_school_qualification': forms.Select(attrs={'class': 'form-select'}),
+            'bachelor_qualification': forms.Select(attrs={'class': 'form-select'}),
+            'master_qualification': forms.Select(attrs={'class': 'form-select'}),
+            'other_certificate': forms.Select(attrs={'class': 'form-select'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # تحضير مجال اختياري للمؤهلات المختلفة
+        if 'application' in kwargs.get('initial', {}):
+            application = kwargs['initial']['application']
+
+            # تقييد الاختيارات للمؤهلات التابعة لهذا الطلب فقط
+            self.fields['high_school_qualification'].queryset = HighSchoolQualification.objects.filter(
+                application=application)
+            self.fields['bachelor_qualification'].queryset = BachelorQualification.objects.filter(
+                application=application)
+            self.fields['master_qualification'].queryset = MasterQualification.objects.filter(application=application)
+            self.fields['other_certificate'].queryset = OtherCertificate.objects.filter(application=application)
 
 
 class ApplicationTabsForm(forms.ModelForm):
@@ -384,9 +441,27 @@ class ApplicationTabsForm(forms.ModelForm):
 
 
 # FormSets for tabbed application
-AcademicQualificationFormSet = forms.inlineformset_factory(
-    Application, AcademicQualification,
-    form=AcademicQualificationForm,
+HighSchoolQualificationFormSet = forms.inlineformset_factory(
+    Application, HighSchoolQualification,
+    form=HighSchoolQualificationForm,
+    extra=1, can_delete=True
+)
+
+BachelorQualificationFormSet = forms.inlineformset_factory(
+    Application, BachelorQualification,
+    form=BachelorQualificationForm,
+    extra=1, can_delete=True
+)
+
+MasterQualificationFormSet = forms.inlineformset_factory(
+    Application, MasterQualification,
+    form=MasterQualificationForm,
+    extra=1, can_delete=True
+)
+
+OtherCertificateFormSet = forms.inlineformset_factory(
+    Application, OtherCertificate,
+    form=OtherCertificateForm,
     extra=1, can_delete=True
 )
 

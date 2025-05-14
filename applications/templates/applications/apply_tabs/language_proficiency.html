@@ -6,337 +6,316 @@
 {% block application_content %}
 <h4 class="mb-4">{% trans "الكفاءة اللغوية" %}</h4>
 
+{% if not application.language_proficiencies.all %}
 <div class="alert alert-info mb-4">
-  <i class="fas fa-info-circle me-2"></i>
-  {% trans "يرجى إضافة معلومات الكفاءة اللغوية. يجب إضافة اللغة الإنجليزية كحد أدنى." %}
+    <i class="fas fa-info-circle me-2"></i>
+    {% trans "يجب إضافة معلومات الكفاءة اللغوية في اللغة الإنجليزية على الأقل." %}
 </div>
+{% endif %}
 
-<form method="post" id="languageForm">
-  {% csrf_token %}
-  
-  {{ formset.management_form }}
-  
-  <div id="language_proficiency_formset">
-    {% for form in formset %}
-      <div class="language-row" data-form-index="{{ forloop.counter0 }}">
-        <div class="language-header">
-          <h5 class="mb-0 language-title">
-            {% if form.instance.pk %}
-              {% if form.instance.is_english %}
-                {% trans "اللغة الإنجليزية" %}
-              {% else %}
-                {% if form.instance.other_language == 'other' %}
-                  {{ form.instance.other_language_name }}
-                {% else %}
-                  {{ form.instance.get_other_language_display }}
-                {% endif %}
-              {% endif %}
-            {% else %}
-              {% trans "لغة جديدة" %}
-            {% endif %}
-          </h5>
-          <div>
-            <button type="button" class="btn btn-danger btn-sm delete-language" {% if forloop.first and formset|length == 1 %}style="display: none;"{% endif %}>
-              <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
-            </button>
-          </div>
+<form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    <div id="language_formset">
+        {% for form in formset %}
+        <div class="language-row border rounded p-4 mb-4 bg-light">
+            <div class="language-header d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 language-title fw-bold">
+                    {% if form.instance.pk %}
+                        {% if form.instance.is_english %}
+                            {% trans "اللغة الإنجليزية" %}
+                        {% elif form.instance.other_language %}
+                            {{ form.instance.get_other_language_display }}
+                        {% else %}
+                            {% trans "كفاءة لغوية جديدة" %}
+                        {% endif %}
+                    {% else %}
+                        {% trans "كفاءة لغوية جديدة" %}
+                    {% endif %}
+                </h5>
+                <div>
+                    <button type="button" class="btn btn-danger btn-sm delete-language" {% if forloop.first and formset|length == 1 %}style="display: none;"{% endif %}>
+                        <i class="fas fa-trash-alt"></i> {% trans "حذف" %}
+                    </button>
+                </div>
+            </div>
+
+            {{ form.id }}
+            {{ form.DELETE.as_hidden }}
+
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="form-check">
+                        {{ form.is_english }}
+                        <label class="form-check-label" for="{{ form.is_english.id_for_label }}">
+                            {{ form.is_english.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- حقول اللغة الإنجليزية -->
+            <div class="english-fields">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.test_type|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3 other-test-field">
+                        {{ form.other_test_name|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.test_date|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.overall_score|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.reference_number|as_crispy_field }}
+                    </div>
+                </div>
+
+                <h6 class="mt-3 mb-3">{% trans "الدرجات التفصيلية" %}</h6>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.reading_score|as_crispy_field }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.listening_score|as_crispy_field }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.speaking_score|as_crispy_field }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.writing_score|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- حقول اللغات الأخرى -->
+            <div class="other-language-fields">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.other_language|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3 other-language-name-field">
+                        {{ form.other_language_name|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.proficiency_level|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    {{ form.additional_info|as_crispy_field }}
+                </div>
+            </div>
         </div>
-        
-        {{ form.id }}
-        {{ form.DELETE.as_hidden }}
-        
-        <div class="row mb-3">
-          <div class="col-md-12">
-            {{ form.is_english|as_crispy_field }}
-          </div>
-        </div>
-        
-        <!-- حقول اللغة الإنجليزية -->
-        <div class="english-fields">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              {{ form.test_type|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3 other-test-fields">
-              {{ form.other_test_name|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.test_date|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3">
-              {{ form.overall_score|as_crispy_field }}
-            </div>
-            <div class="col-md-12 mb-3">
-              {{ form.reference_number|as_crispy_field }}
-            </div>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-3 mb-3">
-              {{ form.reading_score|as_crispy_field }}
-            </div>
-            <div class="col-md-3 mb-3">
-              {{ form.listening_score|as_crispy_field }}
-            </div>
-            <div class="col-md-3 mb-3">
-              {{ form.speaking_score|as_crispy_field }}
-            </div>
-            <div class="col-md-3 mb-3">
-              {{ form.writing_score|as_crispy_field }}
-            </div>
-          </div>
-        </div>
-        
-        <!-- حقول اللغات الأخرى -->
-        <div class="other-language-fields">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              {{ form.other_language|as_crispy_field }}
-            </div>
-            <div class="col-md-6 mb-3 other-language-name-fields">
-              {{ form.other_language_name|as_crispy_field }}
-            </div>
-            <div class="col-md-12 mb-3">
-              {{ form.proficiency_level|as_crispy_field }}
-            </div>
-          </div>
-        </div>
-        
-        <!-- معلومات إضافية -->
-        <div class="row mt-3">
-          <div class="col-md-12">
-            {{ form.additional_info|as_crispy_field }}
-          </div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-  
-  <div class="text-center my-4">
-    <button type="button" class="btn btn-success" id="add_language">
-      <i class="fas fa-plus me-1"></i> {% trans "إضافة لغة جديدة" %}
-    </button>
-  </div>
-  
-  <div class="d-flex justify-content-between mt-4">
-    <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=academic" class="btn btn-outline-secondary btn-steps">
-      <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
-    </a>
-    <button type="submit" class="btn btn-primary btn-steps">
-      <i class="fas fa-arrow-left me-1"></i> {% trans "التالي: المستندات" %}
-    </button>
-  </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center my-4">
+        <button type="button" class="btn btn-success" id="add_language">
+            <i class="fas fa-plus me-1"></i> {% trans "إضافة كفاءة لغوية جديدة" %}
+        </button>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=academic" class="btn btn-outline-secondary btn-steps">
+            <i class="fas fa-arrow-right me-1"></i> {% trans "السابق: المؤهلات الأكاديمية" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-steps">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "التالي: المستندات المطلوبة" %}
+        </button>
+    </div>
 </form>
 {% endblock %}
 
 {% block step_js %}
-// تغيير حقول اللغة حسب النوع المحدد
-function toggleLanguageFields() {
-  const languageRows = document.querySelectorAll('.language-row');
-  
-  languageRows.forEach(row => {
-    const isEnglishCheckbox = row.querySelector('input[id$="-is_english"]');
-    const englishFields = row.querySelector('.english-fields');
-    const otherLanguageFields = row.querySelector('.other-language-fields');
-    const languageTitle = row.querySelector('.language-title');
-    
-    // تغيير العنوان والحقول المعروضة
-    if (isEnglishCheckbox.checked) {
-      englishFields.style.display = 'block';
-      otherLanguageFields.style.display = 'none';
-      languageTitle.innerText = '{% trans "اللغة الإنجليزية" %}';
-      
-      // التحقق من نوع الاختبار
-      const testTypeSelect = row.querySelector('select[id$="-test_type"]');
-      const otherTestFields = row.querySelector('.other-test-fields');
-      
-      if (testTypeSelect.value === 'other') {
-        otherTestFields.style.display = 'block';
-      } else {
-        otherTestFields.style.display = 'none';
-      }
-      
-      // إضافة مستمع لتغيير نوع الاختبار
-      testTypeSelect.addEventListener('change', function() {
-        if (this.value === 'other') {
-          otherTestFields.style.display = 'block';
-        } else {
-          otherTestFields.style.display = 'none';
-        }
-      });
-    } else {
-      englishFields.style.display = 'none';
-      otherLanguageFields.style.display = 'block';
-      
-      // تحديث العنوان بناءً على اللغة المحددة
-      const otherLanguageSelect = row.querySelector('select[id$="-other_language"]');
-      const otherLanguageNameFields = row.querySelector('.other-language-name-fields');
-      
-      if (otherLanguageSelect.value === 'other') {
-        otherLanguageNameFields.style.display = 'block';
-        // محاولة الحصول على قيمة اسم اللغة المخصصة
-        const otherLanguageNameInput = row.querySelector('input[id$="-other_language_name"]');
-        if (otherLanguageNameInput.value) {
-          languageTitle.innerText = otherLanguageNameInput.value;
-        } else {
-          languageTitle.innerText = '{% trans "لغة أخرى" %}';
-        }
-      } else {
-        otherLanguageNameFields.style.display = 'none';
-        // الحصول على النص المعروض من القائمة المنسدلة
-        const selectedOption = otherLanguageSelect.options[otherLanguageSelect.selectedIndex];
-        languageTitle.innerText = selectedOption.text;
-      }
-      
-      // إضافة مستمع لتغيير نوع اللغة الأخرى
-      otherLanguageSelect.addEventListener('change', function() {
-        if (this.value === 'other') {
-          otherLanguageNameFields.style.display = 'block';
-        } else {
-          otherLanguageNameFields.style.display = 'none';
-          // تحديث العنوان
-          const selectedOption = this.options[this.selectedIndex];
-          languageTitle.innerText = selectedOption.text;
-        }
-      });
-      
-      // إضافة مستمع لتغيير اسم اللغة المخصصة
-      const otherLanguageNameInput = row.querySelector('input[id$="-other_language_name"]');
-      otherLanguageNameInput.addEventListener('input', function() {
-        if (this.value) {
-          languageTitle.innerText = this.value;
-        } else {
-          languageTitle.innerText = '{% trans "لغة أخرى" %}';
-        }
-      });
-    }
-  });
-}
-
-// تنفيذ عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-  const formset = document.getElementById('language_proficiency_formset');
-  
-  // تحديد عدد النماذج الحالية والحد الأقصى
-  const totalFormsInput = document.getElementById('id_languageproficiency_set-TOTAL_FORMS');
-  const maxNumForms = parseInt(document.getElementById('id_languageproficiency_set-MAX_NUM_FORMS').value);
-  
-  // زر إضافة لغة جديدة
-  const addLanguageBtn = document.getElementById('add_language');
-  
-  // تنفيذ toggleLanguageFields عند بدء الصفحة
-  toggleLanguageFields();
-  
-  // إضافة مستمعي الأحداث لتغيير نوع اللغة
-  formset.querySelectorAll('input[id$="-is_english"]').forEach(checkbox => {
-    checkbox.addEventListener('change', toggleLanguageFields);
-  });
-  
-  // إضافة لغة جديدة
-  addLanguageBtn.addEventListener('click', function() {
-    const totalForms = parseInt(totalFormsInput.value);
-    
-    // التحقق من عدم تجاوز الحد الأقصى
-    if (totalForms < maxNumForms) {
-      // نسخ آخر نموذج
-      const lastForm = formset.querySelector('.language-row:last-child');
-      const newForm = lastForm.cloneNode(true);
-      
-      // تحديث المعرفات والأسماء
-      newForm.setAttribute('data-form-index', totalForms);
-      newForm.querySelectorAll('input, select, textarea').forEach(input => {
-        // استبدال الرقم في المعرف والاسم
-        const oldName = input.getAttribute('name');
-        const oldId = input.getAttribute('id');
-        
-        if (oldName) {
-          const newName = oldName.replace(/-\d+-/, `-${totalForms}-`);
-          input.setAttribute('name', newName);
+    const formset = document.getElementById('language_formset');
+
+    // تحديد عدد النماذج الحالية والحد الأقصى
+    const totalFormsInput = document.getElementById('id_language_proficiencies-TOTAL_FORMS');
+    const maxNumForms = parseInt(document.getElementById('id_language_proficiencies-MAX_NUM_FORMS').value || '1000');
+
+    // زر إضافة كفاءة لغوية جديدة
+    const addLanguageBtn = document.getElementById('add_language');
+
+    // تحديث حقول اللغة عند تحميل الصفحة
+    updateLanguageFields();
+
+    // إضافة كفاءة لغوية جديدة
+    addLanguageBtn.addEventListener('click', function() {
+        const totalForms = parseInt(totalFormsInput.value);
+
+        if (totalForms < maxNumForms) {
+            // نسخ آخر نموذج
+            const lastForm = formset.querySelector('.language-row:last-child');
+            const newForm = lastForm.cloneNode(true);
+
+            // تحديث المعرفات والأسماء
+            newForm.querySelectorAll('input, select, textarea, label').forEach(input => {
+                // تحديث الاسم والمعرف
+                if (input.name) {
+                    const oldName = input.name;
+                    const newName = oldName.replace(/language_proficiencies-\d+-/, `language_proficiencies-${totalForms}-`);
+                    input.name = newName;
+                }
+
+                if (input.id) {
+                    const oldId = input.id;
+                    const newId = oldId.replace(/id_language_proficiencies-\d+-/, `id_language_proficiencies-${totalForms}-`);
+                    input.id = newId;
+                }
+
+                // تحديث for للعناوين
+                if (input.htmlFor) {
+                    const oldFor = input.htmlFor;
+                    const newFor = oldFor.replace(/id_language_proficiencies-\d+-/, `id_language_proficiencies-${totalForms}-`);
+                    input.htmlFor = newFor;
+                }
+
+                // إعادة تعيين القيم
+                if (input.type !== 'hidden') {
+                    if (input.type === 'checkbox') {
+                        if (input.name.includes('DELETE')) {
+                            input.checked = false;
+                        } else if (input.name.includes('is_english')) {
+                            input.checked = true; // الافتراضي هو اللغة الإنجليزية
+                        } else {
+                            input.checked = false;
+                        }
+                    } else if (input.tagName === 'SELECT') {
+                        input.selectedIndex = 0;
+                    } else {
+                        input.value = '';
+                    }
+                } else if (input.name && input.name.includes('id')) {
+                    input.value = ''; // تفريغ معرف السجل
+                }
+            });
+
+            // إعادة تعيين عنوان الكفاءة اللغوية
+            const title = newForm.querySelector('.language-title');
+            if (title) {
+                title.innerText = 'كفاءة لغوية جديدة';
+            }
+
+            // التأكد من إظهار زر الحذف
+            const deleteBtn = newForm.querySelector('.delete-language');
+            deleteBtn.style.display = 'inline-block';
+
+            // إضافة النموذج للصفحة
+            formset.appendChild(newForm);
+
+            // تحديث عدد النماذج
+            totalFormsInput.value = totalForms + 1;
+
+            // إضافة مستمعي الأحداث للنموذج الجديد
+            initializeLanguageForm(newForm);
+
+            // تحديث حقول اللغة
+            updateLanguageFields();
+        } else {
+            alert('{% trans "تم الوصول للحد الأقصى من الكفاءات اللغوية" %}');
         }
-        
-        if (oldId) {
-          const newId = oldId.replace(/-\d+-/, `-${totalForms}-`);
-          input.setAttribute('id', newId);
-        }
-        
-        // إعادة تعيين القيم
-        if (input.type !== 'hidden') {
-          if (input.type === 'checkbox') {
-            input.checked = false;
-          } else {
-            input.value = '';
-          }
-        }
-      });
-      
-      // إعادة تعيين المسميات
-      newForm.querySelectorAll('label').forEach(label => {
-        const forAttr = label.getAttribute('for');
-        if (forAttr) {
-          const newFor = forAttr.replace(/-\d+-/, `-${totalForms}-`);
-          label.setAttribute('for', newFor);
-        }
-      });
-      
-      // إخفاء العنصر المخفي DELETE
-      const deleteCheckbox = newForm.querySelector('input[id$="-DELETE"]');
-      if (deleteCheckbox) {
-        deleteCheckbox.checked = false;
-      }
-      
-      // إعادة تعيين عنوان اللغة
-      const languageTitle = newForm.querySelector('.language-title');
-      languageTitle.innerText = '{% trans "لغة جديدة" %}';
-      
-      // افتراض أن اللغة الجديدة ليست الإنجليزية (لأن الإنجليزية يجب أن تكون موجودة بالفعل)
-      const isEnglishCheckbox = newForm.querySelector('input[id$="-is_english"]');
-      isEnglishCheckbox.checked = false;
-      
-      // إضافة المستمع لنوع اللغة
-      isEnglishCheckbox.addEventListener('change', toggleLanguageFields);
-      
-      // إضافة مستمع لزر الحذف
-      const deleteBtn = newForm.querySelector('.delete-language');
-      deleteBtn.style.display = 'inline-block';
-      deleteBtn.addEventListener('click', function() {
-        deleteLanguage(newForm);
-      });
-      
-      // إضافة النموذج الجديد للمستند
-      formset.appendChild(newForm);
-      
-      // تحديث عدد النماذج الكلي
-      totalFormsInput.value = totalForms + 1;
-      
-      // تنفيذ toggleLanguageFields بعد إضافة النموذج
-      toggleLanguageFields();
-    } else {
-      alert('{% trans "تم الوصول للحد الأقصى من اللغات" %}');
-    }
-  });
-  
-  // حذف لغة
-  function deleteLanguage(row) {
-    const totalForms = parseInt(totalFormsInput.value);
-    
-    // إذا كان هناك أكثر من نموذج واحد
-    if (totalForms > 1) {
-      const deleteCheckbox = row.querySelector('input[id$="-DELETE"]');
-      if (deleteCheckbox) {
-        deleteCheckbox.checked = true;
-      }
-      row.style.display = 'none';
-    } else {
-      alert('{% trans "يجب إضافة لغة واحدة على الأقل" %}');
-    }
-  }
-  
-  // إضافة مستمعي الأحداث لأزرار الحذف
-  formset.querySelectorAll('.delete-language').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const row = this.closest('.language-row');
-      deleteLanguage(row);
     });
-  });
+
+    // تهيئة مستمعي الأحداث لكل نموذج
+    formset.querySelectorAll('.language-row').forEach(row => {
+        initializeLanguageForm(row);
+    });
+
+    // دالة لتهيئة النموذج
+    function initializeLanguageForm(form) {
+        // مستمع حدث للحذف
+        const deleteBtn = form.querySelector('.delete-language');
+        deleteBtn.addEventListener('click', function() {
+            deleteLanguage(form);
+        });
+
+        // مستمع حدث لتغيير نوع اللغة
+        const isEnglishCheckbox = form.querySelector('input[id$="-is_english"]');
+        isEnglishCheckbox.addEventListener('change', function() {
+            toggleLanguageFields(form);
+        });
+
+        // مستمع حدث لتغيير نوع اختبار اللغة الإنجليزية
+        const testTypeSelect = form.querySelector('select[id$="-test_type"]');
+        if (testTypeSelect) {
+            testTypeSelect.addEventListener('change', function() {
+                toggleOtherTestField(form);
+            });
+        }
+
+        // مستمع حدث لتغيير نوع اللغة الأخرى
+        const otherLanguageSelect = form.querySelector('select[id$="-other_language"]');
+        if (otherLanguageSelect) {
+            otherLanguageSelect.addEventListener('change', function() {
+                toggleOtherLanguageNameField(form);
+            });
+        }
+    }
+
+    // دالة لحذف كفاءة لغوية
+    function deleteLanguage(row) {
+        const totalForms = parseInt(totalFormsInput.value);
+
+        // إذا كان هذا النموذج الوحيد، لا نسمح بحذفه
+        if (totalForms <= 1) {
+            alert('{% trans "يجب إضافة كفاءة لغوية واحدة على الأقل" %}');
+            return;
+        }
+
+        // تعليم النموذج للحذف
+        const deleteCheckbox = row.querySelector('input[id$="-DELETE"]');
+        if (deleteCheckbox) {
+            deleteCheckbox.checked = true;
+        }
+
+        // إخفاء النموذج
+        row.style.display = 'none';
+    }
+
+    // دالة لتبديل حقول اللغة
+    function toggleLanguageFields(form) {
+        const isEnglish = form.querySelector('input[id$="-is_english"]').checked;
+
+        // حقول اللغة الإنجليزية
+        const englishFields = form.querySelector('.english-fields');
+        englishFields.style.display = isEnglish ? 'block' : 'none';
+
+        // حقول اللغات الأخرى
+        const otherLanguageFields = form.querySelector('.other-language-fields');
+        otherLanguageFields.style.display = isEnglish ? 'none' : 'block';
+    }
+
+    // دالة لتبديل حقل اسم الاختبار الآخر
+    function toggleOtherTestField(form) {
+        const testType = form.querySelector('select[id$="-test_type"]').value;
+        const otherTestField = form.querySelector('.other-test-field');
+
+        otherTestField.style.display = testType === 'other' ? 'block' : 'none';
+    }
+
+    // دالة لتبديل حقل اسم اللغة الأخرى
+    function toggleOtherLanguageNameField(form) {
+        const otherLanguage = form.querySelector('select[id$="-other_language"]').value;
+        const otherLanguageNameField = form.querySelector('.other-language-name-field');
+
+        otherLanguageNameField.style.display = otherLanguage === 'other' ? 'block' : 'none';
+    }
+
+    // دالة لتحديث حقول جميع نماذج اللغة
+    function updateLanguageFields() {
+        formset.querySelectorAll('.language-row').forEach(row => {
+            toggleLanguageFields(row);
+            toggleOtherTestField(row);
+            toggleOtherLanguageNameField(row);
+        });
+    }
 });
 {% endblock %}

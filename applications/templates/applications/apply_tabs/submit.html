@@ -5,156 +5,135 @@
 {% block application_content %}
 <h4 class="mb-4">{% trans "تقديم الطلب" %}</h4>
 
-{% if is_complete %}
-  <div class="alert alert-success mb-4">
-    <div class="d-flex">
-      <div class="me-3">
-        <i class="fas fa-check-circle fa-3x text-success"></i>
-      </div>
-      <div>
-        <h5 class="alert-heading">{% trans "الطلب جاهز للتقديم" %}</h5>
-        <p class="mb-0">{% trans "لقد أكملت جميع خطوات التقديم المطلوبة وأرفقت جميع المستندات الضرورية. يمكنك الآن تقديم الطلب." %}</p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light">
-      <h5 class="mb-0">{% trans "ملخص الطلب" %}</h5>
-    </div>
-    <div class="card-body">
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <div class="border rounded p-3 text-center h-100">
-            <i class="fas fa-user-graduate text-primary fa-2x mb-2"></i>
-            <h5>{{ application.applicant.get_full_name }}</h5>
-            <p class="mb-0 text-muted">{% trans "المتقدم" %}</p>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="border rounded p-3 text-center h-100">
-            <i class="fas fa-graduation-cap text-success fa-2x mb-2"></i>
-            <h5>{{ academic_qualifications.count }}</h5>
-            <p class="mb-0 text-muted">{% trans "المؤهلات الأكاديمية" %}</p>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="border rounded p-3 text-center h-100">
-            <i class="fas fa-file-alt text-danger fa-2x mb-2"></i>
-            <h5>{{ documents.count }}</h5>
-            <p class="mb-0 text-muted">{% trans "المستندات المرفقة" %}</p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="alert alert-warning mt-3">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        {% trans "يرجى التأكد من صحة جميع المعلومات قبل التقديم. لن يمكنك تعديل الطلب بعد الموافقة عليه من قبل المشرفين." %}
-      </div>
-    </div>
-  </div>
-  
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light">
-      <h5 class="mb-0">{% trans "إقرار وتعهد" %}</h5>
-    </div>
-    <div class="card-body">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="termsCheck">
-        <label class="form-check-label" for="termsCheck">
-          {% trans "أقر بأن جميع المعلومات والمستندات المقدمة في هذا الطلب صحيحة وكاملة. أتحمل المسؤولية القانونية في حال ثبوت عدم صحة أي من هذه المعلومات." %}
-        </label>
-      </div>
-      
-      <div class="form-check mt-2">
-        <input class="form-check-input" type="checkbox" id="privacyCheck">
-        <label class="form-check-label" for="privacyCheck">
-          {% trans "أوافق على استخدام بياناتي الشخصية لغرض معالجة طلب الابتعاث وفقًا لسياسة الخصوصية." %}
-        </label>
-      </div>
-    </div>
-  </div>
-  
-  <form method="post" id="submitForm">
-    {% csrf_token %}
-    <div class="d-flex justify-content-between">
-      <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=preview" class="btn btn-outline-secondary btn-steps">
-        <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
-      </a>
-      <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
-        <i class="fas fa-paper-plane me-1"></i> {% if is_update %}{% trans "تحديث الطلب" %}{% else %}{% trans "تقديم الطلب" %}{% endif %}
-      </button>
-    </div>
-  </form>
+{% if not is_complete %}
+<div class="alert alert-danger mb-4">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    {% trans "يرجى استكمال البيانات المطلوبة قبل تقديم الطلب:" %}
+    <ul class="mt-2 mb-0">
+        {% for field in missing_fields %}
+        <li>{{ field }}</li>
+        {% endfor %}
+    </ul>
+</div>
 {% else %}
-  <div class="alert alert-danger mb-4">
-    <div class="d-flex">
-      <div class="me-3">
-        <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
-      </div>
-      <div>
-        <h5 class="alert-heading">{% trans "الطلب غير مكتمل" %}</h5>
-        <p class="mb-0">{% trans "لا يمكن تقديم الطلب في الوقت الحالي. يرجى إكمال الخطوات التالية:" %}</p>
-        
-        <ul class="mt-3">
-          {% for field in missing_fields %}
-          <li>{{ field }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-  </div>
-  
-  <div class="d-flex justify-content-between mt-4">
-    <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=preview" class="btn btn-outline-secondary btn-steps">
-      <i class="fas fa-arrow-right me-1"></i> {% trans "السابق" %}
-    </a>
-    <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=preview" class="btn btn-primary btn-steps">
-      <i class="fas fa-eye me-1"></i> {% trans "مراجعة الطلب" %}
-    </a>
-  </div>
+<div class="alert alert-success mb-4">
+    <i class="fas fa-check-circle me-2"></i>
+    {% trans "تم استكمال جميع البيانات المطلوبة. يمكنك الآن تقديم الطلب." %}
+</div>
 {% endif %}
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">{% trans "ملخص الطلب" %}</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th width="30%">{% trans "فرصة الابتعاث" %}</th>
+                <td>{{ scholarship.title }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "التخصص" %}</th>
+                <td>{{ scholarship.major }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "المؤهلات الأكاديمية" %}</th>
+                <td>
+                    <ul class="list-unstyled">
+                        {% for qualification in high_school_qualifications %}
+                        <li><i class="fas fa-graduation-cap me-2"></i> {% trans "الثانوية العامة:" %} {{ qualification.certificate_type }} ({{ qualification.graduation_year }})</li>
+                        {% endfor %}
+
+                        {% for qualification in bachelor_qualifications %}
+                        <li><i class="fas fa-graduation-cap me-2"></i> {% trans "البكالوريوس:" %} {{ qualification.major }} - {{ qualification.institution_name }}</li>
+                        {% endfor %}
+
+                        {% for qualification in master_qualifications %}
+                        <li><i class="fas fa-graduation-cap me-2"></i> {% trans "الماجستير:" %} {{ qualification.major }} - {{ qualification.institution_name }}</li>
+                        {% endfor %}
+
+                        {% for certificate in other_certificates %}
+                        <li><i class="fas fa-certificate me-2"></i> {{ certificate.get_certificate_type_display }}: {{ certificate.certificate_name }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <th>{% trans "الكفاءة اللغوية" %}</th>
+                <td>
+                    <ul class="list-unstyled">
+                        {% for proficiency in language_proficiencies %}
+                        <li>
+                            <i class="fas fa-language me-2"></i>
+                            {% if proficiency.is_english %}
+                            {% trans "اللغة الإنجليزية:" %} {{ proficiency.get_test_type_display }} ({{ proficiency.overall_score }})
+                            {% else %}
+                            {{ proficiency.get_other_language_display }}: {{ proficiency.get_proficiency_level_display }}
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <th>{% trans "المستندات المرفقة" %}</th>
+                <td>
+                    <span class="badge bg-primary">{{ documents.count }}</span> {% trans "مستند" %}
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">{% trans "إقرار وتعهد" %}</h5>
+    </div>
+    <div class="card-body">
+        <p class="mb-1">{% trans "أقر أنا الموقع أدناه بأن جميع المعلومات المقدمة في هذا الطلب صحيحة ودقيقة." %}</p>
+        <p class="mb-1">{% trans "وأتعهد بالالتزام بكافة الأنظمة واللوائح المعمول بها في برنامج الابتعاث." %}</p>
+        <p class="mb-1">{% trans "وأقر بأنني على علم بأن تقديم معلومات غير صحيحة قد يؤدي إلى إلغاء الطلب أو إنهاء البعثة في حال قبولي." %}</p>
+    </div>
+</div>
+
+<form method="post" id="submitForm">
+    {% csrf_token %}
+    <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" id="agreement" required {% if not is_complete %}disabled{% endif %}>
+        <label class="form-check-label" for="agreement">
+            {% trans "أوافق على الإقرار والتعهد المذكور أعلاه وأؤكد رغبتي في تقديم الطلب" %}
+        </label>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% if is_update %}{% url 'applications:update_application_tabs' application.id %}{% else %}{% url 'applications:apply_tabs' scholarship.id %}{% endif %}?step=preview" class="btn btn-outline-secondary btn-steps">
+            <i class="fas fa-arrow-right me-1"></i> {% trans "السابق: معاينة الطلب" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-steps" {% if not is_complete %}disabled{% endif %}>
+            <i class="fas fa-paper-plane me-1"></i>
+            {% if is_update %}
+            {% trans "تحديث الطلب" %}
+            {% else %}
+            {% trans "تقديم الطلب" %}
+            {% endif %}
+        </button>
+    </div>
+</form>
 {% endblock %}
 
 {% block step_js %}
-// تنفيذ عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
-  // إذا كان الطلب مكتمل، التحقق من صناديق الاختيار
-  const termsCheck = document.getElementById('termsCheck');
-  const privacyCheck = document.getElementById('privacyCheck');
-  const submitBtn = document.getElementById('submitBtn');
-  
-  if (termsCheck && privacyCheck && submitBtn) {
-    // تحديث حالة زر التقديم
-    function updateSubmitButtonState() {
-      submitBtn.disabled = !(termsCheck.checked && privacyCheck.checked);
-    }
-    
-    // إضافة مستمعي الأحداث لصناديق الاختيار
-    termsCheck.addEventListener('change', updateSubmitButtonState);
-    privacyCheck.addEventListener('change', updateSubmitButtonState);
-    
-    // التحقق من صناديق الاختيار عند تحميل الصفحة
-    updateSubmitButtonState();
-    
-    // تأكيد التقديم
+    // التحقق من موافقة المستخدم قبل تقديم النموذج
     const submitForm = document.getElementById('submitForm');
-    if (submitForm) {
-      submitForm.addEventListener('submit', function(event) {
-        if (!termsCheck.checked || !privacyCheck.checked) {
-          event.preventDefault();
-          alert('{% trans "يرجى الموافقة على الشروط والأحكام قبل التقديم" %}');
-          return false;
-        }
-        
-        if (!confirm('{% trans "هل أنت متأكد من رغبتك في تقديم الطلب؟ لن تتمكن من تعديل بعض المعلومات بعد التقديم." %}')) {
-          event.preventDefault();
-          return false;
-        }
-        
-        return true;
-      });
+    const agreementCheckbox = document.getElementById('agreement');
+
+    if (submitForm && agreementCheckbox) {
+        submitForm.addEventListener('submit', function(e) {
+            if (!agreementCheckbox.checked) {
+                e.preventDefault();
+                alert('{% trans "يرجى الموافقة على الإقرار والتعهد قبل تقديم الطلب" %}');
+            }
+        });
     }
-  }
 });
 {% endblock %}

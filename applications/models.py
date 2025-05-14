@@ -15,8 +15,6 @@ class ApplicationStatus(models.Model):
     name = models.CharField(_("اسم الحالة"), max_length=100)
     description = models.TextField(_("الوصف"), blank=True, null=True)
     order = models.PositiveSmallIntegerField(_("الترتيب"), default=0)
-
-    # إضافة علامة لتحديد ما إذا كانت الحالة تتطلب مرفقات
     requires_attachment = models.BooleanField(_("تتطلب مرفقات"), default=False)
 
     class Meta:
@@ -26,19 +24,6 @@ class ApplicationStatus(models.Model):
 
     def __str__(self):
         return self.name
-
-
-# الحالات المطلوبة للنظام الجديد:
-# 1. تم التقديم (order=1)
-# 2. قيد المراجعة (order=2)
-# 3. مطابق للشروط (order=3)
-# 4. غير مطابق للشروط (order=4)
-# 5. موافق من اللجنة العليا (order=5، requires_attachment=True)
-# 6. غير موافق من اللجنة العليا (order=6)
-# 7. موافق من مجلس الكلية (order=7، requires_attachment=True)
-# 8. غير موافق من مجلس الكلية (order=8)
-# 9. موافق من رئيس الجامعة (order=9، requires_attachment=True)
-# 10. غير موافق من رئيس الجامعة (order=10)
 
 
 class Application(models.Model):
@@ -60,15 +45,13 @@ class Application(models.Model):
     acceptance_letter = models.BooleanField(_("هل لديك قبول مبدئي؟"), default=False)
     acceptance_university = models.CharField(_("اسم الجامعة التي لديك قبول فيها"), max_length=200, blank=True,
                                              null=True)
-
-    # حقل جديد للملاحظات الإدارية عند مطابقة الشروط
     admin_notes = models.TextField(_("ملاحظات إدارية"), blank=True, null=True)
 
     class Meta:
         verbose_name = _("طلب ابتعاث")
         verbose_name_plural = _("طلبات الابتعاث")
         ordering = ['-application_date']
-        unique_together = ['scholarship', 'applicant']  # لا يمكن للمستخدم التقديم على نفس الفرصة مرتين
+        unique_together = ['scholarship', 'applicant']
 
     def __str__(self):
         return f"{self.applicant.get_full_name()} - {self.scholarship.title}"
@@ -77,100 +60,14 @@ class Application(models.Model):
         return reverse('applications:application_detail', args=[self.id])
 
 
-class AcademicQualification(models.Model):
-    """نموذج المؤهلات الأكاديمية"""
-    application = models.ForeignKey(Application, verbose_name=_("الطلب"), on_delete=models.CASCADE,
-                                    related_name="academic_qualifications")
-    QUALIFICATION_TYPE_CHOICES = [
-        ('high_school', _('الثانوية العامة')),
-        ('bachelors', _('البكالوريوس')),
-        ('masters', _('الماجستير')),
-        ('other', _('شهادة أخرى')),
-    ]
-    qualification_type = models.CharField(_("نوع المؤهل"), max_length=20, choices=QUALIFICATION_TYPE_CHOICES)
-
-    # حقول الثانوية العامة
-    high_school_certificate_type = models.CharField(_("نوع الشهادة"), max_length=50, blank=True, null=True,
-                                                    help_text=_("مثل: أردنية، سعودية، بكالوريا دولية، إلخ"))
-    high_school_branch = models.CharField(_("الفرع/التخصص"), max_length=50, blank=True, null=True,
-                                          help_text=_("مثل: علمي، أدبي، تجاري، إلخ"))
-    high_school_graduation_year = models.IntegerField(_("سنة التخرج - الثانوية"),
-                                                      validators=[MinValueValidator(1950), MaxValueValidator(2030)],
-                                                      blank=True, null=True)
-    high_school_gpa = models.DecimalField(_("المعدل - الثانوية"), max_digits=5, decimal_places=2, blank=True, null=True,
-                                          help_text=_("بالنسبة المئوية"))
-    high_school_country = models.CharField(_("بلد الدراسة - الثانوية"), max_length=100, blank=True, null=True)
-
-    # حقول البكالوريوس
-    bachelor_institution_name = models.CharField(_("اسم المؤسسة/الجامعة - البكالوريوس"), max_length=200, blank=True,
-                                                 null=True)
-    bachelor_major = models.CharField(_("التخصص - البكالوريوس"), max_length=200, blank=True, null=True)
-    bachelor_graduation_year = models.IntegerField(_("سنة التخرج - البكالوريوس"),
-                                                   validators=[MinValueValidator(1950), MaxValueValidator(2030)],
-                                                   blank=True, null=True)
-    bachelor_gpa = models.DecimalField(_("المعدل - البكالوريوس"), max_digits=5, decimal_places=2, blank=True, null=True,
-                                       help_text=_("بالنسبة المئوية"))
-    GRADE_CHOICES = [
-        ('excellent', _('ممتاز')),
-        ('very_good', _('جيد جداً')),
-        ('good', _('جيد')),
-        ('acceptable', _('مقبول')),
-    ]
-    bachelor_grade = models.CharField(_("التقدير - البكالوريوس"), max_length=20, choices=GRADE_CHOICES, blank=True,
-                                      null=True)
-    bachelor_country = models.CharField(_("بلد الدراسة - البكالوريوس"), max_length=100, blank=True, null=True)
-
-    # حقول الماجستير
-    masters_institution_name = models.CharField(_("اسم المؤسسة/الجامعة - الماجستير"), max_length=200, blank=True,
-                                                null=True)
-    masters_major = models.CharField(_("التخصص - الماجستير"), max_length=200, blank=True, null=True)
-    masters_graduation_year = models.IntegerField(_("سنة التخرج - الماجستير"),
-                                                  validators=[MinValueValidator(1950), MaxValueValidator(2030)],
-                                                  blank=True, null=True)
-    masters_gpa = models.DecimalField(_("المعدل - الماجستير"), max_digits=5, decimal_places=2, blank=True, null=True,
-                                      help_text=_("بالنسبة المئوية"))
-    masters_grade = models.CharField(_("التقدير - الماجستير"), max_length=20, choices=GRADE_CHOICES, blank=True,
-                                     null=True)
-    masters_country = models.CharField(_("بلد الدراسة - الماجستير"), max_length=100, blank=True, null=True)
-
-    # حقول الشهادة الأخرى
-    certificate_graduation_year = models.IntegerField(_("سنة التخرج - الشهادة"),
-                                                      validators=[MinValueValidator(1950), MaxValueValidator(2030)],
-                                                      blank=True, null=True)
-
-    # حقول مشتركة (للتوافق الخلفي، سيتم إزالتها لاحقاً)
-    institution_name = models.CharField(_("اسم المؤسسة/الجامعة"), max_length=200, blank=True, null=True)
-    major = models.CharField(_("التخصص"), max_length=200, blank=True, null=True)
+# نموذج المؤهل الأكاديمي الأساسي - للوراثة
+class BaseQualification(models.Model):
+    """نموذج المؤهل الأكاديمي الأساسي"""
+    # احذف حقل application من هنا واجعله في كل نموذج متخصص
     graduation_year = models.IntegerField(_("سنة التخرج"),
-                                          validators=[MinValueValidator(1950), MaxValueValidator(2030)],
-                                          blank=True, null=True)
-    gpa = models.DecimalField(_("المعدل"), max_digits=5, decimal_places=2, blank=True, null=True,
-                              help_text=_("بالنسبة المئوية"))
-    grade = models.CharField(_("التقدير"), max_length=20, choices=GRADE_CHOICES, blank=True, null=True)
-    country = models.CharField(_("بلد الدراسة"), max_length=100, blank=True, null=True)
-
-    # حقول خاصة بالبكالوريوس
-    STUDY_SYSTEM_CHOICES = [
-        ('regular', _('انتظام')),
-        ('distance', _('انتساب')),
-    ]
-    study_system = models.CharField(_("نظام الدراسة"), max_length=20, choices=STUDY_SYSTEM_CHOICES,
-                                    blank=True, null=True)
-
-    BACHELOR_TYPE_CHOICES = [
-        ('regular', _('عادية')),
-        ('bridge', _('تجسير')),
-    ]
-    bachelor_type = models.CharField(_("نوع الشهادة"), max_length=20, choices=BACHELOR_TYPE_CHOICES,
-                                     blank=True, null=True)
-
-    # حقول خاصة بالماجستير
-    MASTERS_SYSTEM_CHOICES = [
-        ('thesis', _('مسار الرسالة')),
-        ('comprehensive', _('مسار الشامل')),
-    ]
-    masters_system = models.CharField(_("نظام الدراسة"), max_length=20, choices=MASTERS_SYSTEM_CHOICES,
-                                      blank=True, null=True)
+                                      validators=[MinValueValidator(1950), MaxValueValidator(2030)])
+    country = models.CharField(_("بلد الدراسة"), max_length=100)
+    additional_info = models.TextField(_("معلومات إضافية"), blank=True, null=True)
 
     LANGUAGE_CHOICES = [
         ('arabic', _('عربي')),
@@ -180,41 +77,122 @@ class AcademicQualification(models.Model):
     study_language = models.CharField(_("لغة الدراسة"), max_length=20, choices=LANGUAGE_CHOICES,
                                       blank=True, null=True)
 
-    # حقول خاصة بالشهادات الأخرى
+    class Meta:
+        abstract = True
+
+
+class HighSchoolQualification(BaseQualification):
+    """نموذج مؤهل الثانوية العامة"""
+    application = models.ForeignKey(Application, verbose_name=_("الطلب"), on_delete=models.CASCADE,
+                                    related_name="high_school_qualifications")
+    certificate_type = models.CharField(_("نوع الشهادة"), max_length=50,
+                                        help_text=_("مثل: أردنية، سعودية، بكالوريا دولية، إلخ"))
+    branch = models.CharField(_("الفرع/التخصص"), max_length=50,
+                              help_text=_("مثل: علمي، أدبي، تجاري، إلخ"))
+    gpa = models.DecimalField(_("المعدل"), max_digits=5, decimal_places=2,
+                              help_text=_("بالنسبة المئوية"))
+
+    class Meta:
+        verbose_name = _("مؤهل الثانوية العامة")
+        verbose_name_plural = _("مؤهلات الثانوية العامة")
+        ordering = ['-graduation_year']
+
+    def __str__(self):
+        return f"الثانوية العامة - {self.certificate_type} ({self.graduation_year})"
+
+
+
+class BachelorQualification(BaseQualification):
+    """نموذج مؤهل البكالوريوس"""
+    application = models.ForeignKey(Application, verbose_name=_("الطلب"), on_delete=models.CASCADE,
+                                    related_name="bachelor_qualifications")
+    institution_name = models.CharField(_("اسم المؤسسة/الجامعة"), max_length=200)
+    major = models.CharField(_("التخصص"), max_length=200)
+    gpa = models.DecimalField(_("المعدل"), max_digits=5, decimal_places=2,
+                              help_text=_("بالنسبة المئوية"))
+
+    GRADE_CHOICES = [
+        ('excellent', _('ممتاز')),
+        ('very_good', _('جيد جداً')),
+        ('good', _('جيد')),
+        ('acceptable', _('مقبول')),
+    ]
+    grade = models.CharField(_("التقدير"), max_length=20, choices=GRADE_CHOICES)
+
+    STUDY_SYSTEM_CHOICES = [
+        ('regular', _('انتظام')),
+        ('distance', _('انتساب')),
+    ]
+    study_system = models.CharField(_("نظام الدراسة"), max_length=20, choices=STUDY_SYSTEM_CHOICES)
+
+    BACHELOR_TYPE_CHOICES = [
+        ('regular', _('عادية')),
+        ('bridge', _('تجسير')),
+    ]
+    bachelor_type = models.CharField(_("نوع الشهادة"), max_length=20, choices=BACHELOR_TYPE_CHOICES)
+
+    class Meta:
+        verbose_name = _("مؤهل البكالوريوس")
+        verbose_name_plural = _("مؤهلات البكالوريوس")
+        ordering = ['-graduation_year']
+
+    def __str__(self):
+        return f"البكالوريوس - {self.major} ({self.institution_name})"
+
+
+class MasterQualification(BaseQualification):
+    """نموذج مؤهل الماجستير"""
+    application = models.ForeignKey(Application, verbose_name=_("الطلب"), on_delete=models.CASCADE,
+                                    related_name="master_qualifications")
+    institution_name = models.CharField(_("اسم المؤسسة/الجامعة"), max_length=200)
+    major = models.CharField(_("التخصص"), max_length=200)
+    gpa = models.DecimalField(_("المعدل"), max_digits=5, decimal_places=2,
+                              help_text=_("بالنسبة المئوية"))
+
+    GRADE_CHOICES = [
+        ('excellent', _('ممتاز')),
+        ('very_good', _('جيد جداً')),
+        ('good', _('جيد')),
+        ('acceptable', _('مقبول')),
+    ]
+    grade = models.CharField(_("التقدير"), max_length=20, choices=GRADE_CHOICES)
+
+    MASTERS_SYSTEM_CHOICES = [
+        ('thesis', _('مسار الرسالة')),
+        ('comprehensive', _('مسار الشامل')),
+    ]
+    masters_system = models.CharField(_("نظام الدراسة"), max_length=20, choices=MASTERS_SYSTEM_CHOICES)
+
+    class Meta:
+        verbose_name = _("مؤهل الماجستير")
+        verbose_name_plural = _("مؤهلات الماجستير")
+        ordering = ['-graduation_year']
+
+    def __str__(self):
+        return f"الماجستير - {self.major} ({self.institution_name})"
+
+
+class OtherCertificate(BaseQualification):
+    """نموذج الشهادات الأخرى"""
     CERTIFICATE_TYPE_CHOICES = [
         ('diploma', _('دبلوم')),
         ('professional', _('شهادة مهنية')),
         ('training', _('دورة تدريبية')),
         ('other', _('أخرى')),
     ]
-    certificate_type = models.CharField(_("نوع الشهادة"), max_length=20, choices=CERTIFICATE_TYPE_CHOICES,
-                                        blank=True, null=True)
-    certificate_name = models.CharField(_("اسم الشهادة"), max_length=200, blank=True, null=True)
-    certificate_issuer = models.CharField(_("الجهة المانحة"), max_length=200, blank=True, null=True)
-
-    # معلومات إضافية
-    additional_info = models.TextField(_("معلومات إضافية"), blank=True, null=True)
-
-    # الوثائق المرفقة - سيتم ربطها من خلال نموذج المستندات Document
+    application = models.ForeignKey(Application, verbose_name=_("الطلب"), on_delete=models.CASCADE,
+                                    related_name="other_certificates")
+    certificate_type = models.CharField(_("نوع الشهادة"), max_length=20, choices=CERTIFICATE_TYPE_CHOICES)
+    certificate_name = models.CharField(_("اسم الشهادة"), max_length=200)
+    certificate_issuer = models.CharField(_("الجهة المانحة"), max_length=200)
 
     class Meta:
-        verbose_name = _("مؤهل أكاديمي")
-        verbose_name_plural = _("المؤهلات الأكاديمية")
-        ordering = ['qualification_type', '-graduation_year']
+        verbose_name = _("شهادة أخرى")
+        verbose_name_plural = _("شهادات أخرى")
+        ordering = ['-graduation_year']
 
     def __str__(self):
-        qualification_types = dict(self.QUALIFICATION_TYPE_CHOICES)
-        qualification_type_display = qualification_types.get(self.qualification_type, self.qualification_type)
-
-        if self.qualification_type == 'high_school':
-            return f"{qualification_type_display} - {self.high_school_certificate_type} ({self.high_school_graduation_year or self.graduation_year})"
-        elif self.qualification_type in ['bachelors', 'masters']:
-            if self.qualification_type == 'bachelors':
-                return f"{qualification_type_display} - {self.bachelor_major or self.major} ({self.bachelor_institution_name or self.institution_name})"
-            else:  # masters
-                return f"{qualification_type_display} - {self.masters_major or self.major} ({self.masters_institution_name or self.institution_name})"
-        else:
-            return f"{qualification_type_display} - {self.certificate_name} ({self.certificate_issuer})"
+        return f"{self.get_certificate_type_display()} - {self.certificate_name} ({self.certificate_issuer})"
 
 
 class LanguageProficiency(models.Model):
@@ -354,10 +332,22 @@ class Document(models.Model):
     upload_date = models.DateTimeField(_("تاريخ الرفع"), auto_now_add=True)
     is_required = models.BooleanField(_("مطلوب"), default=True)
 
-    # ربط المستند بمؤهل أكاديمي (اختياري)
-    academic_qualification = models.ForeignKey(AcademicQualification, verbose_name=_("المؤهل الأكاديمي"),
+    # ربط المستند بالمؤهلات الأكاديمية الجديدة
+    high_school_qualification = models.ForeignKey(HighSchoolQualification, verbose_name=_("مؤهل الثانوية العامة"),
+                                                  on_delete=models.SET_NULL, null=True, blank=True,
+                                                  related_name="documents")
+
+    bachelor_qualification = models.ForeignKey(BachelorQualification, verbose_name=_("مؤهل البكالوريوس"),
                                                on_delete=models.SET_NULL, null=True, blank=True,
                                                related_name="documents")
+
+    master_qualification = models.ForeignKey(MasterQualification, verbose_name=_("مؤهل الماجستير"),
+                                             on_delete=models.SET_NULL, null=True, blank=True,
+                                             related_name="documents")
+
+    other_certificate = models.ForeignKey(OtherCertificate, verbose_name=_("شهادة أخرى"),
+                                          on_delete=models.SET_NULL, null=True, blank=True,
+                                          related_name="documents")
 
     # ربط المستند بكفاءة لغوية (اختياري)
     language_proficiency = models.ForeignKey(LanguageProficiency, verbose_name=_("الكفاءة اللغوية"),

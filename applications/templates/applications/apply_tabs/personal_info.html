@@ -6,65 +6,65 @@
 {% block application_content %}
 <h4 class="mb-4">{% trans "المعلومات الأساسية" %}</h4>
 
-<div class="alert alert-info mb-4">
-  <i class="fas fa-info-circle me-2"></i>
-  {% trans "يرجى تعبئة المعلومات الأساسية التالية الخاصة بطلب الابتعاث." %}
-</div>
-
 <form method="post">
-  {% csrf_token %}
-  
-  <div class="row">
-    <div class="col-md-12 mb-4">
-      {{ form.motivation_letter|as_crispy_field }}
+    {% csrf_token %}
+
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            {{ form.motivation_letter|as_crispy_field }}
+        </div>
+
+        <div class="col-md-12 mb-3">
+            {{ form.research_proposal|as_crispy_field }}
+        </div>
+
+        <div class="col-md-12 mb-3">
+            {{ form.comments|as_crispy_field }}
+        </div>
+
+        <div class="col-md-12 mb-3">
+            <div class="form-check">
+                {{ form.acceptance_letter }}
+                <label class="form-check-label" for="{{ form.acceptance_letter.id_for_label }}">
+                    {{ form.acceptance_letter.label }}
+                </label>
+            </div>
+        </div>
+
+        <div class="col-md-12 mb-3 acceptance-university-field">
+            {{ form.acceptance_university|as_crispy_field }}
+        </div>
     </div>
-    
-    <div class="col-md-12 mb-4">
-      {{ form.research_proposal|as_crispy_field }}
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'announcements:scholarship_detail' scholarship.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> {% trans "إلغاء" %}
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-1"></i> {% trans "التالي: المؤهلات الأكاديمية" %}
+        </button>
     </div>
-    
-    <div class="col-md-12 mb-4">
-      <div class="form-group">
-        {{ form.acceptance_letter|as_crispy_field }}
-      </div>
-    </div>
-    
-    <div class="col-md-12 mb-4" id="university_field" style="display: none;">
-      {{ form.acceptance_university|as_crispy_field }}
-    </div>
-    
-    <div class="col-md-12 mb-4">
-      {{ form.comments|as_crispy_field }}
-    </div>
-  </div>
-  
-  <div class="d-flex justify-content-between mt-4">
-    <a href="{% url 'announcements:scholarship_detail' scholarship.id %}" class="btn btn-outline-secondary btn-steps">
-      <i class="fas fa-times me-1"></i> {% trans "إلغاء" %}
-    </a>
-    <button type="submit" class="btn btn-primary btn-steps">
-      <i class="fas fa-arrow-left me-1"></i> {% trans "التالي: المؤهلات الأكاديمية" %}
-    </button>
-  </div>
 </form>
 {% endblock %}
 
 {% block step_js %}
-// إظهار/إخفاء حقل اسم الجامعة عند تغيير حالة خطاب القبول
-const acceptanceCheckbox = document.getElementById('id_acceptance_letter');
-const universityField = document.getElementById('university_field');
+// إظهار/إخفاء حقل الجامعة حسب اختيار وجود قبول مبدئي
+document.addEventListener('DOMContentLoaded', function() {
+    const acceptanceLetterCheckbox = document.getElementById('id_acceptance_letter');
+    const acceptanceUniversityField = document.querySelector('.acceptance-university-field');
 
-function toggleUniversityField() {
-  if (acceptanceCheckbox.checked) {
-    universityField.style.display = 'block';
-  } else {
-    universityField.style.display = 'none';
-  }
-}
+    function toggleAcceptanceUniversityField() {
+        if (acceptanceLetterCheckbox.checked) {
+            acceptanceUniversityField.style.display = 'block';
+        } else {
+            acceptanceUniversityField.style.display = 'none';
+        }
+    }
 
-// التحقق من الحالة الأولية
-if (acceptanceCheckbox) {
-  toggleUniversityField();
-  acceptanceCheckbox.addEventListener('change', toggleUniversityField);
-}
+    // التنفيذ عند تحميل الصفحة
+    toggleAcceptanceUniversityField();
+
+    // التنفيذ عند تغيير حالة مربع الاختيار
+    acceptanceLetterCheckbox.addEventListener('change', toggleAcceptanceUniversityField);
+});
 {% endblock %}
