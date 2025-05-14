@@ -390,13 +390,14 @@ class LanguageProficiencyForm(forms.ModelForm):
                     self.fields['other_language_name'].required = True
 
 
-class DocumentUploadForm(forms.ModelForm):
+class DocumentUploadForm(forms.ModelForm):  # ← This is the form causing problems
     """نموذج رفع المستندات"""
 
     class Meta:
         model = Document
         fields = ['document_type', 'name', 'description', 'file', 'is_required',
                   'high_school_qualification', 'bachelor_qualification', 'master_qualification', 'other_certificate']
+                  # ↑ 'language_proficiency' is missing from this list
         widgets = {
             'document_type': forms.Select(attrs={'class': 'form-select'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -407,6 +408,7 @@ class DocumentUploadForm(forms.ModelForm):
             'bachelor_qualification': forms.Select(attrs={'class': 'form-select'}),
             'master_qualification': forms.Select(attrs={'class': 'form-select'}),
             'other_certificate': forms.Select(attrs={'class': 'form-select'}),
+            # No widget for 'language_proficiency' defined here
         }
 
     def __init__(self, *args, **kwargs):
@@ -423,6 +425,7 @@ class DocumentUploadForm(forms.ModelForm):
                 application=application)
             self.fields['master_qualification'].queryset = MasterQualification.objects.filter(application=application)
             self.fields['other_certificate'].queryset = OtherCertificate.objects.filter(application=application)
+            # No queryset for 'language_proficiency' initialized here
 
 
 class ApplicationTabsForm(forms.ModelForm):
@@ -474,5 +477,8 @@ LanguageProficiencyFormSet = forms.inlineformset_factory(
 DocumentFormSet = forms.inlineformset_factory(
     Application, Document,
     form=DocumentUploadForm,
+    fields=['document_type', 'name', 'description', 'file', 'is_required',
+            'high_school_qualification', 'bachelor_qualification',
+            'master_qualification', 'other_certificate', 'language_proficiency'],
     extra=1, can_delete=True
 )

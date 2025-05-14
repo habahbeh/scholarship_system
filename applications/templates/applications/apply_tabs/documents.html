@@ -16,20 +16,20 @@
 <div class="required-documents mb-4">
     <h5>{% trans "المستندات المطلوبة" %}</h5>
     <ul class="list-group">
-        <li class="list-group-item {% if 'cv' in application.documents.values_list('document_type', flat=True) %}list-group-item-success{% endif %}">
-            <i class="fas {% if 'cv' in application.documents.values_list('document_type', flat=True) %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+        <li class="list-group-item {% if 'cv' in document_types %}list-group-item-success{% endif %}">
+            <i class="fas {% if 'cv' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
             {% trans "السيرة الذاتية" %}
         </li>
-        <li class="list-group-item {% if 'personal_id' in application.documents.values_list('document_type', flat=True) %}list-group-item-success{% endif %}">
-            <i class="fas {% if 'personal_id' in application.documents.values_list('document_type', flat=True) %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+        <li class="list-group-item {% if 'personal_id' in document_types %}list-group-item-success{% endif %}">
+            <i class="fas {% if 'personal_id' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
             {% trans "إثبات الهوية" %}
         </li>
-        <li class="list-group-item {% if 'high_school_certificate' in application.documents.values_list('document_type', flat=True) %}list-group-item-success{% endif %}">
-            <i class="fas {% if 'high_school_certificate' in application.documents.values_list('document_type', flat=True) %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+        <li class="list-group-item {% if 'high_school_certificate' in document_types %}list-group-item-success{% endif %}">
+            <i class="fas {% if 'high_school_certificate' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
             {% trans "شهادة الثانوية العامة" %}
         </li>
-        <li class="list-group-item {% if 'bachelors_certificate' in application.documents.values_list('document_type', flat=True) %}list-group-item-success{% endif %}">
-            <i class="fas {% if 'bachelors_certificate' in application.documents.values_list('document_type', flat=True) %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
+        <li class="list-group-item {% if 'bachelors_certificate' in document_types %}list-group-item-success{% endif %}">
+            <i class="fas {% if 'bachelors_certificate' in document_types %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %} me-2"></i>
             {% trans "شهادة البكالوريوس" %}
         </li>
     </ul>

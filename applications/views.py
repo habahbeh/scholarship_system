@@ -1042,11 +1042,23 @@ def handle_documents_step(request, application, context):
     if request.method == 'POST':
         formset = DocumentFormSet(request.POST, request.FILES, instance=application)
         if formset.is_valid():
-            formset.save()
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.save()
+            formset.save_m2m()
             messages.success(request, _("تم حفظ المستندات بنجاح"))
             return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=preview")
     else:
         formset = DocumentFormSet(instance=application)
+
+        # Make sure each form has language_proficiency field initialized
+        for form in formset:
+            if 'language_proficiency' not in form.fields:
+                form.fields['language_proficiency'] = forms.ModelChoiceField(
+                    queryset=LanguageProficiency.objects.filter(application=application),
+                    required=False,
+                    widget=forms.Select(attrs={'class': 'form-select'})
+                )
 
     # الحصول على قائمة المؤهلات الأكاديمية المختلفة والكفاءات اللغوية لربطها بالمستندات
     high_school_qualifications = application.high_school_qualifications.all()
@@ -1054,6 +1066,9 @@ def handle_documents_step(request, application, context):
     master_qualifications = application.master_qualifications.all()
     other_certificates = application.other_certificates.all()
     language_proficiencies = LanguageProficiency.objects.filter(application=application)
+
+    # Pre-compute document types for template (to fix the values_list issue)
+    document_types = list(application.documents.values_list('document_type', flat=True))
 
     context.update({
         'formset': formset,
@@ -1063,6 +1078,7 @@ def handle_documents_step(request, application, context):
         'master_qualifications': master_qualifications,
         'other_certificates': other_certificates,
         'language_proficiencies': language_proficiencies,
+        'document_types': document_types,  # Add this for the template
     })
     return render(request, 'applications/apply_tabs/documents.html', context)
 
