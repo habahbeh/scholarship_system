@@ -61,6 +61,8 @@
                     <!-- موافقات سابقة -->
                     <div class="mb-4">
                         <h6 class="mb-3">{% trans "مرفقات الموافقات السابقة" %}</h6>
+
+                        <!-- مرفقات اللجنة العليا -->
                         {% if higher_committee_attachments %}
                         <div class="list-group mb-3">
                             {% for attachment in higher_committee_attachments %}
@@ -68,13 +70,31 @@
                                 <div>
                                     <i class="fas fa-file-pdf text-danger me-2"></i>
                                     {% trans "مرفق موافقة اللجنة العليا" %}
-                                    <span class="badge bg-secondary ms-2">{{ attachment.created_at|date:"Y-m-d" }}</span>
+                                    <span class="badge bg-secondary ms-2">{{ attachment.upload_date|date:"Y-m-d" }}</span>
                                 </div>
                                 <i class="fas fa-external-link-alt text-primary"></i>
                             </a>
                             {% endfor %}
                         </div>
-                        {% else %}
+                        {% endif %}
+
+                        <!-- مرفقات مجلس القسم -->
+                        {% if department_council_attachments %}
+                        <div class="list-group mb-3">
+                            {% for attachment in department_council_attachments %}
+                            <a href="{{ attachment.attachment.url }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
+                                <div>
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                    {% trans "مرفق موافقة مجلس القسم" %}
+                                    <span class="badge bg-secondary ms-2">{{ attachment.upload_date|date:"Y-m-d" }}</span>
+                                </div>
+                                <i class="fas fa-external-link-alt text-primary"></i>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if not higher_committee_attachments and not department_council_attachments %}
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             {% trans "لا توجد قرارات سابقة لهذا الطلب." %}

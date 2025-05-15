@@ -269,8 +269,9 @@ class ApprovalAttachment(models.Model):
                                     verbose_name=_("الطلب"))
     approval_type = models.CharField(_("نوع الموافقة"), max_length=50, choices=[
         ('higher_committee', _('اللجنة العليا')),
+        ('department_council', _('مجلس القسم')),
         ('faculty_council', _('مجلس الكلية')),
-        ('president', _('رئيس الجامعة')),
+        ('deans_council', _('مجلس العمداء')),
     ])
     attachment = models.FileField(_("المرفق"), upload_to='approvals/%Y/%m/')
     upload_date = models.DateTimeField(_("تاريخ الرفع"), auto_now_add=True)

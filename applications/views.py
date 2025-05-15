@@ -22,7 +22,8 @@ from .forms import (
     DocumentForm, DocumentUploadForm, ApplicationStatusForm, ApplicationFilterForm,
     RequirementsCheckForm, HigherCommitteeApprovalForm, FacultyCouncilApprovalForm, PresidentApprovalForm,
     ApplicationTabsForm, HighSchoolQualificationFormSet, BachelorQualificationFormSet,
-    MasterQualificationFormSet, OtherCertificateFormSet, LanguageProficiencyFormSet, DocumentFormSet
+    MasterQualificationFormSet, OtherCertificateFormSet, LanguageProficiencyFormSet, DocumentFormSet,
+    DepartmentCouncilApprovalForm, DeansCouncilApprovalForm
 )
 
 
