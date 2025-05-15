@@ -16,22 +16,22 @@
 <!-- تبويبات لأنواع المؤهلات المختلفة -->
 <ul class="nav nav-tabs mb-4" id="qualificationTabs" role="tablist">
   <li class="nav-item" role="presentation">
-    <button class="nav-link {% if active_tab == 'high_school' %}active{% endif %} text-dark fw-bold" id="high-school-tab" data-bs-toggle="tab" data-bs-target="#high-school" type="button" role="tab">
+    <button class="nav-link {% if active_tab == 'high_school' %}active{% endif %} text-dark fw-bold" id="high-school-tab" data-bs-toggle="tab" data-bs-target="#high-school" type="button" role="tab" style="color: #000 !important;">
       {% trans "الثانوية العامة" %} {% if qualifications_stats.high_school > 0 %}<span class="badge bg-success">{{ qualifications_stats.high_school }}</span>{% endif %}
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link {% if active_tab == 'bachelors' %}active{% endif %} text-dark fw-bold" id="bachelors-tab" data-bs-toggle="tab" data-bs-target="#bachelors" type="button" role="tab">
+    <button class="nav-link {% if active_tab == 'bachelors' %}active{% endif %} text-dark fw-bold" id="bachelors-tab" data-bs-toggle="tab" data-bs-target="#bachelors" type="button" role="tab" style="color: #000 !important;">
       {% trans "البكالوريوس" %} {% if qualifications_stats.bachelors > 0 %}<span class="badge bg-success">{{ qualifications_stats.bachelors }}</span>{% endif %}
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link {% if active_tab == 'masters' %}active{% endif %} text-dark fw-bold" id="masters-tab" data-bs-toggle="tab" data-bs-target="#masters" type="button" role="tab">
+    <button class="nav-link {% if active_tab == 'masters' %}active{% endif %} text-dark fw-bold" id="masters-tab" data-bs-toggle="tab" data-bs-target="#masters" type="button" role="tab" style="color: #000 !important;">
       {% trans "الماجستير" %} {% if qualifications_stats.masters > 0 %}<span class="badge bg-success">{{ qualifications_stats.masters }}</span>{% endif %}
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link {% if active_tab == 'other' %}active{% endif %} text-dark fw-bold" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab">
+    <button class="nav-link {% if active_tab == 'other' %}active{% endif %} text-dark fw-bold" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab" style="color: #000 !important;">
       {% trans "شهادات أخرى" %} {% if qualifications_stats.other > 0 %}<span class="badge bg-success">{{ qualifications_stats.other }}</span>{% endif %}
     </button>
   </li>
@@ -43,39 +43,38 @@
     <form method="post" id="highSchoolForm">
       {% csrf_token %}
       <input type="hidden" name="qualification_type" value="high_school">
+      <input type="hidden" name="stay_in_tab" value="high_school">
 
       {{ high_school_formset.management_form }}
 
       <div id="high_school_formset">
-        {% for form in high_school_formset %}
+        {% with first_form=high_school_formset.0 %}
+          {% if first_form %}
           <div class="qualification-row border rounded p-4 mb-4 bg-light">
             <div class="qualification-header mb-3">
               <h5 class="mb-0 qualification-title fw-bold">{% trans "الثانوية العامة" %}</h5>
-              {% if form.instance.pk %}
+              {% if first_form.instance.pk %}
                 <div class="text-success small">
                   <i class="fas fa-check-circle"></i> {% trans "تم حفظ البيانات" %}
                 </div>
               {% endif %}
             </div>
 
-            {{ form.id }}
-            {{ form.DELETE.as_hidden }}
+            {{ first_form.id }}
+            {{ first_form.DELETE.as_hidden }}
 
             <div class="row">
-              <div class="col-md-4 mb-3">{{ form.certificate_type|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.branch|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.gpa|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
-              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.certificate_type|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.branch|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.gpa|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ first_form.additional_info|as_crispy_field }}</div>
             </div>
           </div>
-          {% if forloop.first and qualifications_stats.high_school == 0 %}
-          <!-- عرض نموذج واحد فقط للشهادة الثانوية -->
-          {% break %}
           {% endif %}
-        {% endfor %}
+        {% endwith %}
       </div>
 
       <div class="d-flex justify-content-end mt-4">
@@ -91,42 +90,41 @@
     <form method="post" id="bachelorsForm">
       {% csrf_token %}
       <input type="hidden" name="qualification_type" value="bachelors">
+      <input type="hidden" name="stay_in_tab" value="bachelors">
 
       {{ bachelor_formset.management_form }}
 
       <div id="bachelor_formset">
-        {% for form in bachelor_formset %}
+        {% with first_form=bachelor_formset.0 %}
+          {% if first_form %}
           <div class="qualification-row border rounded p-4 mb-4 bg-light">
             <div class="qualification-header mb-3">
               <h5 class="mb-0 qualification-title fw-bold">{% trans "البكالوريوس" %}</h5>
-              {% if form.instance.pk %}
+              {% if first_form.instance.pk %}
                 <div class="text-success small">
                   <i class="fas fa-check-circle"></i> {% trans "تم حفظ البيانات" %}
                 </div>
               {% endif %}
             </div>
 
-            {{ form.id }}
-            {{ form.DELETE.as_hidden }}
+            {{ first_form.id }}
+            {{ first_form.DELETE.as_hidden }}
 
             <div class="row">
-              <div class="col-md-6 mb-3">{{ form.institution_name|as_crispy_field }}</div>
-              <div class="col-md-6 mb-3">{{ form.major|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.gpa|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.grade|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.study_system|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.bachelor_type|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
-              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+              <div class="col-md-6 mb-3">{{ first_form.institution_name|as_crispy_field }}</div>
+              <div class="col-md-6 mb-3">{{ first_form.major|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.gpa|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.grade|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.study_system|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.bachelor_type|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ first_form.additional_info|as_crispy_field }}</div>
             </div>
           </div>
-          {% if forloop.first and qualifications_stats.bachelors == 0 %}
-          <!-- عرض نموذج واحد فقط للبكالوريوس -->
-          {% break %}
           {% endif %}
-        {% endfor %}
+        {% endwith %}
       </div>
 
       <div class="d-flex justify-content-end mt-4">
@@ -142,41 +140,40 @@
     <form method="post" id="mastersForm">
       {% csrf_token %}
       <input type="hidden" name="qualification_type" value="masters">
+      <input type="hidden" name="stay_in_tab" value="masters">
 
       {{ master_formset.management_form }}
 
       <div id="master_formset">
-        {% for form in master_formset %}
+        {% with first_form=master_formset.0 %}
+          {% if first_form %}
           <div class="qualification-row border rounded p-4 mb-4 bg-light">
             <div class="qualification-header mb-3">
               <h5 class="mb-0 qualification-title fw-bold">{% trans "الماجستير" %}</h5>
-              {% if form.instance.pk %}
+              {% if first_form.instance.pk %}
                 <div class="text-success small">
                   <i class="fas fa-check-circle"></i> {% trans "تم حفظ البيانات" %}
                 </div>
               {% endif %}
             </div>
 
-            {{ form.id }}
-            {{ form.DELETE.as_hidden }}
+            {{ first_form.id }}
+            {{ first_form.DELETE.as_hidden }}
 
             <div class="row">
-              <div class="col-md-6 mb-3">{{ form.institution_name|as_crispy_field }}</div>
-              <div class="col-md-6 mb-3">{{ form.major|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.graduation_year|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.gpa|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.grade|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.country|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.masters_system|as_crispy_field }}</div>
-              <div class="col-md-4 mb-3">{{ form.study_language|as_crispy_field }}</div>
-              <div class="col-md-12">{{ form.additional_info|as_crispy_field }}</div>
+              <div class="col-md-6 mb-3">{{ first_form.institution_name|as_crispy_field }}</div>
+              <div class="col-md-6 mb-3">{{ first_form.major|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.graduation_year|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.gpa|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.grade|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.country|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.masters_system|as_crispy_field }}</div>
+              <div class="col-md-4 mb-3">{{ first_form.study_language|as_crispy_field }}</div>
+              <div class="col-md-12">{{ first_form.additional_info|as_crispy_field }}</div>
             </div>
           </div>
-          {% if forloop.first and qualifications_stats.masters == 0 %}
-          <!-- عرض نموذج واحد فقط للماجستير -->
-          {% break %}
           {% endif %}
-        {% endfor %}
+        {% endwith %}
       </div>
 
       <div class="d-flex justify-content-end mt-4">
@@ -192,6 +189,7 @@
     <form method="post" id="otherForm">
       {% csrf_token %}
       <input type="hidden" name="qualification_type" value="other">
+      <input type="hidden" name="stay_in_tab" value="other">
 
       {{ other_certificate_formset.management_form }}
 

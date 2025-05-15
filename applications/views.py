@@ -75,7 +75,7 @@ def check_requirements(request, application_id):
     application = get_object_or_404(Application, pk=application_id)
 
     # التحقق من أن الطلب في حالة تسمح بمطابقة الشروط
-    if application.status.order > 2:
+    if application.status.order > 1:  # تغيير من 2 إلى 1 لأن قيد المراجعة تم حذفها
         messages.error(request, _("لا يمكن مطابقة الشروط لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
 
@@ -87,11 +87,11 @@ def check_requirements(request, application_id):
 
             # تحديث حالة الطلب
             if meets_requirements == 'yes':
-                # البحث عن حالة "مطابق للشروط"
-                status = ApplicationStatus.objects.get(order=3)
+                # البحث عن حالة "مطابق للشروط" (order=2 في النظام الجديد)
+                status = ApplicationStatus.objects.get(order=2)
             else:
-                # البحث عن حالة "غير مطابق للشروط"
-                status = ApplicationStatus.objects.get(order=4)
+                # البحث عن حالة "غير مطابق للشروط" (order=3 في النظام الجديد)
+                status = ApplicationStatus.objects.get(order=3)
 
             old_status = application.status
             application.status = status
@@ -120,6 +120,7 @@ def check_requirements(request, application_id):
     return render(request, 'applications/check_requirements.html', context)
 
 
+
 @login_required
 @permission_required('applications.change_application', raise_exception=True)
 def higher_committee_approval(request, application_id):
@@ -127,7 +128,7 @@ def higher_committee_approval(request, application_id):
     application = get_object_or_404(Application, pk=application_id)
 
     # التحقق من أن الطلب مطابق للشروط
-    if application.status.order != 3:
+    if application.status.order != 2:  # تغيير من 3 إلى 2
         messages.error(request, _("لا يمكن تقديم موافقة اللجنة العليا لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
 
@@ -139,8 +140,8 @@ def higher_committee_approval(request, application_id):
 
             # تحديث حالة الطلب
             if is_approved == 'yes':
-                # البحث عن حالة "موافق من اللجنة العليا"
-                status = ApplicationStatus.objects.get(order=5)
+                # البحث عن حالة "موافق من اللجنة العليا" (order=4 في النظام الجديد)
+                status = ApplicationStatus.objects.get(order=4)
 
                 # حفظ مرفق الموافقة
                 attachment = form.cleaned_data['attachment']
@@ -153,8 +154,8 @@ def higher_committee_approval(request, application_id):
                     )
                     approval_attachment.save()
             else:
-                # البحث عن حالة "غير موافق من اللجنة العليا"
-                status = ApplicationStatus.objects.get(order=6)
+                # البحث عن حالة "غير موافق من اللجنة العليا" (order=5 في النظام الجديد)
+                status = ApplicationStatus.objects.get(order=5)
 
             old_status = application.status
             application.status = status
@@ -185,19 +186,93 @@ def higher_committee_approval(request, application_id):
 
 @login_required
 @permission_required('applications.change_application', raise_exception=True)
-def faculty_council_approval(request, application_id):
-    """موافقة مجلس الكلية"""
+def department_council_approval(request, application_id):
+    """موافقة مجلس القسم"""
     application = get_object_or_404(Application, pk=application_id)
 
     # التحقق من أن الطلب موافق من اللجنة العليا
-    if application.status.order != 5:
-        messages.error(request, _("لا يمكن تقديم موافقة مجلس الكلية لهذا الطلب في حالته الحالية"))
+    if application.status.order != 4:  # حالة موافق من اللجنة العليا
+        messages.error(request, _("لا يمكن تقديم موافقة مجلس القسم لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
 
     # الحصول على مرفقات اللجنة العليا
     higher_committee_attachments = ApprovalAttachment.objects.filter(
         application=application,
         approval_type='higher_committee'
+    )
+
+    if request.method == 'POST':
+        form = DepartmentCouncilApprovalForm(request.POST, request.FILES)
+        if form.is_valid():
+            is_approved = form.cleaned_data['is_approved']
+            notes = form.cleaned_data['notes']
+
+            # تحديث حالة الطلب
+            if is_approved == 'yes':
+                # البحث عن حالة "موافق من مجلس القسم" (order=6)
+                status = ApplicationStatus.objects.get(order=6)
+
+                # حفظ مرفق الموافقة
+                attachment = form.cleaned_data['attachment']
+                if attachment:
+                    approval_attachment = ApprovalAttachment(
+                        application=application,
+                        approval_type='department_council',
+                        attachment=attachment,
+                        notes=notes
+                    )
+                    approval_attachment.save()
+            else:
+                # البحث عن حالة "غير موافق من مجلس القسم" (order=7)
+                status = ApplicationStatus.objects.get(order=7)
+
+            old_status = application.status
+            application.status = status
+            application.save()
+
+            # إضافة سجل للتغيير
+            ApplicationLog.objects.create(
+                application=application,
+                from_status=old_status,
+                to_status=status,
+                created_by=request.user,
+                comment=_("قرار مجلس القسم") + (f": {notes}" if notes else "")
+            )
+
+            messages.success(request, _("تم تحديث حالة الطلب بنجاح"))
+            return redirect('applications:admin_applications_list')
+    else:
+        # تهيئة النموذج
+        form = DepartmentCouncilApprovalForm()
+
+    context = {
+        'form': form,
+        'application': application,
+        'higher_committee_attachments': higher_committee_attachments
+    }
+    return render(request, 'applications/department_council_approval.html', context)
+
+
+@login_required
+@permission_required('applications.change_application', raise_exception=True)
+def faculty_council_approval(request, application_id):
+    """موافقة مجلس الكلية"""
+    application = get_object_or_404(Application, pk=application_id)
+
+    # التحقق من أن الطلب موافق من مجلس القسم
+    if application.status.order != 6:  # تغيير من 5 إلى 6 (موافق من مجلس القسم)
+        messages.error(request, _("لا يمكن تقديم موافقة مجلس الكلية لهذا الطلب في حالته الحالية"))
+        return redirect('applications:admin_applications_list')
+
+    # الحصول على مرفقات اللجنة العليا ومجلس القسم
+    higher_committee_attachments = ApprovalAttachment.objects.filter(
+        application=application,
+        approval_type='higher_committee'
+    )
+
+    department_council_attachments = ApprovalAttachment.objects.filter(
+        application=application,
+        approval_type='department_council'
     )
 
     if request.method == 'POST':
@@ -208,8 +283,8 @@ def faculty_council_approval(request, application_id):
 
             # تحديث حالة الطلب
             if is_approved == 'yes':
-                # البحث عن حالة "موافق من مجلس الكلية"
-                status = ApplicationStatus.objects.get(order=7)
+                # البحث عن حالة "موافق من مجلس الكلية" (order=8)
+                status = ApplicationStatus.objects.get(order=8)
 
                 # حفظ مرفق الموافقة
                 attachment = form.cleaned_data['attachment']
@@ -222,8 +297,8 @@ def faculty_council_approval(request, application_id):
                     )
                     approval_attachment.save()
             else:
-                # البحث عن حالة "غير موافق من مجلس الكلية"
-                status = ApplicationStatus.objects.get(order=8)
+                # البحث عن حالة "غير موافق من مجلس الكلية" (order=9)
+                status = ApplicationStatus.objects.get(order=9)
 
             old_status = application.status
             application.status = status
@@ -247,25 +322,33 @@ def faculty_council_approval(request, application_id):
     context = {
         'form': form,
         'application': application,
-        'higher_committee_attachments': higher_committee_attachments
+        'higher_committee_attachments': higher_committee_attachments,
+        'department_council_attachments': department_council_attachments
     }
     return render(request, 'applications/faculty_council_approval.html', context)
 
+
+# تعديل دالة president_approval إلى deans_council_approval
 @login_required
 @permission_required('applications.change_application', raise_exception=True)
-def president_approval(request, application_id):
-    """موافقة رئيس الجامعة"""
+def deans_council_approval(request, application_id):
+    """موافقة مجلس العمداء"""
     application = get_object_or_404(Application, pk=application_id)
 
     # التحقق من أن الطلب موافق من مجلس الكلية
-    if application.status.order != 7:
-        messages.error(request, _("لا يمكن تقديم موافقة رئيس الجامعة لهذا الطلب في حالته الحالية"))
+    if application.status.order != 8:  # تغيير من 7 إلى 8
+        messages.error(request, _("لا يمكن تقديم موافقة مجلس العمداء لهذا الطلب في حالته الحالية"))
         return redirect('applications:admin_applications_list')
 
-    # الحصول على مرفقات اللجنة العليا ومجلس الكلية
+    # الحصول على مرفقات سابقة
     higher_committee_attachments = ApprovalAttachment.objects.filter(
         application=application,
         approval_type='higher_committee'
+    )
+
+    department_council_attachments = ApprovalAttachment.objects.filter(
+        application=application,
+        approval_type='department_council'
     )
 
     faculty_council_attachments = ApprovalAttachment.objects.filter(
@@ -274,29 +357,29 @@ def president_approval(request, application_id):
     )
 
     if request.method == 'POST':
-        form = PresidentApprovalForm(request.POST, request.FILES)
+        form = DeansCouncilApprovalForm(request.POST, request.FILES)
         if form.is_valid():
             is_approved = form.cleaned_data['is_approved']
             notes = form.cleaned_data['notes']
 
             # تحديث حالة الطلب
             if is_approved == 'yes':
-                # البحث عن حالة "موافق من رئيس الجامعة"
-                status = ApplicationStatus.objects.get(order=9)
+                # البحث عن حالة "موافق من مجلس العمداء" (order=10)
+                status = ApplicationStatus.objects.get(order=10)
 
                 # حفظ مرفق الموافقة
                 attachment = form.cleaned_data['attachment']
                 if attachment:
                     approval_attachment = ApprovalAttachment(
                         application=application,
-                        approval_type='president',
+                        approval_type='deans_council',
                         attachment=attachment,
                         notes=notes
                     )
                     approval_attachment.save()
             else:
-                # البحث عن حالة "غير موافق من رئيس الجامعة"
-                status = ApplicationStatus.objects.get(order=10)
+                # البحث عن حالة "غير موافق من مجلس العمداء" (order=11)
+                status = ApplicationStatus.objects.get(order=11)
 
             old_status = application.status
             application.status = status
@@ -308,22 +391,24 @@ def president_approval(request, application_id):
                 from_status=old_status,
                 to_status=status,
                 created_by=request.user,
-                comment=_("قرار رئيس الجامعة") + (f": {notes}" if notes else "")
+                comment=_("قرار مجلس العمداء") + (f": {notes}" if notes else "")
             )
 
             messages.success(request, _("تم تحديث حالة الطلب بنجاح"))
             return redirect('applications:admin_applications_list')
     else:
         # تهيئة النموذج
-        form = PresidentApprovalForm()
+        form = DeansCouncilApprovalForm()
 
     context = {
         'form': form,
         'application': application,
         'higher_committee_attachments': higher_committee_attachments,
+        'department_council_attachments': department_council_attachments,
         'faculty_council_attachments': faculty_council_attachments
     }
-    return render(request, 'applications/president_approval.html', context)
+    return render(request, 'applications/deans_council_approval.html', context)
+
 
 # --- Report Views ---
 
@@ -331,8 +416,8 @@ def president_approval(request, application_id):
 @permission_required('applications.view_application')
 def requirements_report(request):
     """تقرير الطلبات المطابقة للشروط"""
-    # الحصول على الطلبات المطابقة للشروط (حالة رقم 3)
-    applications = Application.objects.filter(status__order=3).order_by('-application_date')
+    # الحصول على الطلبات المطابقة للشروط (حالة رقم 2)
+    applications = Application.objects.filter(status__order=2).order_by('-application_date')
 
     context = {
         'applications': applications,
@@ -359,8 +444,8 @@ def requirements_report(request):
 @permission_required('applications.view_application')
 def higher_committee_report(request):
     """تقرير الطلبات الموافق عليها من اللجنة العليا"""
-    # الحصول على الطلبات الموافق عليها من اللجنة العليا (حالة رقم 5)
-    applications = Application.objects.filter(status__order=5).order_by('-application_date')
+    # الحصول على الطلبات الموافق عليها من اللجنة العليا (حالة رقم 4)
+    applications = Application.objects.filter(status__order=4).order_by('-application_date')
 
     # تحميل المرفقات للطلبات
     for application in applications:
@@ -394,8 +479,8 @@ def higher_committee_report(request):
 @permission_required('applications.view_application')
 def faculty_council_report(request):
     """تقرير الطلبات الموافق عليها من مجلس الكلية"""
-    # الحصول على الطلبات الموافق عليها من مجلس الكلية (حالة رقم 7)
-    applications = Application.objects.filter(status__order=7).order_by('-application_date')
+    # الحصول على الطلبات الموافق عليها من مجلس الكلية (حالة رقم 8)
+    applications = Application.objects.filter(status__order=8).order_by('-application_date')
 
     # تحميل المرفقات للطلبات
     for application in applications:
@@ -935,6 +1020,8 @@ def handle_academic_qualifications_step(request, application, context):
     if request.method == 'POST':
         # تحديد التبويب الفرعي النشط (نوع المؤهل)
         active_tab = request.POST.get('qualification_type', 'high_school')
+        # استخدام حقل للبقاء في نفس التبويب
+        stay_in_tab = request.POST.get('stay_in_tab')
 
         if active_tab == 'high_school':
             formset = HighSchoolQualificationFormSet(request.POST, instance=application, prefix='high_school')
@@ -959,6 +1046,13 @@ def handle_academic_qualifications_step(request, application, context):
                 obj.delete()
 
             messages.success(request, _("تم حفظ المؤهلات الأكاديمية بنجاح"))
+
+            # البقاء في نفس التبويب بعد الحفظ
+            if stay_in_tab:
+                redirect_url = f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=academic&qualification_type={stay_in_tab}"
+                return redirect(redirect_url)
+
+            # الانتقال للخطوة التالية إذا لم يكن هناك إشارة للبقاء
             return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=language")
         else:
             # عرض رسائل الخطأ للمستخدم
@@ -970,11 +1064,19 @@ def handle_academic_qualifications_step(request, application, context):
         # تحديد التبويب النشط (نوع المؤهل) من الطلب
         active_tab = request.GET.get('qualification_type', 'high_school')
 
-        # تجهيز جميع النماذج لجميع أنواع المؤهلات
-        high_school_formset = HighSchoolQualificationFormSet(instance=application, prefix='high_school')
-        bachelor_formset = BachelorQualificationFormSet(instance=application, prefix='bachelors')
-        master_formset = MasterQualificationFormSet(instance=application, prefix='masters')
-        other_certificate_formset = OtherCertificateFormSet(instance=application, prefix='other')
+    # تحضير جميع النماذج
+    high_school_formset = HighSchoolQualificationFormSet(instance=application, prefix='high_school')
+    bachelor_formset = BachelorQualificationFormSet(instance=application, prefix='bachelors')
+    master_formset = MasterQualificationFormSet(instance=application, prefix='masters')
+    other_certificate_formset = OtherCertificateFormSet(instance=application, prefix='other')
+
+    # تقييد الثانوية العامة والبكالوريوس والماجستير لعرض نموذج واحد فقط
+    if high_school_formset.forms:
+        high_school_formset.extra = 0 if application.high_school_qualifications.exists() else 1
+    if bachelor_formset.forms:
+        bachelor_formset.extra = 0 if application.bachelor_qualifications.exists() else 1
+    if master_formset.forms:
+        master_formset.extra = 0 if application.master_qualifications.exists() else 1
 
     # إحصاءات عن المؤهلات الموجودة
     qualifications_stats = {
@@ -1016,48 +1118,41 @@ def handle_language_proficiency_step(request, application, context):
 
 
 def handle_documents_step(request, application, context):
-    """معالجة تبويب المستندات"""
-    if request.method == 'POST':
-        formset = DocumentFormSet(request.POST, request.FILES, instance=application)
-        if formset.is_valid():
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.save()
-            formset.save_m2m()
-            messages.success(request, _("تم حفظ المستندات بنجاح"))
-            return redirect(f"{reverse('applications:apply_tabs', args=[application.scholarship.id])}?step=preview")
-    else:
-        formset = DocumentFormSet(instance=application)
+    """معالجة تبويب المستندات بطريقة مبسطة"""
+    if request.method == 'POST' and request.POST.get('action') == 'upload_document':
+        # رفع مستند واحد فقط
+        document_type = request.POST.get('document_type')
+        file = request.FILES.get('file')
 
-        # Make sure each form has language_proficiency field initialized
-        for form in formset:
-            if 'language_proficiency' not in form.fields:
-                form.fields['language_proficiency'] = forms.ModelChoiceField(
-                    queryset=LanguageProficiency.objects.filter(application=application),
-                    required=False,
-                    widget=forms.Select(attrs={'class': 'form-select'})
-                )
+        if document_type and file:
+            # الحصول على العرض المقابل لنوع المستند
+            document_types_dict = dict(Document.DOCUMENT_TYPE_CHOICES)
+            document_type_display = document_types_dict.get(document_type, document_type)
 
-    # الحصول على قائمة المؤهلات الأكاديمية المختلفة والكفاءات اللغوية لربطها بالمستندات
-    high_school_qualifications = application.high_school_qualifications.all()
-    bachelor_qualifications = application.bachelor_qualifications.all()
-    master_qualifications = application.master_qualifications.all()
-    other_certificates = application.other_certificates.all()
-    language_proficiencies = LanguageProficiency.objects.filter(application=application)
+            # إنشاء مستند جديد
+            document = Document(
+                application=application,
+                document_type=document_type,
+                name=document_type_display,
+                file=file,
+                # تحديد ما إذا كان المستند مطلوبًا بناءً على نوع المستند
+                is_required=document_type in ['cv', 'personal_id', 'high_school_certificate', 'bachelors_certificate', 'language_certificate']
+            )
+            document.save()
 
-    # Pre-compute document types for template (to fix the values_list issue)
-    document_types = list(application.documents.values_list('document_type', flat=True))
+            messages.success(request, _("تم رفع المستند بنجاح"))
+            return redirect(request.path_info + "?step=documents")
+        else:
+            messages.error(request, _("يرجى اختيار نوع المستند وتحميل الملف"))
+
+    # استخراج أنواع المستندات الموجودة للتحقق من المستندات المطلوبة
+    document_types = list(Document.objects.filter(application=application).values_list('document_type', flat=True))
 
     context.update({
-        'formset': formset,
         'title': _("المستندات المطلوبة"),
-        'high_school_qualifications': high_school_qualifications,
-        'bachelor_qualifications': bachelor_qualifications,
-        'master_qualifications': master_qualifications,
-        'other_certificates': other_certificates,
-        'language_proficiencies': language_proficiencies,
-        'document_types': document_types,  # Add this for the template
+        'document_types': document_types,
     })
+
     return render(request, 'applications/apply_tabs/documents.html', context)
 
 
@@ -1302,3 +1397,93 @@ def handle_update_submit_step(request, application, context):
     })
 
     return render(request, 'applications/apply_tabs/submit.html', context)
+
+
+@login_required
+@permission_required('applications.view_application')
+def department_council_report(request):
+    """تقرير الطلبات الموافق عليها من مجلس القسم"""
+    # الحصول على الطلبات الموافق عليها من مجلس القسم (حالة رقم 6)
+    applications = Application.objects.filter(status__order=6).order_by('-application_date')
+
+    # تحميل المرفقات للطلبات
+    for application in applications:
+        application.higher_committee_attachment = ApprovalAttachment.objects.filter(
+            application=application,
+            approval_type='higher_committee'
+        ).first()
+
+        application.department_council_attachment = ApprovalAttachment.objects.filter(
+            application=application,
+            approval_type='department_council'
+        ).first()
+
+    context = {
+        'applications': applications,
+        'title': _("تقرير الطلبات الموافق عليها من مجلس القسم"),
+        'date': timezone.now()
+    }
+
+    # تحديد ما إذا كان التقرير للعرض أو للطباعة
+    if request.GET.get('print') == 'true':
+        # إنشاء ملف PDF
+        html_string = render_to_string('applications/reports/department_council_report_pdf.html', context)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'filename="department_council_report.pdf"'
+
+        # استخدام weasyprint لتحويل HTML إلى PDF
+        pdf = weasyprint.HTML(string=html_string).write_pdf()
+        response.write(pdf)
+        return response
+
+    return render(request, 'applications/reports/department_council_report.html', context)
+
+
+@login_required
+@permission_required('applications.view_application')
+def deans_council_report(request):
+    """تقرير الطلبات الموافق عليها من مجلس العمداء"""
+    # الحصول على الطلبات الموافق عليها من مجلس العمداء (حالة رقم 10)
+    applications = Application.objects.filter(status__order=10).order_by('-application_date')
+
+    # تحميل المرفقات للطلبات
+    for application in applications:
+        application.higher_committee_attachment = ApprovalAttachment.objects.filter(
+            application=application,
+            approval_type='higher_committee'
+        ).first()
+
+        application.department_council_attachment = ApprovalAttachment.objects.filter(
+            application=application,
+            approval_type='department_council'
+        ).first()
+
+        application.faculty_council_attachment = ApprovalAttachment.objects.filter(
+            application=application,
+            approval_type='faculty_council'
+        ).first()
+
+        application.deans_council_attachment = ApprovalAttachment.objects.filter(
+            application=application,
+            approval_type='deans_council'
+        ).first()
+
+    context = {
+        'applications': applications,
+        'title': _("تقرير الطلبات الموافق عليها من مجلس العمداء"),
+        'date': timezone.now()
+    }
+
+    # تحديد ما إذا كان التقرير للعرض أو للطباعة
+    if request.GET.get('print') == 'true':
+        # إنشاء ملف PDF
+        html_string = render_to_string('applications/reports/deans_council_report_pdf.html', context)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'filename="deans_council_report.pdf"'
+
+        # استخدام weasyprint لتحويل HTML إلى PDF
+        pdf = weasyprint.HTML(string=html_string).write_pdf()
+        response.write(pdf)
+        return response
+
+    return render(request, 'applications/reports/deans_council_report.html', context)

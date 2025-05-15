@@ -468,3 +468,78 @@ DocumentFormSet = forms.inlineformset_factory(
             'master_qualification', 'other_certificate', 'language_proficiency'],
     extra=1, can_delete=True
 )
+
+
+
+class DepartmentCouncilApprovalForm(forms.Form):
+    """نموذج موافقة مجلس القسم"""
+    APPROVAL_CHOICES = [
+        ('yes', _('موافق')),
+        ('no', _('غير موافق')),
+    ]
+
+    is_approved = forms.ChoiceField(
+        label=_('قرار مجلس القسم'),
+        choices=APPROVAL_CHOICES,
+        widget=forms.RadioSelect(),
+        required=True
+    )
+
+    attachment = forms.FileField(
+        label=_('مرفق الموافقة'),
+        required=False,
+        help_text=_('مطلوب فقط في حالة الموافقة')
+    )
+
+    notes = forms.CharField(
+        label=_('ملاحظات'),
+        widget=forms.Textarea(attrs={'rows': 3}),
+        required=False
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_approved = cleaned_data.get('is_approved')
+        attachment = cleaned_data.get('attachment')
+
+        if is_approved == 'yes' and not attachment:
+            self.add_error('attachment', _('يجب إرفاق مستند الموافقة في حالة الموافقة'))
+
+        return cleaned_data
+
+
+class DeansCouncilApprovalForm(forms.Form):
+    """نموذج موافقة مجلس العمداء"""
+    APPROVAL_CHOICES = [
+        ('yes', _('موافق')),
+        ('no', _('غير موافق')),
+    ]
+
+    is_approved = forms.ChoiceField(
+        label=_('قرار مجلس العمداء'),
+        choices=APPROVAL_CHOICES,
+        widget=forms.RadioSelect(),
+        required=True
+    )
+
+    attachment = forms.FileField(
+        label=_('مرفق الموافقة'),
+        required=False,
+        help_text=_('مطلوب فقط في حالة الموافقة')
+    )
+
+    notes = forms.CharField(
+        label=_('ملاحظات'),
+        widget=forms.Textarea(attrs={'rows': 3}),
+        required=False
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_approved = cleaned_data.get('is_approved')
+        attachment = cleaned_data.get('attachment')
+
+        if is_approved == 'yes' and not attachment:
+            self.add_error('attachment', _('يجب إرفاق مستند الموافقة في حالة الموافقة'))
+
+        return cleaned_data

@@ -63,11 +63,14 @@
                         <a href="{% url 'applications:higher_committee_report' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-users me-2 text-primary"></i> {% trans "موافقات اللجنة العليا" %}
                         </a>
+                        <a href="{% url 'applications:department_council_report' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users-cog me-2 text-info"></i> {% trans "موافقات مجلس القسم" %}
+                        </a>
                         <a href="{% url 'applications:faculty_council_report' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-university me-2 text-info"></i> {% trans "موافقات مجلس الكلية" %}
                         </a>
-                        <a href="{% url 'applications:president_report' %}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-stamp me-2 text-danger"></i> {% trans "موافقات رئيس الجامعة" %}
+                        <a href="{% url 'applications:deans_council_report' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-stamp me-2 text-danger"></i> {% trans "موافقات مجلس العمداء" %}
                         </a>
                     </div>
                 </div>
@@ -102,25 +105,29 @@
                                     <td>{{ application.scholarship.title }}</td>
                                     <td>{{ application.application_date|date:"Y-m-d" }}</td>
                                     <td>
-                                        {% if application.status.order == 1 %}
+                                        {% if application.status.order == 0 %}
                                             <span class="badge bg-secondary">{{ application.status }}</span>
-                                        {% elif application.status.order == 2 %}
+                                        {% elif application.status.order == 1 %}
                                             <span class="badge bg-info">{{ application.status }}</span>
+                                        {% elif application.status.order == 2 %}
+                                            <span class="badge bg-success">{{ application.status }}</span>
                                         {% elif application.status.order == 3 %}
-                                            <span class="badge bg-success">{{ application.status }}</span>
+                                            <span class="badge bg-danger">{{ application.status }}</span>
                                         {% elif application.status.order == 4 %}
-                                            <span class="badge bg-danger">{{ application.status }}</span>
+                                            <span class="badge bg-primary">{{ application.status }}</span>
                                         {% elif application.status.order == 5 %}
-                                            <span class="badge bg-primary">{{ application.status }}</span>
+                                            <span class="badge bg-danger">{{ application.status }}</span>
                                         {% elif application.status.order == 6 %}
-                                            <span class="badge bg-danger">{{ application.status }}</span>
-                                        {% elif application.status.order == 7 %}
                                             <span class="badge bg-primary">{{ application.status }}</span>
-                                        {% elif application.status.order == 8 %}
+                                        {% elif application.status.order == 7 %}
                                             <span class="badge bg-danger">{{ application.status }}</span>
+                                        {% elif application.status.order == 8 %}
+                                            <span class="badge bg-primary">{{ application.status }}</span>
                                         {% elif application.status.order == 9 %}
-                                            <span class="badge bg-success">{{ application.status }}</span>
+                                            <span class="badge bg-danger">{{ application.status }}</span>
                                         {% elif application.status.order == 10 %}
+                                            <span class="badge bg-success">{{ application.status }}</span>
+                                        {% elif application.status.order == 11 %}
                                             <span class="badge bg-danger">{{ application.status }}</span>
                                         {% else %}
                                             <span class="badge bg-secondary">{{ application.status }}</span>
@@ -133,20 +140,24 @@
                                                 <i class="fas fa-eye text-primary"></i>
                                             </a>
 
-                                            {% if application.status.order == 2 %}
+                                            {% if application.status.order == 1 %}
                                             <a href="{% url 'applications:check_requirements' application.id %}" class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="{% trans 'مطابقة الشروط' %}">
                                                 <i class="fas fa-clipboard-check text-success"></i>
                                             </a>
-                                            {% elif application.status.order == 3 %}
+                                            {% elif application.status.order == 2 %}
                                             <a href="{% url 'applications:higher_committee_approval' application.id %}" class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="{% trans 'موافقة اللجنة العليا' %}">
                                                 <i class="fas fa-users text-primary"></i>
                                             </a>
-                                            {% elif application.status.order == 5 %}
+                                            {% elif application.status.order == 4 %}
+                                            <a href="{% url 'applications:department_council_approval' application.id %}" class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="{% trans 'موافقة مجلس القسم' %}">
+                                                <i class="fas fa-users-cog text-info"></i>
+                                            </a>
+                                            {% elif application.status.order == 6 %}
                                             <a href="{% url 'applications:faculty_council_approval' application.id %}" class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="{% trans 'موافقة مجلس الكلية' %}">
                                                 <i class="fas fa-university text-info"></i>
                                             </a>
-                                            {% elif application.status.order == 7 %}
-                                            <a href="{% url 'applications:president_approval' application.id %}" class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="{% trans 'موافقة رئيس الجامعة' %}">
+                                            {% elif application.status.order == 8 %}
+                                            <a href="{% url 'applications:deans_council_approval' application.id %}" class="btn btn-sm btn-light" data-bs-toggle="tooltip" title="{% trans 'موافقة مجلس العمداء' %}">
                                                 <i class="fas fa-stamp text-danger"></i>
                                             </a>
                                             {% else %}
