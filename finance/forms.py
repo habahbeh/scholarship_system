@@ -2,8 +2,56 @@
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import ScholarshipBudget, Expense, ExpenseCategory, FinancialReport, BudgetAdjustment, YearlyScholarshipCosts
+from .models import (
+    ScholarshipBudget, Expense, ExpenseCategory, FinancialReport, BudgetAdjustment,
+    YearlyScholarshipCosts, FiscalYear, ScholarshipSettings
+)
 from applications.models import Application
+
+
+class FiscalYearForm(forms.ModelForm):
+    """نموذج إنشاء وتعديل السنة المالية"""
+
+    class Meta:
+        model = FiscalYear
+        fields = ['year', 'start_date', 'end_date', 'total_budget', 'description']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        # التحقق من تاريخ البداية والنهاية
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError(_("تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية"))
+
+        return cleaned_data
+
+
+class FiscalYearFilterForm(forms.Form):
+    """نموذج للبحث وفلترة السنوات المالية"""
+    status = forms.ChoiceField(
+        label=_("الحالة"),
+        choices=[('', _('جميع الحالات')), ('open', _('مفتوحة')), ('closed', _('مغلقة'))],
+        required=False
+    )
+    year_from = forms.IntegerField(
+        label=_("من سنة"),
+        required=False
+    )
+    year_to = forms.IntegerField(
+        label=_("إلى سنة"),
+        required=False
+    )
+    search = forms.CharField(
+        label=_("بحث"),
+        required=False
+    )
 
 
 class ScholarshipBudgetForm(forms.ModelForm):
@@ -11,7 +59,7 @@ class ScholarshipBudgetForm(forms.ModelForm):
 
     class Meta:
         model = ScholarshipBudget
-        fields = ['total_amount', 'start_date', 'end_date', 'tuition_fees', 'monthly_stipend',
+        fields = ['fiscal_year', 'total_amount', 'start_date', 'end_date', 'tuition_fees', 'monthly_stipend',
                   'travel_allowance', 'health_insurance', 'books_allowance', 'research_allowance',
                   'conference_allowance', 'other_expenses', 'notes']
         widgets = {
@@ -19,6 +67,11 @@ class ScholarshipBudgetForm(forms.ModelForm):
             'end_date': forms.DateInput(attrs={'type': 'date'}),
             'notes': forms.Textarea(attrs={'rows': 4}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # عرض فقط السنوات المالية المفتوحة
+        self.fields['fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
 
     def clean(self):
         cleaned_data = super().clean()
@@ -55,7 +108,7 @@ class ExpenseForm(forms.ModelForm):
 
     class Meta:
         model = Expense
-        fields = ['category', 'amount', 'date', 'description', 'receipt_number', 'receipt_file']
+        fields = ['fiscal_year', 'category', 'amount', 'date', 'description', 'receipt_number', 'receipt_file']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
@@ -64,6 +117,13 @@ class ExpenseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.budget = kwargs.pop('budget', None)
         super().__init__(*args, **kwargs)
+
+        # عرض فقط السنوات المالية المفتوحة
+        self.fields['fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
+
+        # تعيين السنة المالية تلقائيًا إذا كانت الميزانية مرتبطة بسنة مالية
+        if self.budget and self.budget.fiscal_year and not self.instance.pk:
+            self.fields['fiscal_year'].initial = self.budget.fiscal_year
 
         # تعيين الميزانية تلقائيًا إذا تم تمريرها
         if self.budget and not self.instance.pk:
@@ -117,7 +177,7 @@ class BudgetAdjustmentForm(forms.ModelForm):
 
     class Meta:
         model = BudgetAdjustment
-        fields = ['amount', 'date', 'reason', 'adjustment_type']
+        fields = ['fiscal_year', 'amount', 'date', 'reason', 'adjustment_type']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'reason': forms.Textarea(attrs={'rows': 3}),
@@ -126,6 +186,13 @@ class BudgetAdjustmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.budget = kwargs.pop('budget', None)
         super().__init__(*args, **kwargs)
+
+        # عرض فقط السنوات المالية المفتوحة
+        self.fields['fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
+
+        # تعيين السنة المالية تلقائيًا إذا كانت الميزانية مرتبطة بسنة مالية
+        if self.budget and self.budget.fiscal_year and not self.instance.pk:
+            self.fields['fiscal_year'].initial = self.budget.fiscal_year
 
         # تعيين الميزانية تلقائيًا إذا تم تمريرها
         if self.budget and not self.instance.pk:
@@ -145,10 +212,16 @@ class FinancialReportForm(forms.ModelForm):
 
     class Meta:
         model = FinancialReport
-        fields = ['title', 'description', 'report_type', 'is_public']
+        fields = ['title', 'description', 'report_type', 'fiscal_year', 'is_public']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # إضافة خيار السنة المالية
+        self.fields['fiscal_year'].queryset = FiscalYear.objects.all().order_by('-year')
+        self.fields['fiscal_year'].required = False
 
 
 class DateRangeForm(forms.Form):
@@ -162,6 +235,11 @@ class BudgetFilterForm(forms.Form):
     status = forms.ChoiceField(
         label=_("الحالة"),
         choices=[('', _('جميع الحالات'))] + list(ScholarshipBudget.STATUS_CHOICES),
+        required=False
+    )
+    fiscal_year = forms.ModelChoiceField(
+        label=_("السنة المالية"),
+        queryset=FiscalYear.objects.all().order_by('-year'),
         required=False
     )
     start_date = forms.DateField(
@@ -193,6 +271,11 @@ class ExpenseFilterForm(forms.Form):
     status = forms.ChoiceField(
         label=_("الحالة"),
         choices=[('', _('جميع الحالات'))] + list(Expense.STATUS_CHOICES),
+        required=False
+    )
+    fiscal_year = forms.ModelChoiceField(
+        label=_("السنة المالية"),
+        queryset=FiscalYear.objects.all().order_by('-year'),
         required=False
     )
     category = forms.ModelChoiceField(
@@ -227,10 +310,29 @@ class ExpenseFilterForm(forms.Form):
 class YearlyScholarshipCostsForm(forms.ModelForm):
     class Meta:
         model = YearlyScholarshipCosts
-        fields = ['year_number', 'academic_year', 'travel_tickets', 'monthly_allowance',
-                'monthly_duration', 'visa_fees', 'health_insurance',
-                'tuition_fees_foreign', 'tuition_fees_local']
+        fields = ['year_number', 'academic_year', 'fiscal_year', 'travel_tickets', 'monthly_allowance',
+                  'monthly_duration', 'visa_fees', 'health_insurance',
+                  'tuition_fees_foreign', 'tuition_fees_local']
         widgets = {
-            'academic_year': forms.Select(choices=[(f"{y}-{y+1}", f"{y}-{y+1}")
-                                                for y in range(2020, 2030)]),
+            'academic_year': forms.Select(choices=[(f"{y}-{y + 1}", f"{y}-{y + 1}")
+                                                   for y in range(2020, 2030)]),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # عرض فقط السنوات المالية المفتوحة
+        self.fields['fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
+        self.fields['fiscal_year'].required = False
+
+
+class ScholarshipSettingsForm(forms.ModelForm):
+    """نموذج إعدادات نظام الابتعاث"""
+
+    class Meta:
+        model = ScholarshipSettings
+        fields = ['life_insurance_rate', 'add_percentage', 'current_fiscal_year']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # عرض فقط السنوات المالية المفتوحة للسنة الحالية
+        self.fields['current_fiscal_year'].queryset = FiscalYear.objects.filter(status='open')

@@ -6,6 +6,83 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.utils import timezone
 from applications.models import Application
+import datetime
+
+
+class FiscalYear(models.Model):
+    """نموذج السنة المالية"""
+    year = models.IntegerField(_("السنة المالية"))
+    start_date = models.DateField(_("تاريخ البداية"))
+    end_date = models.DateField(_("تاريخ النهاية"))
+    status = models.CharField(_("الحالة"), max_length=10,
+                              choices=[('open', 'مفتوحة'), ('closed', 'مغلقة')],
+                              default='open')
+    total_budget = models.DecimalField(_("إجمالي الميزانية السنوية"),
+                                       max_digits=15, decimal_places=2)
+    description = models.TextField(_("وصف/ملاحظات"), blank=True, null=True)
+    created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL,
+                                   verbose_name=_("تم الإنشاء بواسطة"),
+                                   related_name="created_fiscal_years",
+                                   null=True)
+
+    class Meta:
+        verbose_name = _("السنة المالية")
+        verbose_name_plural = _("السنوات المالية")
+        ordering = ['-year']
+        unique_together = ['year']
+
+    def __str__(self):
+        return f"السنة المالية {self.year} ({self.get_status_display()})"
+
+    def get_absolute_url(self):
+        return reverse('finance:fiscal_year_detail', args=[self.id])
+
+    def get_spent_amount(self):
+        """إجمالي المصاريف في هذه السنة المالية"""
+        return Expense.objects.filter(
+            date__gte=self.start_date,
+            date__lte=self.end_date,
+            status='approved'
+        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
+
+    def get_remaining_amount(self):
+        """المبلغ المتبقي من الميزانية"""
+        return self.total_budget - self.get_spent_amount()
+
+    def get_spent_percentage(self):
+        """نسبة الإنفاق من الميزانية"""
+        if self.total_budget > 0:
+            return (self.get_spent_amount() / self.total_budget) * 100
+        return 0
+
+    def get_scholarship_budgets_count(self):
+        """عدد ميزانيات الابتعاث المرتبطة بهذه السنة المالية"""
+        return self.scholarship_budgets.count()
+
+    def close_and_create_new(self):
+        """إغلاق السنة المالية الحالية وإنشاء سنة جديدة"""
+        if self.status == 'closed':
+            return None
+
+        # إغلاق السنة الحالية
+        self.status = 'closed'
+        self.save()
+
+        # إنشاء سنة مالية جديدة
+        next_year = self.year + 1
+        new_fiscal_year = FiscalYear.objects.create(
+            year=next_year,
+            start_date=datetime.date(next_year, 1, 1),
+            end_date=datetime.date(next_year, 12, 31),
+            status='open',
+            total_budget=self.total_budget,  # يمكن تعديله لاحقًا
+            description=f"السنة المالية {next_year}",
+            created_by=self.created_by
+        )
+
+        return new_fiscal_year
 
 
 class ScholarshipBudget(models.Model):
@@ -13,6 +90,10 @@ class ScholarshipBudget(models.Model):
     application = models.OneToOneField(Application, on_delete=models.CASCADE,
                                        verbose_name=_("طلب الابتعاث"),
                                        related_name="budget")
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.CASCADE,
+                                    verbose_name=_("السنة المالية"),
+                                    related_name="scholarship_budgets",
+                                    null=True)
     total_amount = models.DecimalField(_("المبلغ الإجمالي"), max_digits=12, decimal_places=2)
     start_date = models.DateField(_("تاريخ بدء الميزانية"))
     end_date = models.DateField(_("تاريخ انتهاء الميزانية"))
@@ -63,18 +144,69 @@ class ScholarshipBudget(models.Model):
 
     def get_remaining_amount(self):
         """حساب المبلغ المتبقي في الميزانية"""
-        spent_amount = self.expenses.aggregate(models.Sum('amount'))['amount__sum'] or 0
+        spent_amount = self.expenses.filter(
+            date__gte=self.fiscal_year.start_date if self.fiscal_year else self.start_date,
+            date__lte=self.fiscal_year.end_date if self.fiscal_year else self.end_date,
+            status='approved'
+        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
         return self.total_amount - spent_amount
 
     def get_spent_amount(self):
         """حساب المبلغ المصروف من الميزانية"""
-        return self.expenses.aggregate(models.Sum('amount'))['amount__sum'] or 0
+        return self.expenses.filter(
+            date__gte=self.fiscal_year.start_date if self.fiscal_year else self.start_date,
+            date__lte=self.fiscal_year.end_date if self.fiscal_year else self.end_date,
+            status='approved'
+        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
 
     def get_spent_percentage(self):
         """حساب نسبة الصرف من الميزانية"""
         if self.total_amount > 0:
             return (self.get_spent_amount() / self.total_amount) * 100
         return 0
+
+    def get_yearly_costs_total(self):
+        """حساب إجمالي التكاليف السنوية للابتعاث"""
+        return sum(cost.total_year_cost() for cost in self.yearly_costs.all())
+
+    def close_current_year_open_new(self):
+        """إغلاق السنة الدراسية الحالية وفتح سنة جديدة"""
+        if not self.is_current or self.status == 'closed':
+            return None
+
+        # تحديث السنة الحالية
+        current_year = self.academic_year
+        year_parts = current_year.split('-')
+        next_year = f"{int(year_parts[0]) + 1}-{int(year_parts[1]) + 1}"
+
+        # إغلاق السنة الحالية
+        self.is_current = False
+        self.status = 'closed'
+        self.save()
+
+        # إنشاء ميزانية جديدة للسنة التالية
+        new_budget = ScholarshipBudget.objects.create(
+            application=self.application,
+            fiscal_year=self.fiscal_year,
+            total_amount=self.total_amount,
+            start_date=self.end_date + datetime.timedelta(days=1),
+            end_date=self.end_date + datetime.timedelta(days=365),
+            created_by=self.created_by,
+            tuition_fees=self.tuition_fees,
+            monthly_stipend=self.monthly_stipend,
+            travel_allowance=self.travel_allowance,
+            health_insurance=self.health_insurance,
+            books_allowance=self.books_allowance,
+            research_allowance=self.research_allowance,
+            conference_allowance=self.conference_allowance,
+            other_expenses=self.other_expenses,
+            academic_year=next_year,
+            exchange_rate=self.exchange_rate,
+            foreign_currency=self.foreign_currency,
+            is_current=True
+        )
+
+        return new_budget
 
 
 class YearlyScholarshipCosts(models.Model):
@@ -95,6 +227,10 @@ class YearlyScholarshipCosts(models.Model):
     tuition_fees_foreign = models.DecimalField(_("الرسوم الدراسية (بالعملة الأجنبية)"), max_digits=10, decimal_places=2,
                                                default=0)
 
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
+                                    verbose_name=_("السنة المالية"),
+                                    related_name="yearly_scholarship_costs",
+                                    null=True, blank=True)
     created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
     updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
 
@@ -128,6 +264,9 @@ class ScholarshipSettings(models.Model):
                                               default=0.0034, help_text=_("3.4/1000"))
     add_percentage = models.DecimalField(_("نسبة الزيادة"), max_digits=5, decimal_places=2,
                                          default=50.0, help_text=_("نسبة الزيادة على المجموع الكلي (%)"))
+    current_fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
+                                            verbose_name=_("السنة المالية الحالية"),
+                                            null=True, blank=True)
 
     class Meta:
         verbose_name = _("إعدادات نظام الابتعاث")
@@ -170,6 +309,10 @@ class Expense(models.Model):
                                    related_name="created_expenses")
     created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
     updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
+                                    verbose_name=_("السنة المالية"),
+                                    related_name="expenses",
+                                    null=True, blank=True)
 
     # حالة المصروف
     STATUS_CHOICES = [
@@ -198,6 +341,13 @@ class Expense(models.Model):
     def get_absolute_url(self):
         return reverse('finance:expense_detail', args=[self.id])
 
+    def save(self, *args, **kwargs):
+        # التحقق من تعيين السنة المالية تلقائيًا
+        if not self.fiscal_year and self.budget and self.budget.fiscal_year:
+            self.fiscal_year = self.budget.fiscal_year
+
+        super().save(*args, **kwargs)
+
 
 class FinancialReport(models.Model):
     """نموذج التقارير المالية"""
@@ -212,12 +362,17 @@ class FinancialReport(models.Model):
         ('monthly_expenses', _('المصروفات الشهرية')),
         ('category_expenses', _('المصروفات حسب الفئة')),
         ('scholarship_years_costs', _('تكاليف الابتعاث حسب السنوات')),
+        ('fiscal_year_summary', _('ملخص السنة المالية')),
         ('custom', _('تقرير مخصص')),
     ]
     report_type = models.CharField(_("نوع التقرير"), max_length=50, choices=REPORT_TYPE_CHOICES)
 
     # فلاتر التقرير (يتم تخزينها كـ JSON)
     filters = models.JSONField(_("فلاتر التقرير"), blank=True, null=True)
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
+                                    verbose_name=_("السنة المالية"),
+                                    related_name="reports",
+                                    null=True, blank=True)
 
     created_by = models.ForeignKey(User, on_delete=models.CASCADE,
                                    verbose_name=_("تم الإنشاء بواسطة"),
@@ -260,6 +415,10 @@ class BudgetAdjustment(models.Model):
                                    verbose_name=_("تم الإنشاء بواسطة"),
                                    related_name="created_adjustments")
     created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
+                                    verbose_name=_("السنة المالية"),
+                                    related_name="budget_adjustments",
+                                    null=True, blank=True)
 
     # تفاصيل الموافقة
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL,
@@ -286,6 +445,13 @@ class BudgetAdjustment(models.Model):
     def get_absolute_url(self):
         return reverse('finance:adjustment_detail', args=[self.id])
 
+    def save(self, *args, **kwargs):
+        # التحقق من تعيين السنة المالية تلقائيًا
+        if not self.fiscal_year and self.budget and self.budget.fiscal_year:
+            self.fiscal_year = self.budget.fiscal_year
+
+        super().save(*args, **kwargs)
+
 
 class FinancialLog(models.Model):
     """نموذج سجل العمليات المالية"""
@@ -301,6 +467,10 @@ class FinancialLog(models.Model):
                                    verbose_name=_("تعديل الميزانية"),
                                    related_name="logs",
                                    blank=True, null=True)
+    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
+                                    verbose_name=_("السنة المالية"),
+                                    related_name="financial_logs",
+                                    null=True, blank=True)
 
     # نوع العملية
     ACTION_TYPE_CHOICES = [
@@ -309,6 +479,7 @@ class FinancialLog(models.Model):
         ('delete', _('حذف')),
         ('approve', _('موافقة')),
         ('reject', _('رفض')),
+        ('close', _('إغلاق')),
     ]
     action_type = models.CharField(_("نوع العملية"), max_length=20, choices=ACTION_TYPE_CHOICES)
     description = models.TextField(_("وصف العملية"))
@@ -325,3 +496,15 @@ class FinancialLog(models.Model):
 
     def __str__(self):
         return f"{self.action_type} - {self.created_at}"
+
+    def save(self, *args, **kwargs):
+        # التحقق من تعيين السنة المالية تلقائيًا
+        if not self.fiscal_year:
+            if self.budget and self.budget.fiscal_year:
+                self.fiscal_year = self.budget.fiscal_year
+            elif self.expense and self.expense.fiscal_year:
+                self.fiscal_year = self.expense.fiscal_year
+            elif self.adjustment and self.adjustment.fiscal_year:
+                self.fiscal_year = self.adjustment.fiscal_year
+
+        super().save(*args, **kwargs)

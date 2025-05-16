@@ -9,6 +9,17 @@ urlpatterns = [
     # الصفحة الرئيسية للمالية
     path('', views.finance_home, name='home'),
 
+    # إدارة السنوات المالية
+    path('fiscal-years/', views.fiscal_year_list, name='fiscal_year_list'),
+    path('fiscal-years/<int:fiscal_year_id>/', views.fiscal_year_detail, name='fiscal_year_detail'),
+    path('fiscal-years/create/', views.create_fiscal_year, name='create_fiscal_year'),
+    path('fiscal-years/<int:fiscal_year_id>/update/', views.update_fiscal_year, name='update_fiscal_year'),
+    path('fiscal-years/<int:fiscal_year_id>/close/', views.close_fiscal_year, name='close_fiscal_year'),
+    path('fiscal-years/<int:fiscal_year_id>/report/', views.fiscal_year_report, name='fiscal_year_report'),
+    path('fiscal-years/<int:fiscal_year_id>/expenses/', views.fiscal_year_expenses, name='fiscal_year_expenses'),
+    path('fiscal-years/<int:fiscal_year_id>/budgets/', views.fiscal_year_budgets, name='fiscal_year_budgets'),
+    path('settings/', views.scholarship_settings, name='scholarship_settings'),
+
     # إدارة الميزانيات
     path('budgets/', views.budget_list, name='budget_list'),
     path('budgets/<int:budget_id>/', views.budget_detail, name='budget_detail'),
@@ -50,6 +61,7 @@ urlpatterns = [
     path('reports/expense-summary/', views.expense_summary_report, name='expense_summary_report'),
     path('reports/monthly-expenses/', views.monthly_expenses_report, name='monthly_expenses_report'),
     path('reports/category-expenses/', views.category_expenses_report, name='category_expenses_report'),
+    path('reports/fiscal-year-summary/', views.fiscal_year_summary_report, name='fiscal_year_summary_report'),
 
     # لوحة المعلومات المالية (Dashboard)
     path('dashboard/', views.finance_dashboard, name='dashboard'),
@@ -59,15 +71,10 @@ urlpatterns = [
     path('api/expense-categories/', views.api_expense_categories, name='api_expense_categories'),
     path('api/monthly-expenses/', views.api_monthly_expenses, name='api_monthly_expenses'),
     path('api/budget-status/', views.api_budget_status, name='api_budget_status'),
-
-    # API endpoints for charts
-    path('api/monthly-expenses/', views.api_monthly_expenses, name='api_monthly_expenses'),
-    path('api/expense-categories/', views.api_expense_categories, name='api_expense_categories'),
-    path('api/budget-status/', views.api_budget_status, name='api_budget_status'),
+    path('api/fiscal-year-summary/', views.api_fiscal_year_summary, name='api_fiscal_year_summary'),
 
     # إضافة مسارات جديدة
     path('budgets/<int:budget_id>/add-year/', views.add_scholarship_year, name='add_scholarship_year'),
     path('budgets/<int:budget_id>/close-year/', views.close_current_year_open_new, name='close_current_year_open_new'),
     path('budgets/<int:budget_id>/costs-report/', views.scholarship_years_costs_report, name='scholarship_years_costs_report'),
-
 ]
