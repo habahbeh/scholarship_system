@@ -9,6 +9,52 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.rtl.min.css">
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+  .nav-link.active {
+    font-weight: bold;
+    background-color: rgba(13, 110, 253, 0.1);
+  }
+  .list-group-item-action:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+  }
+  .card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+    border: none;
+  }
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    border-top-right-radius: 0.5rem !important;
+    border-top-left-radius: 0.5rem !important;
+  }
+  .badge-success {
+    background-color: #28a745;
+    color: white;
+  }
+  .badge-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+  .badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  .badge-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+  .badge-info {
+    background-color: #17a2b8;
+    color: white;
+  }
+  .badge-primary {
+    background-color: #0d6efd;
+    color: white;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -42,16 +88,8 @@
                     </div>
                   </div>
                 </a>
-                <a href="{% url 'finance:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active fw-bold{% endif %}">
-                  <div class="d-flex align-items-center">
-                    <div class="me-3">
-                      <i class="fas fa-tachometer-alt fa-fw text-primary"></i>
-                    </div>
-                    <div>
-                      <span>{% trans "لوحة المعلومات" %}</span>
-                    </div>
-                  </div>
-                </a>
+
+                <!-- إدارة الميزانيات -->
                 <a href="{% url 'finance:budget_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'budget_list' or 'budget_detail' in request.resolver_match.url_name or 'budget_create' in request.resolver_match.url_name or 'budget_update' in request.resolver_match.url_name %}active fw-bold{% endif %}">
                   <div class="d-flex align-items-center">
                     <div class="me-3">
@@ -63,9 +101,21 @@
                   </div>
                 </a>
 
+                <!-- إدارة السنوات المالية -->
+                <a href="{% url 'finance:fiscal_year_list' %}" class="list-group-item list-group-item-action {% if 'fiscal_year' in request.resolver_match.url_name %}active fw-bold{% endif %}">
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <i class="fas fa-calendar-alt fa-fw text-primary"></i>
+                    </div>
+                    <div>
+                      <span>{% trans "السنوات المالية" %}</span>
+                    </div>
+                  </div>
+                </a>
+
                 <!-- Expandable menu for expenses -->
                 <div class="list-group-item p-0">
-                  <a class="d-flex align-items-center p-3 text-decoration-none text-dark" data-bs-toggle="collapse" href="#expensesSubmenu" role="button" aria-expanded="false" aria-controls="expensesSubmenu">
+                  <a class="d-flex align-items-center p-3 text-decoration-none text-dark {% if 'expense' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}fw-bold{% endif %}" data-bs-toggle="collapse" href="#expensesSubmenu" role="button" aria-expanded="{% if 'expense' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}true{% else %}false{% endif %}" aria-controls="expensesSubmenu">
                     <div class="me-3">
                       <i class="fas fa-file-invoice-dollar fa-fw text-primary"></i>
                     </div>
@@ -76,25 +126,38 @@
                       <i class="fas fa-chevron-down small"></i>
                     </div>
                   </a>
-                  <div class="collapse {% if 'expense' in request.resolver_match.url_name %}show{% endif %}" id="expensesSubmenu">
+                  <div class="collapse {% if 'expense' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}show{% endif %}" id="expensesSubmenu">
                     <div class="list-group list-group-flush border-top">
-                      <a href="{% url 'finance:expense_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'expense_list' %}active fw-bold{% endif %}">
+                      <a href="{% url 'finance:expense_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'expense_list' or 'expense_detail' in request.resolver_match.url_name or 'expense_create' in request.resolver_match.url_name or 'expense_update' in request.resolver_match.url_name %}active fw-bold{% endif %}">
                         <i class="fas fa-list-ul fa-fw me-2"></i>{% trans "قائمة المصروفات" %}
                       </a>
-                      <a href="{% url 'finance:category_list' %}" class="list-group-item list-group-item-action ps-5 {% if request.resolver_match.url_name == 'category_list' %}active fw-bold{% endif %}">
+                      <a href="{% url 'finance:category_list' %}" class="list-group-item list-group-item-action ps-5 {% if 'category' in request.resolver_match.url_name %}active fw-bold{% endif %}">
                         <i class="fas fa-tags fa-fw me-2"></i>{% trans "فئات المصروفات" %}
                       </a>
                     </div>
                   </div>
                 </div>
 
+                <!-- التقارير المالية -->
                 <a href="{% url 'finance:report_list' %}" class="list-group-item list-group-item-action {% if 'report' in request.resolver_match.url_name %}active fw-bold{% endif %}">
                   <div class="d-flex align-items-center">
                     <div class="me-3">
-                      <i class="fas fa-chart-pie fa-fw text-primary"></i>
+                      <i class="fas fa-file-alt fa-fw text-primary"></i>
                     </div>
                     <div>
                       <span>{% trans "التقارير المالية" %}</span>
+                    </div>
+                  </div>
+                </a>
+
+                <!-- إعدادات النظام المالي -->
+                <a href="{% url 'finance:scholarship_settings' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'scholarship_settings' %}active fw-bold{% endif %}">
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <i class="fas fa-cog fa-fw text-primary"></i>
+                    </div>
+                    <div>
+                      <span>{% trans "الإعدادات" %}</span>
                     </div>
                   </div>
                 </a>
@@ -115,6 +178,18 @@
     <!-- المحتوى الرئيسي -->
     <div class="col-lg-9 col-md-8">
       <div class="card shadow-sm">
+        <!-- Notification area for flash messages -->
+        {% if messages %}
+        <div class="alert-container px-3 pt-3">
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="card-body">
           {% block finance_content %}{% endblock %}
         </div>
@@ -128,8 +203,6 @@
 {{ block.super }}
 <!-- Bootstrap Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Activate the appropriate menu item based on current page
@@ -153,13 +226,23 @@
         }
       }
     });
+
+    // Initialize all tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    if (tooltipTriggerList.length) {
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    }
+
+    // Auto-hide alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert:not(.alert-important)');
+    alerts.forEach(alert => {
+      setTimeout(() => {
+        const closeButton = alert.querySelector('.btn-close');
+        if (closeButton) {
+          closeButton.click();
+        }
+      }, 5000);
+    });
   });
 </script>
-{% endblock %}
-
-{% block extrahead %}
-<!-- React Libraries -->
-<script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.min.js" crossorigin></script>
 {% endblock %}
