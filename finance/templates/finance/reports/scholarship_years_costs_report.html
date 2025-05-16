@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "تقرير تكاليف الابتعاث حسب السنوات" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">{% trans "تقرير تكاليف الابتعاث حسب السنوات" %}</h3>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> {% trans "طباعة" %}
+                </button>
+                <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> {% trans "العودة" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- معلومات المبتعث والميزانية -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "معلومات المبتعث" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>{% trans "المبتعث:" %}</strong> {{ budget.application.applicant.get_full_name }}</p>
+                            <p><strong>{% trans "المنحة:" %}</strong> {{ budget.application.scholarship.title }}</p>
+                            <p><strong>{% trans "السنة الدراسية الحالية:" %}</strong> {{ budget.academic_year }}</p>
+                            <p><strong>{% trans "السنة المالية:" %}</strong> 
+                                {% if budget.fiscal_year %}
+                                    {{ budget.fiscal_year }}
+                                {% else %}
+                                    {% trans "غير محددة" %}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "ملخص التكاليف" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>{% trans "إجمالي تكاليف السنوات:" %}</strong> {{ total_costs|floatformat:2 }}</p>
+                            <p><strong>{% trans "مبلغ التأمين على الحياة (معدل:" %} {{ insurance_rate|floatformat:4 }}):</strong> {{ insurance_amount|floatformat:2 }}</p>
+                            <p><strong>{% trans "التكلفة الحقيقية:" %}</strong> {{ true_cost|floatformat:2 }}</p>
+                            <p><strong>{% trans "نسبة الزيادة الاحتياطية:" %}</strong> {{ additional_percent|floatformat:2 }}%</p>
+                            <p class="font-weight-bold text-primary"><strong>{% trans "إجمالي الميزانية المطلوبة:" %}</strong> {{ grand_total|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- جدول التكاليف السنوية -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>{% trans "التكاليف حسب السنوات الدراسية" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr class="bg-light">
+                                    <th>{% trans "رقم السنة" %}</th>
+                                    <th>{% trans "السنة الدراسية" %}</th>
+                                    <th>{% trans "السنة المالية" %}</th>
+                                    <th>{% trans "تذكرة سفر" %}</th>
+                                    <th>{% trans "المخصص الشهري" %}</th>
+                                    <th>{% trans "عدد الأشهر" %}</th>
+                                    <th>{% trans "إجمالي المخصص" %}</th>
+                                    <th>{% trans "رسوم الفيزا" %}</th>
+                                    <th>{% trans "التأمين الصحي" %}</th>
+                                    <th>{% trans "الرسوم الدراسية (بالعملة الأجنبية)" %}</th>
+                                    <th>{% trans "الرسوم الدراسية (بالدينار)" %}</th>
+                                    <th>{% trans "إجمالي التكلفة" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cost in yearly_costs %}
+                                <tr>
+                                    <td>{{ cost.year_number }}</td>
+                                    <td>{{ cost.academic_year }}</td>
+                                    <td>
+                                        {% if cost.fiscal_year %}
+                                            {{ cost.fiscal_year.year }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ cost.travel_tickets|floatformat:2 }}</td>
+                                    <td>{{ cost.monthly_allowance|floatformat:2 }}</td>
+                                    <td>{{ cost.monthly_duration }}</td>
+                                    <td>{{ cost.total_monthly_allowance|floatformat:2 }}</td>
+                                    <td>{{ cost.visa_fees|floatformat:2 }}</td>
+                                    <td>{{ cost.health_insurance|floatformat:2 }}</td>
+                                    <td>{{ cost.tuition_fees_foreign|floatformat:2 }}</td>
+                                    <td>{{ cost.tuition_fees_local|floatformat:2 }}</td>
+                                    <td class="font-weight-bold">{{ cost.total_year_cost|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="12" class="text-center">{% trans "لا توجد بيانات لتكاليف السنوات الدراسية" %}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="bg-light font-weight-bold">
+                                    <td colspan="11" class="text-right">{% trans "إجمالي تكاليف جميع السنوات:" %}</td>
+                                    <td>{{ total_costs|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التكاليف حسب السنة المالية -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>{% trans "التكاليف حسب السنوات المالية" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for fiscal_year_data in costs_by_fiscal_year %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>{{ fiscal_year_data.name }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>{% trans "السنة الدراسية" %}</th>
+                                                <th>{% trans "رقم السنة" %}</th>
+                                                <th>{% trans "التكلفة" %}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cost in fiscal_year_data.costs %}
+                                            <tr>
+                                                <td>{{ cost.academic_year }}</td>
+                                                <td>{{ cost.year_number }}</td>
+                                                <td>{{ cost.total_year_cost|floatformat:2 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            <tr class="font-weight-bold">
+                                                <td colspan="2">{% trans "الإجمالي:" %}</td>
+                                                <td>{{ fiscal_year_data.total|floatformat:2 }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                {% trans "لا توجد بيانات موزعة على السنوات المالية" %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- الرسوم البيانية -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "توزيع التكاليف حسب السنوات الدراسية" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="yearCostsChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "توزيع التكاليف حسب السنوات المالية" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="fiscalYearCostsChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // بيانات الرسوم البيانية للسنوات الدراسية
+        var years = [{% for cost in yearly_costs %}'{% trans "السنة" %} {{ cost.year_number }}',{% endfor %}];
+        var costs = [{% for cost in yearly_costs %}{{ cost.total_year_cost }},{% endfor %}];
+
+        // رسم بياني للتكاليف حسب السنوات الدراسية
+        var yearCostsCtx = document.getElementById('yearCostsChart').getContext('2d');
+        new Chart(yearCostsCtx, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: '{% trans "التكلفة" %}',
+                    data: costs,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // بيانات الرسوم البيانية للسنوات المالية
+        var fiscalYears = [{% for fiscal_year_data in costs_by_fiscal_year %}'{{ fiscal_year_data.fiscal_year.year }}',{% endfor %}];
+        var fiscalYearCosts = [{% for fiscal_year_data in costs_by_fiscal_year %}{{ fiscal_year_data.total }},{% endfor %}];
+
+        // رسم بياني للتكاليف حسب السنوات المالية
+        var fiscalYearCostsCtx = document.getElementById('fiscalYearCostsChart').getContext('2d');
+        new Chart(fiscalYearCostsCtx, {
+            type: 'pie',
+            data: {
+                labels: fiscalYears,
+                datasets: [{
+                    data: fiscalYearCosts,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(153, 102, 255, 0.5)',
+                        'rgba(255, 159, 64, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

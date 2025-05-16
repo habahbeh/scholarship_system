@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "تقرير ملخص السنوات المالية" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "تقرير ملخص السنوات المالية" %}</h3>
+        </div>
+        <div class="card-body">
+            <!-- معلومات السنة المالية الحالية -->
+            {% if current_fiscal_year %}
+            <div class="alert alert-info">
+                <strong>{% trans "السنة المالية الحالية:" %}</strong> {{ current_fiscal_year.year }} 
+                ({{ current_fiscal_year.get_status_display }})
+            </div>
+            {% endif %}
+
+            <!-- جدول السنوات المالية -->
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>{% trans "السنة المالية" %}</th>
+                            <th>{% trans "الفترة" %}</th>
+                            <th>{% trans "إجمالي الميزانية" %}</th>
+                            <th>{% trans "المصروفات" %}</th>
+                            <th>{% trans "المتبقي" %}</th>
+                            <th>{% trans "نسبة الصرف" %}</th>
+                            <th>{% trans "عدد الميزانيات" %}</th>
+                            <th>{% trans "الحالة" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fiscal_year in fiscal_years %}
+                        <tr>
+                            <td><a href="{% url 'finance:fiscal_year_detail' fiscal_year_id=fiscal_year.id %}">{{ fiscal_year.year }}</a></td>
+                            <td>{{ fiscal_year.start_date|date:"Y-m-d" }} - {{ fiscal_year.end_date|date:"Y-m-d" }}</td>
+                            <td>{{ fiscal_year.total_budget|floatformat:2 }}</td>
+                            <td>{{ fiscal_year.spent_amount|floatformat:2 }}</td>
+                            <td>{{ fiscal_year.remaining_amount|floatformat:2 }}</td>
+                            <td>{{ fiscal_year.spent_percentage|floatformat:2 }}%</td>
+                            <td>{{ fiscal_year.budgets_count }}</td>
+                            <td><span class="badge {% if fiscal_year.status == 'open' %}badge-success{% else %}badge-secondary{% endif %}">
+                                {{ fiscal_year.get_status_display }}
+                            </span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">{% trans "لا توجد سنوات مالية" %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- الرسوم البيانية -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "نسب الإنفاق للسنوات المالية" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="spendingChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "إجمالي الميزانيات السنوية" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="budgetChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // بيانات الرسوم البيانية
+        var years = [{% for fiscal_year in fiscal_years %}'{{ fiscal_year.year }}',{% endfor %}];
+        var spending = [{% for fiscal_year in fiscal_years %}{{ fiscal_year.spent_percentage }},{% endfor %}];
+        var budgets = [{% for fiscal_year in fiscal_years %}{{ fiscal_year.total_budget }},{% endfor %}];
+
+        // رسم بياني للإنفاق
+        var spendingCtx = document.getElementById('spendingChart').getContext('2d');
+        new Chart(spendingCtx, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: '{% trans "نسبة الإنفاق (%)" %}',
+                    data: spending,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // رسم بياني للميزانيات
+        var budgetCtx = document.getElementById('budgetChart').getContext('2d');
+        new Chart(budgetCtx, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: '{% trans "إجمالي الميزانية" %}',
+                    data: budgets,
+                    backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

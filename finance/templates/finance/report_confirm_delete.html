@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "حذف التقرير" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h3 class="card-title">{% trans "تأكيد حذف التقرير" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h4>{% trans "هل أنت متأكد من حذف التقرير التالي؟" %}</h4>
+                <p><strong>{% trans "عنوان التقرير:" %}</strong> {{ report.title }}</p>
+                <p><strong>{% trans "نوع التقرير:" %}</strong> {{ report.get_report_type_display }}</p>
+                <p><strong>{% trans "تاريخ الإنشاء:" %}</strong> {{ report.created_at|date:"Y-m-d H:i" }}</p>
+                <p class="text-danger">{% trans "تحذير: لا يمكن التراجع عن هذه العملية!" %}</p>
+            </div>
+            
+            <form method="post" action="{% url 'finance:delete_report' report_id=report.id %}">
+                {% csrf_token %}
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> {% trans "نعم، احذف التقرير" %}
+                    </button>
+                    <a href="{% url 'finance:report_detail' report_id=report.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> {% trans "إلغاء" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

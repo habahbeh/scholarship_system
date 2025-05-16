@@ -30,7 +30,7 @@ from .forms import (
     ScholarshipBudgetForm, ExpenseForm, ExpenseCategoryForm,
     ExpenseApprovalForm, BudgetAdjustmentForm, BudgetAdjustmentApprovalForm,
     FinancialReportForm, DateRangeForm, BudgetFilterForm, ExpenseFilterForm,
-    FiscalYearForm, YearlyScholarshipCostsForm, ScholarshipSettingsForm
+    FiscalYearForm, YearlyScholarshipCostsForm, ScholarshipSettingsForm, FiscalYearFilterForm
 )
 
 
@@ -217,7 +217,7 @@ def create_fiscal_year(request):
             if not settings:
                 settings = ScholarshipSettings.objects.create(
                     current_fiscal_year=fiscal_year,
-                    created_by=request.user
+                    # created_by=request.user
                 )
             elif not settings.current_fiscal_year:
                 settings.current_fiscal_year = fiscal_year

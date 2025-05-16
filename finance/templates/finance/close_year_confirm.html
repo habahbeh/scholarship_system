@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "إغلاق السنة الدراسية الحالية وفتح سنة جديدة" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h3 class="card-title">{% trans "تأكيد إغلاق السنة الدراسية الحالية وفتح سنة جديدة" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h4>{% trans "هل أنت متأكد من إغلاق السنة الدراسية الحالية وفتح سنة جديدة؟" %}</h4>
+                <p><strong>{% trans "المبتعث:" %}</strong> {{ budget.application.applicant.get_full_name }}</p>
+                <p><strong>{% trans "السنة الدراسية الحالية:" %}</strong> {{ budget.academic_year }}</p>
+                <p><strong>{% trans "حالة الميزانية:" %}</strong> {{ budget.get_status_display }}</p>
+                <hr>
+                <p>{% trans "سيتم إغلاق الميزانية الحالية وإنشاء ميزانية جديدة للسنة التالية." %}</p>
+                <p class="text-danger">{% trans "تحذير: لا يمكن التراجع عن هذه العملية!" %}</p>
+            </div>
+            
+            <form method="post" action="{% url 'finance:close_current_year_open_new' budget_id=budget.id %}">
+                {% csrf_token %}
+                
+                <div class="form-group mt-3">
+                    <label for="fiscal_year">{% trans "السنة المالية للسنة الجديدة:" %}</label>
+                    <select name="fiscal_year" id="fiscal_year" class="form-control">
+                        {% if budget.fiscal_year %}
+                            <option value="{{ budget.fiscal_year.id }}" selected>{{ budget.fiscal_year }}</option>
+                        {% endif %}
+                        {% for fiscal_year in fiscal_years %}
+                            {% if fiscal_year.id != budget.fiscal_year.id %}
+                                <option value="{{ fiscal_year.id }}">{{ fiscal_year }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">{% trans "اختر السنة المالية التي سيتم ربط الميزانية الجديدة بها" %}</small>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-check-circle"></i> {% trans "نعم، أغلق السنة الحالية وافتح سنة جديدة" %}
+                    </button>
+                    <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> {% trans "إلغاء" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

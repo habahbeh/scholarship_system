@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% trans "إضافة سنة دراسية جديدة للابتعاث" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "إضافة سنة دراسية جديدة للابتعاث" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "معلومات الميزانية" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>{% trans "المبتعث:" %}</strong> {{ budget.application.applicant.get_full_name }}</p>
+                            <p><strong>{% trans "المنحة:" %}</strong> {{ budget.application.scholarship.title }}</p>
+                            <p><strong>{% trans "السنة الدراسية الحالية:" %}</strong> {{ budget.academic_year }}</p>
+                            <p><strong>{% trans "السنة المالية:" %}</strong> 
+                                {% if budget.fiscal_year %}
+                                    {{ budget.fiscal_year }}
+                                {% else %}
+                                    {% trans "غير محددة" %}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>{% trans "التفاصيل المالية" %}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>{% trans "إجمالي الميزانية:" %}</strong> {{ budget.total_amount|floatformat:2 }}</p>
+                            <p><strong>{% trans "المصروفات:" %}</strong> {{ budget.get_spent_amount|floatformat:2 }}</p>
+                            <p><strong>{% trans "المتبقي:" %}</strong> {{ budget.get_remaining_amount|floatformat:2 }}</p>
+                            <p><strong>{% trans "رقم السنة الجديدة:" %}</strong> {{ next_year_number }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'finance:add_scholarship_year' budget_id=budget.id %}">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.year_number|as_crispy_field }}
+                        {{ form.academic_year|as_crispy_field }}
+                        {{ form.fiscal_year|as_crispy_field }}
+                        {{ form.travel_tickets|as_crispy_field }}
+                        {{ form.visa_fees|as_crispy_field }}
+                        {{ form.health_insurance|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.monthly_allowance|as_crispy_field }}
+                        {{ form.monthly_duration|as_crispy_field }}
+                        {{ form.tuition_fees_foreign|as_crispy_field }}
+                        {{ form.tuition_fees_local|as_crispy_field }}
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <p><strong>{% trans "ملاحظة:" %}</strong> {% trans "إجمالي المخصص الشهري سيتم حسابه تلقائياً بناءً على المخصص الشهري وعدد الأشهر" %}</p>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {% trans "حفظ السنة الدراسية" %}
+                    </button>
+                    <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> {% trans "إلغاء" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
