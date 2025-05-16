@@ -2,7 +2,7 @@
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import ScholarshipBudget, Expense, ExpenseCategory, FinancialReport, BudgetAdjustment
+from .models import ScholarshipBudget, Expense, ExpenseCategory, FinancialReport, BudgetAdjustment, YearlyScholarshipCosts
 from applications.models import Application
 
 
@@ -222,3 +222,15 @@ class ExpenseFilterForm(forms.Form):
         label=_("بحث"),
         required=False
     )
+
+
+class YearlyScholarshipCostsForm(forms.ModelForm):
+    class Meta:
+        model = YearlyScholarshipCosts
+        fields = ['year_number', 'academic_year', 'travel_tickets', 'monthly_allowance',
+                'monthly_duration', 'visa_fees', 'health_insurance',
+                'tuition_fees_foreign', 'tuition_fees_local']
+        widgets = {
+            'academic_year': forms.Select(choices=[(f"{y}-{y+1}", f"{y}-{y+1}")
+                                                for y in range(2020, 2030)]),
+        }

@@ -1850,3 +1850,125 @@ def api_budget_status(request):
         })
 
     return JsonResponse({'data': status_data})
+
+
+@login_required
+@permission_required('finance.add_yearlyscholarshipcosts')
+def add_scholarship_year(request, budget_id):
+    """إضافة سنة جديدة لميزانية المبتعث"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # تحديد رقم السنة الجديدة
+    next_year_number = YearlyScholarshipCosts.objects.filter(budget=budget).count() + 1
+
+    if request.method == 'POST':
+        form = YearlyScholarshipCostsForm(request.POST)
+        if form.is_valid():
+            yearly_cost = form.save(commit=False)
+            yearly_cost.budget = budget
+            yearly_cost.save()
+
+            messages.success(request, _("تمت إضافة السنة الدراسية بنجاح"))
+            return redirect('finance:budget_detail', budget_id=budget.id)
+    else:
+        # القيم الافتراضية حسب تقرير PDF المرفق
+        initial_data = {
+            'year_number': next_year_number,
+            'academic_year': budget.academic_year,
+            'monthly_allowance': 1000,
+            'monthly_duration': 12,
+        }
+
+        # القيم الافتراضية تختلف حسب السنة
+        if next_year_number == 1:
+            initial_data.update({
+                'travel_tickets': 1100,
+                'visa_fees': 358,
+                'health_insurance': 500,
+                'tuition_fees_foreign': 22350,
+            })
+        else:
+            initial_data.update({
+                'travel_tickets': 0,
+                'visa_fees': 0,
+                'health_insurance': 0,
+                'tuition_fees_foreign': 22350,
+            })
+
+        form = YearlyScholarshipCostsForm(initial=initial_data)
+
+    context = {
+        'form': form,
+        'budget': budget,
+        'next_year_number': next_year_number,
+    }
+    return render(request, 'finance/scholarship_year_form.html', context)
+
+
+@login_required
+@permission_required('finance.view_scholarshipbudget')
+def scholarship_years_costs_report(request, budget_id):
+    """عرض تقرير تكاليف الابتعاث حسب السنوات"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget).order_by('year_number')
+
+    # الحصول على الإعدادات
+    settings = ScholarshipSettings.objects.first()
+    if not settings:
+        settings = ScholarshipSettings.objects.create()
+
+    # حساب إجمالي التكاليف
+    total_costs = sum(cost.total_year_cost() for cost in yearly_costs)
+    insurance_amount = total_costs * settings.life_insurance_rate
+    true_cost = total_costs + insurance_amount
+    additional_percentage = settings.add_percentage
+    grand_total = true_cost * (1 + additional_percentage / 100)
+
+    context = {
+        'budget': budget,
+        'yearly_costs': yearly_costs,
+        'total_costs': total_costs,
+        'insurance_rate': settings.life_insurance_rate,
+        'insurance_amount': insurance_amount,
+        'true_cost': true_cost,
+        'additional_percent': additional_percentage,
+        'grand_total': grand_total,
+    }
+    return render(request, 'finance/reports/scholarship_years_costs_report.html', context)
+
+
+@login_required
+@permission_required('finance.change_scholarshipbudget')
+def close_current_year_open_new(request, budget_id):
+    """إغلاق السنة الحالية وفتح سنة جديدة"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    if request.method == 'POST':
+        # تحديث السنة الحالية
+        current_year = budget.academic_year
+        year_parts = current_year.split('-')
+        next_year = f"{int(year_parts[0])+1}-{int(year_parts[1])+1}"
+
+        # إغلاق السنة الحالية
+        budget.is_current = False
+        budget.save()
+
+        # إنشاء ميزانية جديدة للسنة التالية
+        new_budget = ScholarshipBudget.objects.create(
+            application=budget.application,
+            total_amount=budget.total_amount,  # يمكن تغييره حسب الحاجة
+            start_date=budget.end_date + datetime.timedelta(days=1),
+            end_date=budget.end_date + datetime.timedelta(days=365),
+            academic_year=next_year,
+            exchange_rate=budget.exchange_rate,
+            foreign_currency=budget.foreign_currency,
+            is_current=True
+        )
+
+        messages.success(request, f"تم إغلاق السنة {current_year} وفتح سنة جديدة {next_year} بنجاح")
+        return redirect('finance:budget_detail', budget_id=new_budget.id)
+
+    context = {
+        'budget': budget,
+    }
+    return render(request, 'finance/close_year_confirm.html', context)

@@ -41,13 +41,22 @@ class ScholarshipBudget(models.Model):
     ]
     status = models.CharField(_("حالة الميزانية"), max_length=20, choices=STATUS_CHOICES, default='active')
 
+    # حقول جديدة للدعم السنوي والعملات
+    academic_year = models.CharField(_("السنة الدراسية"), max_length=9,
+                                     help_text=_("مثال: 2024-2025"), default="2024-2025")
+    exchange_rate = models.DecimalField(_("سعر الصرف"), max_digits=6, decimal_places=2, default=0.91,
+                                        help_text=_("سعر صرف العملة الأجنبية"))
+    foreign_currency = models.CharField(_("العملة الأجنبية"), max_length=3, default="GBP")
+    is_current = models.BooleanField(_("السنة الحالية"), default=True,
+                                     help_text=_("هل هذه الميزانية للسنة الحالية؟"))
+
     class Meta:
         verbose_name = _("ميزانية الابتعاث")
         verbose_name_plural = _("ميزانيات الابتعاث")
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.application.applicant.get_full_name()} - {self.total_amount}"
+        return f"{self.application.applicant.get_full_name()} - {self.total_amount} - {self.academic_year}"
 
     def get_absolute_url(self):
         return reverse('finance:budget_detail', args=[self.id])
@@ -66,6 +75,66 @@ class ScholarshipBudget(models.Model):
         if self.total_amount > 0:
             return (self.get_spent_amount() / self.total_amount) * 100
         return 0
+
+
+class YearlyScholarshipCosts(models.Model):
+    """نموذج التكاليف السنوية للابتعاث"""
+    budget = models.ForeignKey(ScholarshipBudget, on_delete=models.CASCADE,
+                               related_name="yearly_costs", verbose_name=_("الميزانية"))
+    year_number = models.PositiveIntegerField(_("رقم السنة"), help_text=_("رقم السنة من الابتعاث (1, 2, 3, ...)"))
+    academic_year = models.CharField(_("السنة الدراسية"), max_length=9, help_text=_("مثال: 2024-2025"))
+
+    # تفاصيل التكاليف
+    travel_tickets = models.DecimalField(_("تذكرة سفر"), max_digits=10, decimal_places=2, default=0)
+    monthly_allowance = models.DecimalField(_("المخصص الشهري"), max_digits=10, decimal_places=2, default=0)
+    monthly_duration = models.PositiveIntegerField(_("عدد الأشهر"), default=12)
+    visa_fees = models.DecimalField(_("رسوم الفيزا"), max_digits=10, decimal_places=2, default=0)
+    health_insurance = models.DecimalField(_("التأمين الصحي"), max_digits=10, decimal_places=2, default=0)
+    tuition_fees_local = models.DecimalField(_("الرسوم الدراسية (بالدينار)"), max_digits=10, decimal_places=2,
+                                             default=0)
+    tuition_fees_foreign = models.DecimalField(_("الرسوم الدراسية (بالعملة الأجنبية)"), max_digits=10, decimal_places=2,
+                                               default=0)
+
+    created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
+
+    def total_monthly_allowance(self):
+        """إجمالي المخصصات الشهرية"""
+        return self.monthly_allowance * self.monthly_duration
+
+    def total_year_cost(self):
+        """إجمالي تكلفة السنة"""
+        return (
+                self.travel_tickets +
+                self.total_monthly_allowance() +
+                self.visa_fees +
+                self.health_insurance +
+                self.tuition_fees_local
+        )
+
+    class Meta:
+        verbose_name = _("تكاليف سنوية للابتعاث")
+        verbose_name_plural = _("التكاليف السنوية للابتعاث")
+        ordering = ['year_number']
+        unique_together = ['budget', 'year_number']
+
+    def __str__(self):
+        return f"{self.budget.application.applicant.get_full_name()} - السنة {self.year_number} ({self.academic_year})"
+
+
+class ScholarshipSettings(models.Model):
+    """إعدادات نظام الابتعاث"""
+    life_insurance_rate = models.DecimalField(_("معدل التأمين على الحياة"), max_digits=6, decimal_places=4,
+                                              default=0.0034, help_text=_("3.4/1000"))
+    add_percentage = models.DecimalField(_("نسبة الزيادة"), max_digits=5, decimal_places=2,
+                                         default=50.0, help_text=_("نسبة الزيادة على المجموع الكلي (%)"))
+
+    class Meta:
+        verbose_name = _("إعدادات نظام الابتعاث")
+        verbose_name_plural = _("إعدادات نظام الابتعاث")
+
+    def __str__(self):
+        return _("إعدادات نظام الابتعاث")
 
 
 class ExpenseCategory(models.Model):
@@ -142,6 +211,7 @@ class FinancialReport(models.Model):
         ('budget_comparison', _('مقارنة الميزانيات')),
         ('monthly_expenses', _('المصروفات الشهرية')),
         ('category_expenses', _('المصروفات حسب الفئة')),
+        ('scholarship_years_costs', _('تكاليف الابتعاث حسب السنوات')),
         ('custom', _('تقرير مخصص')),
     ]
     report_type = models.CharField(_("نوع التقرير"), max_length=50, choices=REPORT_TYPE_CHOICES)

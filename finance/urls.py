@@ -65,4 +65,9 @@ urlpatterns = [
     path('api/expense-categories/', views.api_expense_categories, name='api_expense_categories'),
     path('api/budget-status/', views.api_budget_status, name='api_budget_status'),
 
+    # إضافة مسارات جديدة
+    path('budgets/<int:budget_id>/add-year/', views.add_scholarship_year, name='add_scholarship_year'),
+    path('budgets/<int:budget_id>/close-year/', views.close_current_year_open_new, name='close_current_year_open_new'),
+    path('budgets/<int:budget_id>/costs-report/', views.scholarship_years_costs_report, name='scholarship_years_costs_report'),
+
 ]
