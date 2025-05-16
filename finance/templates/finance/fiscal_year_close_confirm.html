@@ -1,0 +1,109 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="close-confirm-container">
+    <div class="page-header">
+        <h2>{% trans "تأكيد إغلاق السنة المالية" %}</h2>
+        <div class="header-actions">
+            <a href="{% url 'finance:fiscal_year_detail' fiscal_year_id=fiscal_year.id %}" class="btn btn-secondary">
+                {% trans "العودة إلى تفاصيل السنة المالية" %}
+            </a>
+        </div>
+    </div>
+    
+    <div class="alert alert-warning">
+        <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>{% trans "تحذير!" %}</h4>
+        <p>
+            {% trans "أنت على وشك إغلاق السنة المالية" %} <strong>{{ fiscal_year.year }}</strong> {% trans "وفتح سنة مالية جديدة" %}.
+        </p>
+        <p>{% trans "سيؤدي هذا الإجراء إلى:" %}</p>
+        <ul>
+            <li>{% trans "تغيير حالة السنة المالية الحالية إلى مغلقة" %}</li>
+            <li>{% trans "إنشاء سنة مالية جديدة لسنة" %} {{ fiscal_year.year|add:1 }}</li>
+            <li>{% trans "نقل الإعدادات والقيم الافتراضية إلى السنة الجديدة" %}</li>
+        </ul>
+        <p class="mb-0">{% trans "هل أنت متأكد من المتابعة؟" %}</p>
+    </div>
+    
+    <div class="fiscal-year-info">
+        <h3>{% trans "معلومات السنة المالية" %}</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table">
+                    <tr>
+                        <th>{% trans "السنة المالية" %}:</th>
+                        <td>{{ fiscal_year.year }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تاريخ البداية" %}:</th>
+                        <td>{{ fiscal_year.start_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تاريخ النهاية" %}:</th>
+                        <td>{{ fiscal_year.end_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "إجمالي الميزانية" %}:</th>
+                        <td>{{ fiscal_year.total_budget|floatformat:2 }} {% trans "دينار" %}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table">
+                    <tr>
+                        <th>{% trans "المبلغ المصروف" %}:</th>
+                        <td>{{ fiscal_year.get_spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "المبلغ المتبقي" %}:</th>
+                        <td>{{ fiscal_year.get_remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "نسبة الصرف" %}:</th>
+                        <td>{{ fiscal_year.get_spent_percentage|floatformat:1 }}%</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "عدد الميزانيات" %}:</th>
+                        <td>{{ fiscal_year.get_scholarship_budgets_count }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="new-fiscal-year-info">
+        <h3>{% trans "معلومات السنة المالية الجديدة" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "السنة المالية" %}:</th>
+                <td>{{ fiscal_year.year|add:1 }}</td>
+            </tr>
+            <tr>
+                <th>{% trans "تاريخ البداية" %}:</th>
+                <td>{{ fiscal_year.year|add:1 }}-01-01</td>
+            </tr>
+            <tr>
+                <th>{% trans "تاريخ النهاية" %}:</th>
+                <td>{{ fiscal_year.year|add:1 }}-12-31</td>
+            </tr>
+            <tr>
+                <th>{% trans "إجمالي الميزانية المقترحة" %}:</th>
+                <td>{{ fiscal_year.total_budget|floatformat:2 }} {% trans "دينار" %} ({% trans "يمكن تعديلها لاحقاً" %})</td>
+            </tr>
+        </table>
+    </div>
+    
+    <form method="post" class="close-form">
+        {% csrf_token %}
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-warning btn-lg">
+                <i class="fas fa-lock me-2"></i>{% trans "نعم، أغلق السنة المالية وافتح سنة جديدة" %}
+            </button>
+            <a href="{% url 'finance:fiscal_year_detail' fiscal_year_id=fiscal_year.id %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times me-2"></i>{% trans "إلغاء" %}
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

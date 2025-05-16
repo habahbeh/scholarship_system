@@ -1,0 +1,218 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+
+{% block finance_content %}
+<div class="settings-container">
+    <div class="page-header">
+        <h2>{% trans "إعدادات نظام الابتعاث" %}</h2>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mb-0">{% trans "إعدادات عامة" %}</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" class="settings-form">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ field.label }}: {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.life_insurance_rate.id_for_label }}" class="form-label">{{ form.life_insurance_rate.label }}</label>
+                        <div class="input-group">
+                            {{ form.life_insurance_rate }}
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">{{ form.life_insurance_rate.help_text }}</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.add_percentage.id_for_label }}" class="form-label">{{ form.add_percentage.label }}</label>
+                        <div class="input-group">
+                            {{ form.add_percentage }}
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">{{ form.add_percentage.help_text }}</div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.current_fiscal_year.id_for_label }}" class="form-label">{{ form.current_fiscal_year.label }}</label>
+                    {{ form.current_fiscal_year }}
+                    <div class="form-text">{% trans "السنة المالية الافتراضية المستخدمة في النظام" %}</div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <p>{% trans "هذه الإعدادات تؤثر على حساب التكاليف السنوية للابتعاث ونظام إدارة المبتعثين" %}</p>
+                    <p>{% trans "معدل التأمين على الحياة يستخدم في حسابات التكاليف الكلية للابتعاث" %}</p>
+                    <p>{% trans "نسبة الزيادة تضاف إلى المجموع الكلي للتكاليف في التقارير المالية" %}</p>
+                </div>
+
+                <div class="form-actions mt-3 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {% trans "حفظ الإعدادات" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3 class="mb-0">{% trans "السنوات المالية" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>{% trans "السنة المالية" %}</th>
+                            <th>{% trans "تاريخ البداية" %}</th>
+                            <th>{% trans "تاريخ النهاية" %}</th>
+                            <th>{% trans "الحالة" %}</th>
+                            <th>{% trans "الميزانية الإجمالية" %}</th>
+                            <th>{% trans "إجراءات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fiscal_year in fiscal_years %}
+                        <tr>
+                            <td>{{ fiscal_year.year }}</td>
+                            <td>{{ fiscal_year.start_date }}</td>
+                            <td>{{ fiscal_year.end_date }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if fiscal_year.status == 'open' %}badge-success
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ fiscal_year.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ fiscal_year.total_budget|floatformat:2 }} {% trans "دينار" %}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'finance:fiscal_year_detail' fiscal_year_id=fiscal_year.id %}" class="btn btn-sm btn-info">
+                                        {% trans "عرض" %}
+                                    </a>
+                                    {% if fiscal_year.status == 'open' %}
+                                    <button type="button" class="btn btn-sm btn-primary set-current" data-fiscal-year-id="{{ fiscal_year.id }}">
+                                        {% trans "تعيين كحالي" %}
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">{% trans "لا توجد سنوات مالية متاحة" %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{% url 'finance:create_fiscal_year' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i> {% trans "إنشاء سنة مالية جديدة" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3 class="mb-0">{% trans "فئات المصروفات" %}</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>{% trans "الفئة" %}</th>
+                            <th>{% trans "الرمز" %}</th>
+                            <th>{% trans "الوصف" %}</th>
+                            <th>{% trans "عدد المصروفات" %}</th>
+                            <th>{% trans "إجراءات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>{{ category.name }}</td>
+                            <td>{{ category.code|default:"-" }}</td>
+                            <td>{{ category.description|truncatechars:50|default:"-" }}</td>
+                            <td>{{ category.expenses_count }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'finance:update_category' category.id %}" class="btn btn-sm btn-primary">
+                                        {% trans "تعديل" %}
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">{% trans "لا توجد فئات مصروفات متاحة" %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{% url 'finance:create_category' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i> {% trans "إنشاء فئة جديدة" %}
+                </a>
+                <a href="{% url 'finance:category_list' %}" class="btn btn-info">
+                    <i class="fas fa-list me-1"></i> {% trans "عرض كافة الفئات" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تطبيق الأنماط على عناصر النموذج
+        const formElements = {
+            '{{ form.life_insurance_rate.id_for_label }}': 'form-control',
+            '{{ form.add_percentage.id_for_label }}': 'form-control',
+            '{{ form.current_fiscal_year.id_for_label }}': 'form-select'
+        };
+
+        for (const elementId in formElements) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add(formElements[elementId]);
+            }
+        }
+        
+        // إضافة معالج أحداث لزر تعيين السنة الحالية
+        const setCurrentButtons = document.querySelectorAll('.set-current');
+        setCurrentButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const fiscalYearId = this.getAttribute('data-fiscal-year-id');
+                document.getElementById('{{ form.current_fiscal_year.id_for_label }}').value = fiscalYearId;
+                
+                // تقديم النموذج تلقائيًا
+                document.querySelector('.settings-form').submit();
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

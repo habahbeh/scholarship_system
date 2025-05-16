@@ -1,0 +1,321 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+{% load finance_extras %}
+
+{% block finance_content %}
+<div class="budgets-list-container">
+    <div class="page-header">
+        <h2>{% trans "ميزانيات السنة المالية" %} {{ fiscal_year.year }}</h2>
+        <div class="header-actions">
+            <a href="{% url 'finance:fiscal_year_detail' fiscal_year_id=fiscal_year.id %}" class="btn btn-secondary">
+                {% trans "العودة إلى تفاصيل السنة المالية" %}
+            </a>
+        </div>
+    </div>
+    
+    <div class="fiscal-year-summary">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات السنة المالية" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "السنة المالية" %}:</th>
+                            <td>{{ fiscal_year.year }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "تاريخ البداية" %}:</th>
+                            <td>{{ fiscal_year.start_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "تاريخ النهاية" %}:</th>
+                            <td>{{ fiscal_year.end_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "الحالة" %}:</th>
+                            <td>
+                                <span class="badge 
+                                    {% if fiscal_year.status == 'open' %}badge-success
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ fiscal_year.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "ملخص الميزانيات" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "إجمالي الميزانيات" %}:</th>
+                            <td>{{ total_budget|floatformat:2 }} {% trans "دينار" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "عدد الميزانيات" %}:</th>
+                            <td>{{ budgets.paginator.count }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "الميزانيات النشطة" %}:</th>
+                            <td>{{ active_budgets }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نموذج فلترة الميزانيات -->
+    <div class="filter-section mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">{% trans "تصفية الميزانيات" %}</h3>
+            </div>
+            <div class="card-body">
+                <form method="get" class="filter-form">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+                            {{ filter_form.status }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.start_date.id_for_label }}">{{ filter_form.start_date.label }}</label>
+                            {{ filter_form.start_date }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.end_date.id_for_label }}">{{ filter_form.end_date.label }}</label>
+                            {{ filter_form.end_date }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.search.id_for_label }}">{{ filter_form.search.label }}</label>
+                            {{ filter_form.search }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.min_amount.id_for_label }}">{{ filter_form.min_amount.label }}</label>
+                            {{ filter_form.min_amount }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ filter_form.max_amount.id_for_label }}">{{ filter_form.max_amount.label }}</label>
+                            {{ filter_form.max_amount }}
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end justify-content-end">
+                            <button type="submit" class="btn btn-primary">{% trans "تطبيق الفلاتر" %}</button>
+                            <a href="{% url 'finance:fiscal_year_budgets' fiscal_year_id=fiscal_year.id %}" class="btn btn-secondary ms-2">{% trans "إعادة ضبط" %}</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- قائمة الميزانيات -->
+    <div class="budgets-list mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">{% trans "قائمة الميزانيات" %}</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>{% trans "المبتعث" %}</th>
+                                <th>{% trans "المنحة" %}</th>
+                                <th>{% trans "المبلغ الإجمالي" %}</th>
+                                <th>{% trans "المبلغ المصروف" %}</th>
+                                <th>{% trans "المبلغ المتبقي" %}</th>
+                                <th>{% trans "نسبة الصرف" %}</th>
+                                <th>{% trans "تاريخ البداية" %}</th>
+                                <th>{% trans "تاريخ النهاية" %}</th>
+                                <th>{% trans "الحالة" %}</th>
+                                <th>{% trans "إجراءات" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for budget in budgets %}
+                            <tr>
+                                <td>{{ budget.application.applicant.get_full_name }}</td>
+                                <td>{{ budget.application.scholarship.title }}</td>
+                                <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                <td>{{ budget.spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                <td>{{ budget.remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar 
+                                            {% if budget.spent_percentage > 80 %}bg-danger
+                                            {% elif budget.spent_percentage > 60 %}bg-warning
+                                            {% else %}bg-success{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ budget.spent_percentage }}%">
+                                            {{ budget.spent_percentage|floatformat:1 }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ budget.start_date }}</td>
+                                <td>{{ budget.end_date }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if budget.status == 'active' %}badge-success
+                                        {% elif budget.status == 'suspended' %}badge-warning
+                                        {% else %}badge-secondary{% endif %}">
+                                        {{ budget.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-sm btn-info">
+                                            {% trans "عرض" %}
+                                        </a>
+                                        {% if perms.finance.change_scholarshipbudget and budget.status != 'closed' %}
+                                        <a href="{% url 'finance:update_budget' budget_id=budget.id %}" class="btn btn-sm btn-primary">
+                                            {% trans "تعديل" %}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center">{% trans "لا توجد ميزانيات متاحة" %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                {% include "finance/includes/pagination.html" with page_obj=budgets %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- رسم بياني توزيع الميزانيات -->
+    <div class="budgets-chart mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">{% trans "توزيع الميزانيات حسب الحالة" %}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="budgetStatusChart" height="250"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "الحالة" %}</th>
+                                    <th>{% trans "العدد" %}</th>
+                                    <th>{% trans "النسبة" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{% trans "نشطة" %}</td>
+                                    <td>{{ active_budgets }}</td>
+                                    <td>
+                                        {% if budgets.paginator.count > 0 %}
+                                        {{ active_budgets|div:budgets.paginator.count|mul:100|floatformat:1 }}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans "معلقة" %}</td>
+                                    <td>{{ suspended_budgets }}</td>
+                                    <td>
+                                        {% if budgets.paginator.count > 0 %}
+                                        {{ suspended_budgets|div:budgets.paginator.count|mul:100|floatformat:1 }}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans "مغلقة" %}</td>
+                                    <td>{{ closed_budgets }}</td>
+                                    <td>
+                                        {% if budgets.paginator.count > 0 %}
+                                        {{ closed_budgets|div:budgets.paginator.count|mul:100|floatformat:1 }}%
+                                        {% else %}
+                                        0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // تطبيق الأنماط على عناصر النموذج
+        const formElements = {
+            '{{ filter_form.status.id_for_label }}': 'form-select',
+            '{{ filter_form.start_date.id_for_label }}': 'form-control',
+            '{{ filter_form.end_date.id_for_label }}': 'form-control',
+            '{{ filter_form.min_amount.id_for_label }}': 'form-control',
+            '{{ filter_form.max_amount.id_for_label }}': 'form-control',
+            '{{ filter_form.search.id_for_label }}': 'form-control'
+        };
+
+        for (const elementId in formElements) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add(formElements[elementId]);
+            }
+        }
+        
+        // رسم بياني لتوزيع الميزانيات حسب الحالة
+        var ctx = document.getElementById('budgetStatusChart').getContext('2d');
+        var data = {
+            labels: [
+                '{% trans "نشطة" %}',
+                '{% trans "معلقة" %}',
+                '{% trans "مغلقة" %}'
+            ],
+            datasets: [{
+                data: [
+                    {{ active_budgets }},
+                    {{ suspended_budgets }},
+                    {{ closed_budgets }}
+                ],
+                backgroundColor: [
+                    '#28A745',  // نشطة
+                    '#FFC107',  // معلقة
+                    '#6C757D'   // مغلقة
+                ]
+            }]
+        };
+        
+        var budgetStatusChart = new Chart(ctx, {
+            type: 'pie',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,386 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+{% load finance_extras %}
+
+{% block finance_content %}
+<div class="report-container">
+    <div class="page-header">
+        <h2>{% trans "تقرير السنة المالية" %} {{ fiscal_year.year }}</h2>
+        <div class="header-actions">
+            <div class="btn-group">
+                <a href="{% url 'finance:export_report_pdf' report_id=report.id %}" class="btn btn-secondary" target="_blank">
+                    <i class="fa fa-file-pdf-o"></i> {% trans "تصدير PDF" %}
+                </a>
+                <a href="{% url 'finance:export_report_excel' report_id=report.id %}" class="btn btn-secondary">
+                    <i class="fa fa-file-excel-o"></i> {% trans "تصدير Excel" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="report-summary">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "معلومات السنة المالية" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "السنة المالية" %}:</th>
+                            <td>{{ fiscal_year.year }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "تاريخ البداية" %}:</th>
+                            <td>{{ fiscal_year.start_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "تاريخ النهاية" %}:</th>
+                            <td>{{ fiscal_year.end_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "الحالة" %}:</th>
+                            <td>
+                                <span class="badge 
+                                    {% if fiscal_year.status == 'open' %}badge-success
+                                    {% else %}badge-secondary{% endif %}">
+                                    {{ fiscal_year.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h3>{% trans "ملخص الميزانية" %}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>{% trans "إجمالي الميزانية" %}:</th>
+                            <td>{{ fiscal_year.total_budget|floatformat:2 }} {% trans "دينار" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المبلغ المصروف" %}:</th>
+                            <td>{{ spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "المبلغ المتبقي" %}:</th>
+                            <td>{{ remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        </tr>
+                        <tr>
+                            <th>{% trans "نسبة الصرف" %}:</th>
+                            <td>{{ spent_percentage|floatformat:1 }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الرسوم البيانية -->
+    <div class="report-charts">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <h3>{% trans "توزيع الميزانية" %}</h3>
+                    <canvas id="budgetDistributionChart" height="250"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <h3>{% trans "المصروفات الشهرية" %}</h3>
+                    <canvas id="monthlyExpensesChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="chart-card">
+                    <h3>{% trans "المصروفات حسب الفئة" %}</h3>
+                    <canvas id="categoryExpensesChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- تفاصيل الميزانيات -->
+    <div class="report-section mt-4">
+        <h3>{% trans "تفاصيل الميزانيات" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "المبتعث" %}</th>
+                        <th>{% trans "المنحة" %}</th>
+                        <th>{% trans "إجمالي الميزانية" %}</th>
+                        <th>{% trans "المبلغ المصروف" %}</th>
+                        <th>{% trans "المبلغ المتبقي" %}</th>
+                        <th>{% trans "نسبة الصرف" %}</th>
+                        <th>{% trans "الحالة" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for budget in budgets %}
+                    <tr>
+                        <td>{{ budget.application.applicant.get_full_name }}</td>
+                        <td>{{ budget.application.scholarship.title }}</td>
+                        <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget.get_spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ budget.get_spent_percentage|floatformat:1 }}%</td>
+                        <td>
+                            <span class="badge 
+                                {% if budget.status == 'active' %}badge-success
+                                {% elif budget.status == 'suspended' %}badge-warning
+                                {% else %}badge-secondary{% endif %}">
+                                {{ budget.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">{% trans "لا توجد ميزانيات متاحة" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- تكاليف الابتعاث السنوية -->
+    <div class="report-section mt-4">
+        <h3>{% trans "تكاليف الابتعاث السنوية" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "المبتعث" %}</th>
+                        <th>{% trans "السنة الدراسية" %}</th>
+                        <th>{% trans "بدل السفر" %}</th>
+                        <th>{% trans "المخصص الشهري" %}</th>
+                        <th>{% trans "رسوم التأشيرة" %}</th>
+                        <th>{% trans "التأمين الصحي" %}</th>
+                        <th>{% trans "الرسوم الدراسية (بالدينار)" %}</th>
+                        <th>{% trans "الرسوم الدراسية (بالعملة الأجنبية)" %}</th>
+                        <th>{% trans "إجمالي التكاليف" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cost_item in scholarship_costs %}
+                    {% for cost in cost_item.yearly_costs %}
+                    <tr>
+                        <td>{{ cost_item.applicant }}</td>
+                        <td>{{ cost.academic_year }} ({{ cost.year_number }})</td>
+                        <td>{{ cost.travel_tickets|floatformat:2 }}</td>
+                        <td>{{ cost.total_monthly_allowance|floatformat:2 }}</td>
+                        <td>{{ cost.visa_fees|floatformat:2 }}</td>
+                        <td>{{ cost.health_insurance|floatformat:2 }}</td>
+                        <td>{{ cost.tuition_fees_local|floatformat:2 }}</td>
+                        <td>{{ cost.tuition_fees_foreign|floatformat:2 }}</td>
+                        <td class="fw-bold">{{ cost.total_year_cost|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">{% trans "لا توجد تكاليف سنوية متاحة" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- المصروفات حسب الفئة -->
+    <div class="report-section mt-4">
+        <h3>{% trans "المصروفات حسب الفئة" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "الفئة" %}</th>
+                        <th>{% trans "المبلغ الإجمالي" %}</th>
+                        <th>{% trans "النسبة من إجمالي المصروفات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in expenses_by_category %}
+                    <tr>
+                        <td>{{ category.category__name }}</td>
+                        <td>{{ category.total|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>
+                            {% if spent_amount > 0 %}
+                            {{ category.total|div:spent_amount|mul:100|floatformat:1 }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">{% trans "لا توجد مصروفات متاحة" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td>{% trans "الإجمالي" %}</td>
+                        <td>{{ spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>100%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <!-- المصروفات الشهرية -->
+    <div class="report-section mt-4">
+        <h3>{% trans "المصروفات الشهرية" %}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>{% trans "الشهر" %}</th>
+                        <th>{% trans "المبلغ الإجمالي" %}</th>
+                        <th>{% trans "النسبة من إجمالي المصروفات" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for month in months_data %}
+                    <tr>
+                        <td>{{ month.month }}</td>
+                        <td>{{ month.total|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>
+                            {% if spent_amount > 0 %}
+                            {{ month.total|div:spent_amount|mul:100|floatformat:1 }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td>{% trans "الإجمالي" %}</td>
+                        <td>{{ spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>100%</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    
+    <!-- تاريخ إنشاء التقرير -->
+    <div class="report-footer mt-4">
+        <p>{% trans "تم إنشاء التقرير في:" %} {{ now|date:"Y-m-d H:i:s" }}</p>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // توزيع الميزانية
+        var budgetCtx = document.getElementById('budgetDistributionChart').getContext('2d');
+        var budgetData = {
+            labels: [
+                '{% trans "المبلغ المصروف" %}',
+                '{% trans "المبلغ المتبقي" %}'
+            ],
+            datasets: [{
+                data: [
+                    {{ spent_amount }},
+                    {{ remaining_amount }}
+                ],
+                backgroundColor: ['#4bc0c0', '#ff6384']
+            }]
+        };
+        
+        var budgetDistributionChart = new Chart(budgetCtx, {
+            type: 'pie',
+            data: budgetData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // المصروفات الشهرية
+        var monthlyCtx = document.getElementById('monthlyExpensesChart').getContext('2d');
+        var monthlyData = {
+            labels: [
+                {% for month in months_data %}
+                '{{ month.month }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: '{% trans "المصروفات الشهرية" %}',
+                data: [
+                    {% for month in months_data %}
+                    {{ month.total }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        var monthlyExpensesChart = new Chart(monthlyCtx, {
+            type: 'bar',
+            data: monthlyData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // المصروفات حسب الفئة
+        var categoryCtx = document.getElementById('categoryExpensesChart').getContext('2d');
+        var categoryData = {
+            labels: [
+                {% for category in expenses_by_category %}
+                '{{ category.category__name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: '{% trans "المصروفات حسب الفئة" %}',
+                data: [
+                    {% for category in expenses_by_category %}
+                    {{ category.total }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', 
+                    '#FF9F40', '#C9CBCF', '#7C7F9E', '#6C757D', '#28A745'
+                ]
+            }]
+        };
+        
+        var categoryExpensesChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: categoryData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

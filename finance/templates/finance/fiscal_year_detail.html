@@ -1,0 +1,382 @@
+{% extends "finance/base.html" %}
+{% load static i18n %}
+{% load finance_extras %}
+
+{% block finance_content %}
+<div class="fiscal-year-detail-container">
+    <div class="page-header">
+        <h2>{% trans "تفاصيل السنة المالية" %} {{ fiscal_year.year }}</h2>
+        <div class="header-actions">
+            {% if perms.finance.change_fiscalyear and fiscal_year.status == 'open' %}
+            <a href="{% url 'finance:update_fiscal_year' fiscal_year_id=fiscal_year.id %}" class="btn btn-primary">
+                {% trans "تعديل السنة المالية" %}
+            </a>
+            {% endif %}
+            
+            {% if perms.finance.change_fiscalyear and fiscal_year.status == 'open' %}
+            <a href="{% url 'finance:close_fiscal_year' fiscal_year_id=fiscal_year.id %}" class="btn btn-warning">
+                {% trans "إغلاق السنة المالية" %}
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'finance:fiscal_year_report' fiscal_year_id=fiscal_year.id %}" class="btn btn-info">
+                {% trans "تقرير السنة المالية" %}
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="info-card">
+                <h3>{% trans "معلومات السنة المالية" %}</h3>
+                <table class="table">
+                    <tr>
+                        <th>{% trans "السنة المالية" %}:</th>
+                        <td>{{ fiscal_year.year }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تاريخ البداية" %}:</th>
+                        <td>{{ fiscal_year.start_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تاريخ النهاية" %}:</th>
+                        <td>{{ fiscal_year.end_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "الحالة" %}:</th>
+                        <td>
+                            <span class="badge 
+                                {% if fiscal_year.status == 'open' %}badge-success
+                                {% else %}badge-secondary{% endif %}">
+                                {{ fiscal_year.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تم الإنشاء بواسطة" %}:</th>
+                        <td>{{ fiscal_year.created_by.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "تاريخ الإنشاء" %}:</th>
+                        <td>{{ fiscal_year.created_at }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="info-card">
+                <h3>{% trans "ملخص الميزانية" %}</h3>
+                <table class="table">
+                    <tr>
+                        <th>{% trans "إجمالي الميزانية" %}:</th>
+                        <td>{{ fiscal_year.total_budget|floatformat:2 }} {% trans "دينار" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "المبلغ المصروف" %}:</th>
+                        <td>{{ fiscal_year.spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "المبلغ المتبقي" %}:</th>
+                        <td>{{ fiscal_year.remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "نسبة الصرف" %}:</th>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar 
+                                    {% if fiscal_year.spent_percentage > 80 %}bg-danger
+                                    {% elif fiscal_year.spent_percentage > 60 %}bg-warning
+                                    {% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ fiscal_year.spent_percentage }}%">
+                                    {{ fiscal_year.spent_percentage|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "عدد الميزانيات" %}:</th>
+                        <td>{{ fiscal_year.budgets_count }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- المصروفات حسب الفئة -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{% trans "المصروفات حسب الفئة" %}</h3>
+                    <a href="{% url 'finance:fiscal_year_expenses' fiscal_year_id=fiscal_year.id %}" class="btn btn-sm btn-primary">
+                        {% trans "عرض كافة المصروفات" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "الفئة" %}</th>
+                                            <th>{% trans "إجمالي المبلغ" %}</th>
+                                            <th>{% trans "النسبة من الإجمالي" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for category in expenses_by_category %}
+                                        <tr>
+                                            <td>{{ category.category__name }}</td>
+                                            <td>{{ category.total|floatformat:2 }} {% trans "دينار" %}</td>
+                                            <td>
+                                                {% if fiscal_year.spent_amount > 0 %}
+                                                {{ category.total|div:fiscal_year.spent_amount|mul:100|floatformat:1 }}%
+                                                {% else %}
+                                                0%
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center">{% trans "لا توجد مصروفات متاحة" %}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <canvas id="expensesByCategoryChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الميزانيات -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{% trans "الميزانيات المرتبطة" %}</h3>
+                    <a href="{% url 'finance:fiscal_year_budgets' fiscal_year_id=fiscal_year.id %}" class="btn btn-sm btn-primary">
+                        {% trans "عرض كافة الميزانيات" %}
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "المبتعث" %}</th>
+                                    <th>{% trans "المنحة" %}</th>
+                                    <th>{% trans "المبلغ الإجمالي" %}</th>
+                                    <th>{% trans "المبلغ المصروف" %}</th>
+                                    <th>{% trans "المبلغ المتبقي" %}</th>
+                                    <th>{% trans "نسبة الصرف" %}</th>
+                                    <th>{% trans "الحالة" %}</th>
+                                    <th>{% trans "إجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for budget in budgets %}
+                                <tr>
+                                    <td>{{ budget.application.applicant.get_full_name }}</td>
+                                    <td>{{ budget.application.scholarship.title }}</td>
+                                    <td>{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                    <td>{{ budget.get_spent_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                    <td>{{ budget.get_remaining_amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar 
+                                                {% if budget.get_spent_percentage > 80 %}bg-danger
+                                                {% elif budget.get_spent_percentage > 60 %}bg-warning
+                                                {% else %}bg-success{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ budget.get_spent_percentage }}%">
+                                                {{ budget.get_spent_percentage|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if budget.status == 'active' %}badge-success
+                                            {% elif budget.status == 'suspended' %}badge-warning
+                                            {% else %}badge-secondary{% endif %}">
+                                            {{ budget.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-sm btn-info">
+                                            {% trans "عرض" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">{% trans "لا توجد ميزانيات متاحة" %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- أحدث المصروفات -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">{% trans "أحدث المصروفات" %}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "المبتعث" %}</th>
+                                    <th>{% trans "الفئة" %}</th>
+                                    <th>{% trans "المبلغ" %}</th>
+                                    <th>{% trans "التاريخ" %}</th>
+                                    <th>{% trans "الوصف" %}</th>
+                                    <th>{% trans "الحالة" %}</th>
+                                    <th>{% trans "إجراءات" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td>{{ expense.budget.application.applicant.get_full_name }}</td>
+                                    <td>{{ expense.category.name }}</td>
+                                    <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
+                                    <td>{{ expense.date }}</td>
+                                    <td>{{ expense.description|truncatechars:50 }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if expense.status == 'approved' %}badge-success
+                                            {% elif expense.status == 'rejected' %}badge-danger
+                                            {% else %}badge-warning{% endif %}">
+                                            {{ expense.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'finance:expense_detail' expense_id=expense.id %}" class="btn btn-sm btn-info">
+                                            {% trans "عرض" %}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">{% trans "لا توجد مصروفات متاحة" %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- سجل العمليات -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">{% trans "سجل العمليات" %}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "العملية" %}</th>
+                                    <th>{% trans "الوصف" %}</th>
+                                    <th>{% trans "بواسطة" %}</th>
+                                    <th>{% trans "التاريخ" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td>
+                                        <span class="badge 
+                                            {% if log.action_type == 'create' %}badge-primary
+                                            {% elif log.action_type == 'update' %}badge-info
+                                            {% elif log.action_type == 'delete' %}badge-danger
+                                            {% elif log.action_type == 'approve' %}badge-success
+                                            {% elif log.action_type == 'close' %}badge-warning
+                                            {% else %}badge-secondary{% endif %}">
+                                            {{ log.get_action_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.description }}</td>
+                                    <td>{{ log.created_by.get_full_name }}</td>
+                                    <td>{{ log.created_at }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">{% trans "لا توجد سجلات عمليات متاحة" %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // رسم بياني للمصروفات حسب الفئة
+        var ctx = document.getElementById('expensesByCategoryChart').getContext('2d');
+        var data = {
+            labels: [
+                {% for category in expenses_by_category %}
+                '{{ category.category__name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for category in expenses_by_category %}
+                    {{ category.total }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', 
+                    '#FF9F40', '#C9CBCF', '#7C7F9E', '#6C757D', '#28A745'
+                ]
+            }]
+        };
+        
+        var expensesByCategoryChart = new Chart(ctx, {
+            type: 'pie',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

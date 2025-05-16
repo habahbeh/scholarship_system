@@ -1,0 +1,240 @@
+{% extends "finance/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block finance_content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="card-title mb-0">
+                    {% if form.instance.id %}
+                        {% trans "تعديل السنة المالية" %}
+                    {% else %}
+                        {% trans "إضافة سنة مالية جديدة" %}
+                    {% endif %}
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'finance:dashboard' %}">{% trans "الرئيسية" %}</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'finance:fiscal_year_list' %}">{% trans "السنوات المالية" %}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {% if form.instance.id %}
+                                {% trans "تعديل" %}
+                            {% else %}
+                                {% trans "إضافة" %}
+                            {% endif %}
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fiscal Year Form -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-calendar-range me-2"></i>
+                <h5 class="mb-0">
+                    {% if form.instance.id %}
+                        {% trans "تفاصيل السنة المالية" %} - {{ form.instance.year }}
+                    {% else %}
+                        {% trans "بيانات السنة المالية الجديدة" %}
+                    {% endif %}
+                </h5>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if form.errors %}
+            <div class="alert alert-danger" role="alert">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="alert-heading">{% trans "يرجى تصحيح الأخطاء أدناه" %}</h5>
+                        <ul class="mt-2 mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <!-- Fiscal Year Details Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-info-circle me-2"></i>{% trans "بيانات أساسية" %}
+                        </h5>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.year.id_for_label }}" class="form-label required">{{ form.year.label }}</label>
+                        {{ form.year }}
+                        <div class="form-text">{% trans "السنة المالية (مثال: 2025)" %}</div>
+                        {% if form.year.errors %}
+                        <div class="invalid-feedback">{{ form.year.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.total_budget.id_for_label }}" class="form-label required">{{ form.total_budget.label }}</label>
+                        <div class="input-group">
+                            {{ form.total_budget }}
+                            <span class="input-group-text">{% trans "دينار" %}</span>
+                        </div>
+                        <div class="form-text">{% trans "إجمالي الميزانية المخصصة للسنة المالية" %}</div>
+                        {% if form.total_budget.errors %}
+                        <div class="invalid-feedback">{{ form.total_budget.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Date Details Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-calendar-date me-2"></i>{% trans "تفاصيل التاريخ" %}
+                        </h5>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.start_date.id_for_label }}" class="form-label required">{{ form.start_date.label }}</label>
+                        {{ form.start_date }}
+                        <div class="form-text">{% trans "تاريخ بدء السنة المالية" %}</div>
+                        {% if form.start_date.errors %}
+                        <div class="invalid-feedback">{{ form.start_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.end_date.id_for_label }}" class="form-label required">{{ form.end_date.label }}</label>
+                        {{ form.end_date }}
+                        <div class="form-text">{% trans "تاريخ انتهاء السنة المالية" %}</div>
+                        {% if form.end_date.errors %}
+                        <div class="invalid-feedback">{{ form.end_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Additional Details Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-card-text me-2"></i>{% trans "تفاصيل إضافية" %}
+                        </h5>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        <div class="form-text">{% trans "وصف أو ملاحظات حول السنة المالية (اختياري)" %}</div>
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.instance.id %}
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                        {{ form.status }}
+                        <div class="form-text">{% trans "حالة السنة المالية (مفتوحة أو مغلقة)" %}</div>
+                        {% if form.status.errors %}
+                        <div class="invalid-feedback">{{ form.status.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'finance:fiscal_year_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i> {% trans "إلغاء" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>
+                        {% if form.instance.id %}
+                            {% trans "حفظ التعديلات" %}
+                        {% else %}
+                            {% trans "إضافة السنة المالية" %}
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply Bootstrap classes to form elements
+        const formElements = {
+            '{{ form.year.id_for_label }}': 'form-control',
+            '{{ form.total_budget.id_for_label }}': 'form-control',
+            '{{ form.start_date.id_for_label }}': 'form-control',
+            '{{ form.end_date.id_for_label }}': 'form-control',
+            '{{ form.description.id_for_label }}': 'form-control',
+            '{{ form.status.id_for_label }}': 'form-select'
+        };
+
+        for (const elementId in formElements) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add(formElements[elementId]);
+            }
+        }
+
+        // Bootstrap form validation
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+    .required:after {
+        content: " *";
+        color: #dc3545;
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .form-text {
+        font-size: 0.775rem;
+    }
+    .text-bg-primary {
+        color: #0d6efd !important;
+    }
+    .was-validated .form-control:invalid, .was-validated .form-select:invalid {
+        border-color: #dc3545;
+    }
+    .was-validated .form-control:valid, .was-validated .form-select:valid {
+        border-color: #198754;
+    }
+</style>
+{% endblock %}
+{% endblock %}

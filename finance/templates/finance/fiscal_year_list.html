@@ -1,0 +1,222 @@
+{% extends "finance/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block finance_content %}
+<div class="container-fluid py-4">
+    <!-- Page Header with Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="card-title mb-0">{% trans "قائمة السنوات المالية" %}</h2>
+                {% if perms.finance.add_fiscalyear %}
+                <a href="{% url 'finance:create_fiscal_year' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>{% trans "إنشاء سنة مالية جديدة" %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-funnel me-2"></i>{% trans "تصفية النتائج" %}
+                </h5>
+                <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body">
+                <form method="get" class="filter-form">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.status.id_for_label }}" class="form-label">{{ filter_form.status.label }}</label>
+                            {{ filter_form.status }}
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.year_from.id_for_label }}" class="form-label">{{ filter_form.year_from.label }}</label>
+                            {{ filter_form.year_from }}
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.year_to.id_for_label }}" class="form-label">{{ filter_form.year_to.label }}</label>
+                            {{ filter_form.year_to }}
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="{{ filter_form.search.id_for_label }}" class="form-label">{{ filter_form.search.label }}</label>
+                            <div class="input-group">
+                                {{ filter_form.search }}
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-12 col-lg-12 d-flex align-items-end justify-content-end">
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-filter me-1"></i>{% trans "تطبيق الفلاتر" %}
+                                </button>
+                                <a href="{% url 'finance:fiscal_year_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>{% trans "إعادة ضبط" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fiscal Year List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-range me-2"></i>{% trans "السنوات المالية" %}
+                </h5>
+                <span class="badge bg-primary rounded-pill">{{ fiscal_years.paginator.count }}</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "السنة المالية" %}</th>
+                            <th>{% trans "تاريخ البداية" %}</th>
+                            <th>{% trans "تاريخ النهاية" %}</th>
+                            <th>{% trans "إجمالي الميزانية" %}</th>
+                            <th>{% trans "المبلغ المصروف" %}</th>
+                            <th>{% trans "المبلغ المتبقي" %}</th>
+                            <th>{% trans "نسبة الصرف" %}</th>
+                            <th>{% trans "الحالة" %}</th>
+                            <th class="text-center">{% trans "إجراءات" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fiscal_year in fiscal_years %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light text-primary me-2">
+                                        {{ fiscal_year.year|slice:":1" }}
+                                    </div>
+                                    <div>{{ fiscal_year.year }}</div>
+                                </div>
+                            </td>
+                            <td>{{ fiscal_year.start_date|date:"Y-m-d" }}</td>
+                            <td>{{ fiscal_year.end_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <span class="fw-bold">{{ fiscal_year.total_budget|floatformat:2 }}</span>
+                                <small class="text-muted">{% trans "دينار" %}</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ fiscal_year.spent_amount|floatformat:2 }}</span>
+                                <small class="text-muted">{% trans "دينار" %}</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ fiscal_year.remaining_amount|floatformat:2 }}</span>
+                                <small class="text-muted">{% trans "دينار" %}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                        <div class="progress-bar {% if fiscal_year.spent_percentage > 80 %}bg-danger{% elif fiscal_year.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                             role="progressbar" style="width: {{ fiscal_year.spent_percentage }}%">
+                                        </div>
+                                    </div>
+                                    <span class="small fw-bold">{{ fiscal_year.spent_percentage|floatformat:1 }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if fiscal_year.status == 'open' %}
+                                    <span class="badge bg-success">{{ fiscal_year.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ fiscal_year.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center">
+                                    <a href="{% url 'finance:fiscal_year_detail' fiscal_year_id=fiscal_year.id %}" class="btn btn-sm btn-outline-info me-1" title="{% trans 'عرض' %}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if perms.finance.change_fiscalyear and fiscal_year.status == 'open' %}
+                                    <a href="{% url 'finance:update_fiscal_year' fiscal_year_id=fiscal_year.id %}" class="btn btn-sm btn-outline-primary me-1" title="{% trans 'تعديل' %}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if perms.finance.change_fiscalyear and fiscal_year.status == 'open' %}
+                                    <a href="{% url 'finance:close_fiscal_year' fiscal_year_id=fiscal_year.id %}" class="btn btn-sm btn-outline-warning" title="{% trans 'إغلاق' %}">
+                                        <i class="bi bi-lock"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                    <p class="mt-2">{% trans "لا توجد سنوات مالية متاحة" %}</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            {% include "finance/includes/pagination.html" with page_obj=fiscal_years %}
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    color: #6c757d;
+}
+</style>
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply Bootstrap classes to form fields
+        var formElements = {
+            '{{ filter_form.status.id_for_label }}': 'form-select',
+            '{{ filter_form.year_from.id_for_label }}': 'form-control',
+            '{{ filter_form.year_to.id_for_label }}': 'form-control', 
+            '{{ filter_form.search.id_for_label }}': 'form-control'
+        };
+
+        for (var elementId in formElements) {
+            var element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add(formElements[elementId]);
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
