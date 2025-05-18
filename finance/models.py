@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from applications.models import Application
 import datetime
-
+from decimal import Decimal
 
 class FiscalYear(models.Model):
     """نموذج السنة المالية"""

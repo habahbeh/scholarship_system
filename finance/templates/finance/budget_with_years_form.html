@@ -127,6 +127,16 @@
                     </div>
 
                     <div class="col-md-4 mb-3">
+                        <label for="{{ form.num_years.id_for_label }}"
+                               class="form-label">{{ form.num_years.label }}</label>
+                        {{ form.num_years }}
+                        <div class="form-text">{% trans "عدد سنوات الدراسة للمبتعث" %}</div>
+                        {% if form.num_years.errors %}
+                            <div class="invalid-feedback">{{ form.num_years.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
                         <label for="{{ form.foreign_currency.id_for_label }}" class="form-label">{{ form.foreign_currency.label }}</label>
                         {{ form.foreign_currency }}
                         <div class="form-text">{% trans "العملة الأجنبية المستخدمة" %}</div>
@@ -422,6 +432,7 @@
             '{{ form.foreign_currency.id_for_label }}',
             '{{ form.exchange_rate.id_for_label }}',
             '{{ form.academic_year.id_for_label }}',
+            '{{ form.num_years.id_for_label }}',
             '{{ form.notes.id_for_label }}'
         ];
 
