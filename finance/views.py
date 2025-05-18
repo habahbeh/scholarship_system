@@ -1315,7 +1315,7 @@ def finance_dashboard(request):
 @login_required
 @permission_required('finance.change_scholarshipbudget', raise_exception=True)
 def update_budget(request, budget_id):
-    """تحديث ميزانية موجودة"""
+    """تحديث ميزانية موجودة مع تفاصيل سنوات دراسية مرنة"""
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
     # التحقق من حالة الميزانية - لا يمكن تعديل الميزانيات المغلقة
@@ -1323,32 +1323,191 @@ def update_budget(request, budget_id):
         messages.error(request, _("لا يمكن تعديل ميزانية مغلقة"))
         return redirect('finance:budget_detail', budget_id=budget.id)
 
+    # الحصول على السنة المالية الحالية
+    settings = ScholarshipSettings.objects.first()
+    current_fiscal_year = None
+    if settings:
+        current_fiscal_year = settings.current_fiscal_year
+    else:
+        # في حالة عدم وجود إعدادات، استخدم أحدث سنة مالية مفتوحة
+        current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+
+    # إنشاء مجموعة نماذج للسنوات الدراسية - تكون مرنة تماماً
+    YearlyScholarshipCostsFormSet = formset_factory(
+        YearlyScholarshipCostsInlineForm,
+        formset=ScholarshipYearFormSet,
+        extra=0,  # لا نضيف نماذج إضافية تلقائياً
+        max_num=10,  # نسمح بعدد أكبر من السنوات
+        can_delete=True  # السماح بحذف السنوات
+    )
+
     if request.method == 'POST':
-        form = ScholarshipBudgetForm(request.POST, instance=budget)
-        if form.is_valid():
-            # حفظ الميزانية المحدثة
-            updated_budget = form.save()
+        form = ScholarshipBudgetWithYearsForm(request.POST, instance=budget)
+        year_formset = YearlyScholarshipCostsFormSet(request.POST, prefix='years')
+
+        if form.is_valid() and year_formset.is_valid():
+            # الحصول على عدد السنوات المحدد
+            num_years = form.cleaned_data.get('num_years', 1)
+
+            # التحقق من أن عدد السنوات المضمنة يتطابق مع num_years
+            included_years_count = sum(1 for year_form in year_formset
+                                      if year_form.cleaned_data
+                                      and year_form.cleaned_data.get('include_year')
+                                      and not year_form.cleaned_data.get('DELETE', False))
+
+            if included_years_count != num_years:
+                messages.error(request, _(f"عدد السنوات المضمنة ({included_years_count}) لا يتطابق مع عدد السنوات المحدد ({num_years})"))
+                return render(request, 'finance/budget_with_years_form.html', {
+                    'form': form,
+                    'year_formset': year_formset,
+                    'application': budget.application,
+                    'current_fiscal_year': current_fiscal_year,
+                })
+
+            # حساب إجمالي تكاليف السنوات المضمنة فقط
+            years_total = Decimal('0.00')
+            for year_form in year_formset:
+                if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False):
+                    # حساب تكلفة السنة مع التقريب إلى منزلتين عشريتين
+                    monthly_allowance_total = (
+                        Decimal(year_form.cleaned_data.get('monthly_allowance', Decimal('0.00'))) *
+                        Decimal(year_form.cleaned_data.get('monthly_duration', 12))
+                    ).quantize(Decimal('0.01'))
+
+                    travel_tickets = Decimal(year_form.cleaned_data.get('travel_tickets', Decimal('0.00'))).quantize(Decimal('0.01'))
+                    visa_fees = Decimal(year_form.cleaned_data.get('visa_fees', Decimal('0.00'))).quantize(Decimal('0.01'))
+                    health_ins = Decimal(year_form.cleaned_data.get('health_insurance', Decimal('0.00'))).quantize(Decimal('0.01'))
+                    tuition_fees_local = Decimal(year_form.cleaned_data.get('tuition_fees_local', Decimal('0.00'))).quantize(Decimal('0.01'))
+
+                    # إضافة للمجموع
+                    year_total = (travel_tickets + monthly_allowance_total + visa_fees + health_ins + tuition_fees_local).quantize(Decimal('0.01'))
+                    years_total += year_total
+
+            # التحقق من أن المجموع الإجمالي للسنوات لا يتجاوز إجمالي الميزانية
+            total_budget = Decimal(form.cleaned_data.get('total_amount', Decimal('0.00'))).quantize(Decimal('0.01'))
+
+            # تحديث الميزانية
+            updated_budget = form.save(commit=False)
+
+            # تعيين بيانات الفئات المالية بناءً على تفاصيل السنوات المضمنة فقط
+            updated_budget.tuition_fees = sum(Decimal(year_form.cleaned_data.get('tuition_fees_local', 0))
+                               for year_form in year_formset
+                               if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
+
+            updated_budget.monthly_stipend = sum(Decimal(year_form.cleaned_data.get('monthly_allowance', 0)) *
+                                 Decimal(year_form.cleaned_data.get('monthly_duration', 12))
+                                 for year_form in year_formset
+                                 if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
+
+            updated_budget.travel_allowance = sum(Decimal(year_form.cleaned_data.get('travel_tickets', 0))
+                                  for year_form in year_formset
+                                  if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
+
+            updated_budget.health_insurance = sum(Decimal(year_form.cleaned_data.get('health_insurance', 0))
+                                 for year_form in year_formset
+                                 if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
+
+            # التأمين والمصاريف الأخرى
+            other_expenses = sum(Decimal(year_form.cleaned_data.get('visa_fees', 0))
+                               for year_form in year_formset
+                               if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
+
+            # إضافة التأمين على الحياة إذا كان مفعلاً في الإعدادات
+            base_total = (updated_budget.tuition_fees + updated_budget.monthly_stipend +
+                          updated_budget.travel_allowance + updated_budget.health_insurance + other_expenses).quantize(Decimal('0.01'))
+
+            if settings and settings.life_insurance_rate > 0:
+                insurance_amount = (base_total * settings.life_insurance_rate).quantize(Decimal('0.01'))
+                other_expenses += insurance_amount
+
+            # إضافة النسبة الإضافية إذا كانت مفعلة في الإعدادات
+            if settings and settings.add_percentage > 0:
+                true_cost = base_total
+                if settings.life_insurance_rate > 0:
+                    true_cost += base_total * settings.life_insurance_rate
+
+                additional_amount = (true_cost * Decimal(settings.add_percentage) / Decimal('100')).quantize(Decimal('0.01'))
+                other_expenses += additional_amount
+
+            # تعيين المصاريف الأخرى والقيم الافتراضية للحقول الأخرى
+            updated_budget.other_expenses = other_expenses
+            updated_budget.books_allowance = Decimal('0.00')
+            updated_budget.research_allowance = Decimal('0.00')
+            updated_budget.conference_allowance = Decimal('0.00')
+
+            # حفظ الميزانية
+            updated_budget.save()
+
+            # حذف السنوات الدراسية الحالية ثم إعادة إنشائها
+            YearlyScholarshipCosts.objects.filter(budget=budget).delete()
+
+            # حفظ السنوات الدراسية المضمنة وغير المحذوفة فقط
+            for year_form in year_formset:
+                if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False):
+                    yearly_cost = year_form.save(commit=False)
+                    yearly_cost.budget = updated_budget
+                    yearly_cost.fiscal_year = updated_budget.fiscal_year
+                    yearly_cost.save()
 
             # إنشاء سجل للعملية
             FinancialLog.objects.create(
                 budget=updated_budget,
                 fiscal_year=updated_budget.fiscal_year,
                 action_type='update',
-                description=_("تحديث ميزانية"),
+                description=_("تحديث ميزانية مع تفاصيل السنوات الدراسية"),
                 created_by=request.user
             )
 
-            messages.success(request, _("تم تحديث الميزانية بنجاح"))
-            return redirect('finance:budget_detail', budget_id=budget.id)
+            messages.success(request, _("تم تحديث الميزانية وتفاصيل السنوات الدراسية بنجاح"))
+            return redirect('finance:budget_detail', budget_id=updated_budget.id)
+        else:
+            # في حالة وجود أخطاء، تجميع رسائل الخطأ من formset
+            if year_formset.errors:
+                for i, errors in enumerate(year_formset.errors):
+                    for field, error in errors.items():
+                        messages.error(request, f"السنة {i+1} - {field}: {error[0]}")
+            if year_formset.non_form_errors():
+                for error in year_formset.non_form_errors():
+                    messages.error(request, error)
     else:
-        form = ScholarshipBudgetForm(instance=budget)
+        # تعبئة نموذج الميزانية
+        form = ScholarshipBudgetWithYearsForm(instance=budget, initial={
+            'num_years': YearlyScholarshipCosts.objects.filter(budget=budget).count()
+        })
+
+        # تعبئة نماذج السنوات الدراسية
+        yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget).order_by('year_number')
+        initial_years = []
+
+        for cost in yearly_costs:
+            year_data = {
+                'year_number': cost.year_number,
+                'academic_year': cost.academic_year,
+                'travel_tickets': cost.travel_tickets,
+                'monthly_allowance': cost.monthly_allowance,
+                'monthly_duration': cost.monthly_duration,
+                'visa_fees': cost.visa_fees,
+                'health_insurance': cost.health_insurance,
+                'tuition_fees_foreign': cost.tuition_fees_foreign,
+                'tuition_fees_local': cost.tuition_fees_local,
+                'include_year': True
+            }
+            initial_years.append(year_data)
+
+        year_formset = YearlyScholarshipCostsFormSet(
+            initial=initial_years,
+            prefix='years'
+        )
 
     context = {
         'form': form,
-        'budget': budget,
+        'year_formset': year_formset,
+        'application': budget.application,
+        'current_fiscal_year': current_fiscal_year,
         'is_update': True,
+        'budget': budget,
     }
-    return render(request, 'finance/budget_form.html', context)
+    return render(request, 'finance/budget_with_years_form.html', context)
 
 
 @login_required
