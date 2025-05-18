@@ -336,3 +336,126 @@ class ScholarshipSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # عرض فقط السنوات المالية المفتوحة للسنة الحالية
         self.fields['current_fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
+
+
+class ScholarshipYearFormSet(forms.BaseFormSet):
+    """مجموعة نماذج مرنة لإدخال بيانات السنوات الدراسية"""
+
+    def clean(self):
+        """التحقق من صحة البيانات المدخلة للسنوات الدراسية"""
+        if any(self.errors):
+            return
+
+        # فقط التحقق من السنوات التي تم تضمينها
+        included_forms = [form for form in self.forms if form.cleaned_data and form.cleaned_data.get('include_year')]
+
+        if not included_forms:
+            raise forms.ValidationError(_("يجب تضمين سنة دراسية واحدة على الأقل"))
+
+        year_numbers = []
+        for form in included_forms:
+            year_number = form.cleaned_data.get('year_number')
+            # التحقق من عدم تكرار رقم السنة
+            if year_number in year_numbers:
+                raise forms.ValidationError(_("لا يمكن تكرار رقم السنة"))
+            year_numbers.append(year_number)
+
+        # التأكد من أن أرقام السنوات متسلسلة
+        year_numbers.sort()
+        for i, year_num in enumerate(year_numbers, start=1):
+            if year_num != i:
+                raise forms.ValidationError(_("يجب أن تكون أرقام السنوات متسلسلة تبدأ من 1"))
+
+
+class YearlyScholarshipCostsInlineForm(forms.ModelForm):
+    """نموذج تكاليف السنة الدراسية أثناء إنشاء الميزانية"""
+    include_year = forms.BooleanField(
+        label=_("تضمين هذه السنة"),
+        required=False,
+        initial=True
+    )
+
+    class Meta:
+        model = YearlyScholarshipCosts
+        fields = ['year_number', 'academic_year', 'travel_tickets', 'monthly_allowance',
+                  'monthly_duration', 'visa_fees', 'health_insurance',
+                  'tuition_fees_foreign', 'tuition_fees_local']
+        widgets = {
+            'academic_year': forms.Select(choices=[(f"{y}-{y + 1}", f"{y}-{y + 1}")
+                                                   for y in range(2020, 2030)]),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # حذف حقل السنة المالية
+        if 'fiscal_year' in self.fields:
+            del self.fields['fiscal_year']
+
+        # تعديل جميع الحقول المالية لتقييدها بمنزلتين عشريتين فقط
+        decimal_fields = [
+            'travel_tickets', 'monthly_allowance', 'visa_fees',
+            'health_insurance', 'tuition_fees_foreign', 'tuition_fees_local'
+        ]
+
+        for field_name in decimal_fields:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    'step': '0.01',
+                    'pattern': r'^\d+(\.\d{1,2})?$',
+                    'title': _('أدخل رقمًا بمنزلتين عشريتين كحد أقصى')
+                })
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # لا نتحقق من البيانات إذا لم يتم تضمين هذه السنة
+        if not cleaned_data.get('include_year'):
+            return cleaned_data
+
+        required_fields = ['year_number', 'academic_year', 'monthly_allowance', 'monthly_duration']
+        for field in required_fields:
+            if not cleaned_data.get(field):
+                self.add_error(field, _("هذا الحقل مطلوب"))
+
+        return cleaned_data
+
+
+class ScholarshipBudgetWithYearsForm(forms.ModelForm):
+    """نموذج إنشاء ميزانية ابتعاث مع التركيز على سنوات الدراسة"""
+
+    num_years = forms.IntegerField(
+        label=_("عدد سنوات الدراسة"),
+        min_value=1,
+        max_value=6,
+        initial=3,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '6'})
+    )
+
+    class Meta:
+        model = ScholarshipBudget
+        fields = ['fiscal_year', 'total_amount', 'start_date', 'end_date',
+                  'foreign_currency', 'exchange_rate', 'academic_year', 'notes']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # عرض فقط السنوات المالية المفتوحة
+        self.fields['fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
+
+        # تعديل جميع الحقول المالية لتقييدها بمنزلتين عشريتين فقط
+        decimal_fields = ['total_amount', 'exchange_rate']
+
+        for field_name in decimal_fields:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    'step': '0.01',
+                    'pattern': r'^\d+(\.\d{1,2})?$',
+                    'title': _('أدخل رقمًا بمنزلتين عشريتين كحد أقصى')
+                })
+
+        # تغيير المسميات والوصف
+        self.fields['total_amount'].label = _("إجمالي كلفة الابتعاث")
+        self.fields['total_amount'].help_text = _("المبلغ الإجمالي المخصص لكامل فترة الابتعاث")

@@ -169,6 +169,32 @@ class ScholarshipBudget(models.Model):
         """حساب إجمالي التكاليف السنوية للابتعاث"""
         return sum(cost.total_year_cost() for cost in self.yearly_costs.all())
 
+    def save(self, *args, **kwargs):
+        """تقريب القيم العشرية عند الحفظ"""
+        # تقريب القيم المالية إلى منزلتين عشريتين
+        if self.total_amount:
+            self.total_amount = Decimal(self.total_amount).quantize(Decimal('0.01'))
+        if self.tuition_fees:
+            self.tuition_fees = Decimal(self.tuition_fees).quantize(Decimal('0.01'))
+        if self.monthly_stipend:
+            self.monthly_stipend = Decimal(self.monthly_stipend).quantize(Decimal('0.01'))
+        if self.travel_allowance:
+            self.travel_allowance = Decimal(self.travel_allowance).quantize(Decimal('0.01'))
+        if self.health_insurance:
+            self.health_insurance = Decimal(self.health_insurance).quantize(Decimal('0.01'))
+        if self.books_allowance:
+            self.books_allowance = Decimal(self.books_allowance).quantize(Decimal('0.01'))
+        if self.research_allowance:
+            self.research_allowance = Decimal(self.research_allowance).quantize(Decimal('0.01'))
+        if self.conference_allowance:
+            self.conference_allowance = Decimal(self.conference_allowance).quantize(Decimal('0.01'))
+        if self.other_expenses:
+            self.other_expenses = Decimal(self.other_expenses).quantize(Decimal('0.01'))
+        if self.exchange_rate:
+            self.exchange_rate = Decimal(self.exchange_rate).quantize(Decimal('0.01'))
+
+        super().save(*args, **kwargs)
+
     def close_current_year_open_new(self):
         """إغلاق السنة الدراسية الحالية وفتح سنة جديدة"""
         if not self.is_current or self.status == 'closed':
@@ -247,6 +273,24 @@ class YearlyScholarshipCosts(models.Model):
                 self.health_insurance +
                 self.tuition_fees_local
         )
+
+    def save(self, *args, **kwargs):
+        """تقريب القيم العشرية عند الحفظ"""
+        # تقريب القيم المالية إلى منزلتين عشريتين
+        if self.travel_tickets:
+            self.travel_tickets = Decimal(self.travel_tickets).quantize(Decimal('0.01'))
+        if self.monthly_allowance:
+            self.monthly_allowance = Decimal(self.monthly_allowance).quantize(Decimal('0.01'))
+        if self.visa_fees:
+            self.visa_fees = Decimal(self.visa_fees).quantize(Decimal('0.01'))
+        if self.health_insurance:
+            self.health_insurance = Decimal(self.health_insurance).quantize(Decimal('0.01'))
+        if self.tuition_fees_local:
+            self.tuition_fees_local = Decimal(self.tuition_fees_local).quantize(Decimal('0.01'))
+        if self.tuition_fees_foreign:
+            self.tuition_fees_foreign = Decimal(self.tuition_fees_foreign).quantize(Decimal('0.01'))
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("تكاليف سنوية للابتعاث")
