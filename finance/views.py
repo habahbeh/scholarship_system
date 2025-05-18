@@ -843,6 +843,24 @@ def create_budget(request, application_id):
         year_formset = YearlyScholarshipCostsFormSet(request.POST, prefix='years')
 
         if form.is_valid() and year_formset.is_valid():
+            # الحصول على عدد السنوات المحدد
+            num_years = form.cleaned_data.get('num_years', 1)
+
+            # التحقق من أن عدد السنوات المضمنة يتطابق مع num_years
+            included_years_count = sum(1 for year_form in year_formset
+                                      if year_form.cleaned_data
+                                      and year_form.cleaned_data.get('include_year')
+                                      and not year_form.cleaned_data.get('DELETE', False))
+
+            if included_years_count != num_years:
+                messages.error(request, _(f"عدد السنوات المضمنة ({included_years_count}) لا يتطابق مع عدد السنوات المحدد ({num_years})"))
+                return render(request, 'finance/budget_with_years_form.html', {
+                    'form': form,
+                    'year_formset': year_formset,
+                    'application': application,
+                    'current_fiscal_year': current_fiscal_year,
+                })
+
             # حساب إجمالي تكاليف السنوات المضمنة فقط
             years_total = Decimal('0.00')
             for year_form in year_formset:
@@ -952,6 +970,8 @@ def create_budget(request, application_id):
         start_date = timezone.now().date()
         end_date = start_date + datetime.timedelta(days=365*3)  # 3 سنوات افتراضية
 
+        default_years = 3  # العدد الافتراضي للسنوات
+
         form = ScholarshipBudgetWithYearsForm(initial={
             'fiscal_year': current_fiscal_year,
             'start_date': start_date,
@@ -959,26 +979,51 @@ def create_budget(request, application_id):
             'exchange_rate': 0.91,
             'foreign_currency': 'GBP',
             'academic_year': f"{timezone.now().year}-{timezone.now().year+1}",
+            'num_years': default_years,  # تعيين العدد الافتراضي للسنوات
         })
 
-        # القيم الافتراضية للسنة الدراسية الأولى فقط
+        # إنشاء النماذج الأولية لعدد السنوات المحدد
         current_year = timezone.now().year
-        initial_years = [
-            {
-                'year_number': 1,
-                'academic_year': f"{current_year}-{current_year+1}",
-                'travel_tickets': 1100.00,
-                'monthly_allowance': 1000.00,
-                'monthly_duration': 12,
-                'visa_fees': 358.00,
-                'health_insurance': 500.00,
-                'tuition_fees_foreign': 22350.00,
-                'tuition_fees_local': 20338.50,
+        initial_years = []
+
+        for year_num in range(1, default_years + 1):
+            year_data = {
+                'year_number': year_num,
+                'academic_year': f"{current_year + year_num - 1}-{current_year + year_num}",
                 'include_year': True
             }
-        ]
 
-        year_formset = YearlyScholarshipCostsFormSet(initial=initial_years, prefix='years')
+            # القيم الافتراضية تختلف حسب السنة
+            if year_num == 1:
+                # القيم للسنة الأولى
+                year_data.update({
+                    'travel_tickets': 1100.00,
+                    'monthly_allowance': 1000.00,
+                    'monthly_duration': 12,
+                    'visa_fees': 358.00,
+                    'health_insurance': 500.00,
+                    'tuition_fees_foreign': 22350.00,
+                    'tuition_fees_local': 20338.50,
+                })
+            else:
+                # القيم للسنوات اللاحقة
+                year_data.update({
+                    'travel_tickets': 0.00,
+                    'monthly_allowance': 1000.00,
+                    'monthly_duration': 12,
+                    'visa_fees': 0.00,
+                    'health_insurance': 500.00,
+                    'tuition_fees_foreign': 22350.00,
+                    'tuition_fees_local': 20338.50,
+                })
+
+            initial_years.append(year_data)
+
+        # تعيين عدد النماذج الإضافية بناءً على عدد السنوات المطلوب
+        year_formset = YearlyScholarshipCostsFormSet(
+            initial=initial_years,
+            prefix='years'
+        )
 
     context = {
         'form': form,
