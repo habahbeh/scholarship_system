@@ -3413,14 +3413,89 @@ def api_fiscal_year_summary(request):
         'spent_percentage': float((spent_amount / total_budget) * 100) if total_budget > 0 else 0,
     })
 
+def calculate_updated_budget_total(budget, settings):
+    """حساب إجمالي الميزانية المحدث بناءً على جميع السنوات الدراسية"""
+
+    # الحصول على جميع التكاليف السنوية
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget)
+
+    # حساب إجمالي التكاليف الأساسية
+    base_total = Decimal('0.00')
+
+    for cost in yearly_costs:
+        # حساب تكلفة السنة
+        monthly_total = cost.monthly_allowance * cost.monthly_duration
+        year_cost = (
+            cost.travel_tickets +
+            monthly_total +
+            cost.visa_fees +
+            cost.health_insurance +
+            cost.tuition_fees_local
+        )
+        base_total += year_cost
+
+    # إضافة التأمين على الحياة
+    insurance_amount = Decimal('0.00')
+    if settings and settings.life_insurance_rate > 0:
+        insurance_amount = base_total * settings.life_insurance_rate
+
+    # حساب التكلفة الحقيقية (الأساسية + التأمين)
+    true_cost = base_total + insurance_amount
+
+    # إضافة النسبة الإضافية
+    additional_amount = Decimal('0.00')
+    if settings and settings.add_percentage > 0:
+        additional_amount = true_cost * (settings.add_percentage / Decimal('100'))
+
+    # المجموع النهائي
+    final_total = true_cost + additional_amount
+
+    return final_total.quantize(Decimal('0.01'))
+
+def update_budget_categories_from_yearly_costs(budget):
+    """تحديث فئات الميزانية بناءً على التكاليف السنوية"""
+
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget)
+
+    # تجميع التكاليف حسب الفئة
+    total_tuition_fees = sum(cost.tuition_fees_local for cost in yearly_costs)
+    total_monthly_stipend = sum(cost.monthly_allowance * cost.monthly_duration for cost in yearly_costs)
+    total_travel_allowance = sum(cost.travel_tickets for cost in yearly_costs)
+    total_health_insurance = sum(cost.health_insurance for cost in yearly_costs)
+    total_visa_fees = sum(cost.visa_fees for cost in yearly_costs)
+
+    # تحديث فئات الميزانية
+    budget.tuition_fees = total_tuition_fees.quantize(Decimal('0.01'))
+    budget.monthly_stipend = total_monthly_stipend.quantize(Decimal('0.01'))
+    budget.travel_allowance = total_travel_allowance.quantize(Decimal('0.01'))
+    budget.health_insurance = total_health_insurance.quantize(Decimal('0.01'))
+
+    # إضافة رسوم الفيزا للمصاريف الأخرى
+    budget.other_expenses = total_visa_fees.quantize(Decimal('0.01'))
+
+    # الفئات الأخرى تبقى كما هي (يمكن تعديلها يدوياً)
+    if not budget.books_allowance:
+        budget.books_allowance = Decimal('0.00')
+    if not budget.research_allowance:
+        budget.research_allowance = Decimal('0.00')
+    if not budget.conference_allowance:
+        budget.conference_allowance = Decimal('0.00')
+
+
 @login_required
 @permission_required('finance.add_yearlyscholarshipcosts', raise_exception=True)
 def add_scholarship_year(request, budget_id):
-    """إضافة سنة جديدة لميزانية المبتعث"""
+    """إضافة سنة جديدة لميزانية المبتعث مع تحديث الميزانية تلقائياً"""
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
+    # التحقق من حالة الميزانية
+    if budget.status != 'active':
+        messages.error(request, _("لا يمكن إضافة سنة دراسية لميزانية غير نشطة"))
+        return redirect('finance:budget_detail', budget_id=budget.id)
+
     # تحديد رقم السنة الجديدة
-    next_year_number = YearlyScholarshipCosts.objects.filter(budget=budget).count() + 1
+    existing_years = YearlyScholarshipCosts.objects.filter(budget=budget)
+    next_year_number = existing_years.count() + 1
 
     # الحصول على قائمة السنوات المالية المفتوحة
     fiscal_years = FiscalYear.objects.filter(status='open').order_by('-year')
@@ -3434,6 +3509,15 @@ def add_scholarship_year(request, budget_id):
         settings = ScholarshipSettings.objects.first()
         if settings and settings.current_fiscal_year:
             default_fiscal_year = settings.current_fiscal_year
+
+    # الحصول على الإعدادات
+    settings = ScholarshipSettings.objects.first()
+    if not settings:
+        settings = ScholarshipSettings.objects.create(
+            life_insurance_rate=Decimal('0.0034'),
+            add_percentage=Decimal('50.0'),
+            current_fiscal_year=default_fiscal_year
+        )
 
     if request.method == 'POST':
         form = YearlyScholarshipCostsForm(request.POST)
@@ -3449,44 +3533,69 @@ def add_scholarship_year(request, budget_id):
 
             yearly_cost.save()
 
-            # إنشاء سجل للعملية
+            # حساب إجمالي التكاليف الجديد
+            new_total = calculate_updated_budget_total(budget, settings)
+
+            # تحديث إجمالي الميزانية
+            old_total = budget.total_amount
+            budget.total_amount = new_total
+
+            # تحديث الفئات المالية بناءً على جميع السنوات
+            update_budget_categories_from_yearly_costs(budget)
+
+            budget.save()
+
+            # إنشاء سجل للعملية - إضافة السنة
             FinancialLog.objects.create(
                 budget=budget,
                 fiscal_year=yearly_cost.fiscal_year,
                 action_type='create',
-                description=_("إضافة سنة دراسية جديدة للابتعاث") + f" - {yearly_cost.year_number}",
+                description=_("إضافة سنة دراسية جديدة للابتعاث") + f" - السنة {yearly_cost.year_number} ({yearly_cost.academic_year})",
                 created_by=request.user
             )
 
-            messages.success(request, _("تمت إضافة السنة الدراسية بنجاح"))
+            # إنشاء سجل للعملية - تحديث الميزانية
+            FinancialLog.objects.create(
+                budget=budget,
+                fiscal_year=yearly_cost.fiscal_year,
+                action_type='update',
+                description=_("تحديث إجمالي الميزانية بعد إضافة سنة جديدة") + f" - من {old_total} إلى {new_total}",
+                created_by=request.user
+            )
+
+            messages.success(request, _(f"تمت إضافة السنة الدراسية {yearly_cost.year_number} بنجاح وتم تحديث إجمالي الميزانية من {old_total:,.2f} إلى {new_total:,.2f} دينار أردني"))
             return redirect('finance:budget_detail', budget_id=budget.id)
     else:
-        # القيم الافتراضية حسب تقرير PDF المرفق
+        # القيم الافتراضية حسب السنة
         academic_year_parts = budget.academic_year.split('-')
         next_academic_year = f"{int(academic_year_parts[0]) + next_year_number - 1}-{int(academic_year_parts[1]) + next_year_number - 1}"
 
         initial_data = {
             'year_number': next_year_number,
             'academic_year': next_academic_year,
-            'monthly_allowance': 1000,
+            'monthly_allowance': Decimal('1000.00'),
             'monthly_duration': 12,
             'fiscal_year': default_fiscal_year,
         }
 
         # القيم الافتراضية تختلف حسب السنة
         if next_year_number == 1:
+            # القيم للسنة الأولى
             initial_data.update({
-                'travel_tickets': 1100,
-                'visa_fees': 358,
-                'health_insurance': 500,
-                'tuition_fees_foreign': 22350,
+                'travel_tickets': Decimal('1100.00'),
+                'visa_fees': Decimal('358.00'),
+                'health_insurance': Decimal('500.00'),
+                'tuition_fees_foreign': Decimal('22350.00'),
+                'tuition_fees_local': Decimal('22350.00') * budget.exchange_rate,
             })
         else:
+            # القيم للسنوات اللاحقة (بدون تذاكر أو فيزا)
             initial_data.update({
-                'travel_tickets': 0,
-                'visa_fees': 0,
-                'health_insurance': 0,
-                'tuition_fees_foreign': 22350,
+                'travel_tickets': Decimal('0.00'),
+                'visa_fees': Decimal('0.00'),
+                'health_insurance': Decimal('500.00'),
+                'tuition_fees_foreign': Decimal('22350.00'),
+                'tuition_fees_local': Decimal('22350.00') * budget.exchange_rate,
             })
 
         form = YearlyScholarshipCostsForm(initial=initial_data)
@@ -3497,6 +3606,7 @@ def add_scholarship_year(request, budget_id):
         'next_year_number': next_year_number,
         'fiscal_years': fiscal_years,
         'default_fiscal_year': default_fiscal_year,
+        'settings': settings,
     }
     return render(request, 'finance/scholarship_year_form.html', context)
 
@@ -3649,18 +3759,33 @@ def scholarship_years_costs_report(request, budget_id):
 
 @login_required
 def api_scholarship_settings(request):
-    """API لجلب إعدادات الابتعاث"""
-    settings = ScholarshipSettings.objects.first()
+    """API لجلب إعدادات الابتعاث مع التخزين المؤقت"""
 
-    if not settings:
-        # إنشاء إعدادات افتراضية إذا لم تكن موجودة
-        settings = ScholarshipSettings.objects.create(
-            life_insurance_rate=Decimal('0.0034'),
-            add_percentage=Decimal('50.0')
-        )
+    # استخدام cache لتحسين الأداء
+    from django.core.cache import cache
 
-    return JsonResponse({
-        'life_insurance_rate': float(settings.life_insurance_rate),
-        'add_percentage': float(settings.add_percentage),
-        'current_fiscal_year_id': settings.current_fiscal_year.id if settings.current_fiscal_year else None,
-    })
+    cache_key = 'scholarship_settings'
+    settings_data = cache.get(cache_key)
+
+    if not settings_data:
+        settings = ScholarshipSettings.objects.first()
+
+        if not settings:
+            # إنشاء إعدادات افتراضية إذا لم تكن موجودة
+            settings = ScholarshipSettings.objects.create(
+                life_insurance_rate=Decimal('0.0034'),
+                add_percentage=Decimal('50.0')
+            )
+
+        settings_data = {
+            'life_insurance_rate': float(settings.life_insurance_rate),
+            'add_percentage': float(settings.add_percentage),
+            'current_fiscal_year_id': settings.current_fiscal_year.id if settings.current_fiscal_year else None,
+            'life_insurance_rate_display': f"{float(settings.life_insurance_rate * 1000):.1f}‰",
+            'add_percentage_display': f"{float(settings.add_percentage):.1f}%",
+        }
+
+        # تخزين في الكاش لمدة 5 دقائق
+        cache.set(cache_key, settings_data, 300)
+
+    return JsonResponse(settings_data)
