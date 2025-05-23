@@ -7,7 +7,9 @@ from django.urls import reverse
 from django.utils import timezone
 from applications.models import Application
 import datetime
-from decimal import Decimal
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal, ROUND_HALF_UP
+
 
 class FiscalYear(models.Model):
     """نموذج السنة المالية"""
@@ -85,76 +87,209 @@ class FiscalYear(models.Model):
         return new_fiscal_year
 
 
+
 class ScholarshipBudget(models.Model):
-    """نموذج ميزانية المبتعث"""
-    application = models.OneToOneField(Application, on_delete=models.CASCADE,
-                                       verbose_name=_("طلب الابتعاث"),
-                                       related_name="budget")
-    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.CASCADE,
-                                    verbose_name=_("السنة المالية"),
-                                    related_name="scholarship_budgets",
-                                    null=True)
-    total_amount = models.DecimalField(_("المبلغ الإجمالي"), max_digits=12, decimal_places=2)
-    start_date = models.DateField(_("تاريخ بدء الميزانية"))
-    end_date = models.DateField(_("تاريخ انتهاء الميزانية"))
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE,
-                                   verbose_name=_("تم الإنشاء بواسطة"),
-                                   related_name="created_budgets")
-    created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
-    updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
-    notes = models.TextField(_("ملاحظات"), blank=True, null=True)
+    """نموذج ميزانية الابتعاث"""
 
-    # حالة الميزانية
     STATUS_CHOICES = [
+        ('draft', _('مسودة')),
+        ('pending', _('قيد المراجعة')),
         ('active', _('نشطة')),
-        ('suspended', _('معلقة')),
         ('closed', _('مغلقة')),
+        ('cancelled', _('ملغية')),
     ]
-    status = models.CharField(_("حالة الميزانية"), max_length=20, choices=STATUS_CHOICES, default='active')
 
-    # حقول للدعم السنوي والعملات
-    academic_year = models.CharField(_("السنة الدراسية"), max_length=9,
-                                     help_text=_("مثال: 2024-2025"), default="2024-2025")
-    exchange_rate = models.DecimalField(_("سعر الصرف"), max_digits=6, decimal_places=2, default=0.91,
-                                        help_text=_("سعر صرف العملة الأجنبية"))
-    foreign_currency = models.CharField(_("العملة الأجنبية"), max_length=3, default="GBP")
-    is_current = models.BooleanField(_("السنة الحالية"), default=True,
-                                     help_text=_("هل هذه الميزانية للسنة الحالية؟"))
+    # العلاقات الأساسية
+    application = models.OneToOneField(
+        'applications.Application',
+        on_delete=models.CASCADE,
+        related_name='budget',
+        verbose_name=_('طلب الابتعاث')
+    )
+
+    fiscal_year = models.ForeignKey(
+        'FiscalYear',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='scholarship_budgets',
+        verbose_name=_('السنة المالية')
+    )
+
+    # المعلومات الأساسية
+    total_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name=_('إجمالي الميزانية'),
+        help_text=_('إجمالي مبلغ الميزانية بالدينار الأردني')
+    )
+
+    start_date = models.DateField(
+        verbose_name=_('تاريخ البداية'),
+        help_text=_('تاريخ بداية صرف الميزانية')
+    )
+
+    end_date = models.DateField(
+        verbose_name=_('تاريخ النهاية'),
+        help_text=_('تاريخ انتهاء صرف الميزانية')
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        verbose_name=_('حالة الميزانية')
+    )
+
+    # تفاصيل الفئات المالية
+    tuition_fees = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('الرسوم الدراسية'),
+        help_text=_('إجمالي الرسوم الدراسية بالدينار الأردني')
+    )
+
+    monthly_stipend = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('المخصص الشهري'),
+        help_text=_('إجمالي المخصصات الشهرية لجميع السنوات')
+    )
+
+    travel_allowance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('مخصص السفر'),
+        help_text=_('تكلفة تذاكر السفر')
+    )
+
+    health_insurance = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('التأمين الصحي'),
+        help_text=_('تكلفة التأمين الصحي لجميع السنوات')
+    )
+
+    other_expenses = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('مصاريف أخرى'),
+        help_text=_('التأمين على الحياة، النسبة الإضافية، رسوم الفيزا، إلخ')
+    )
+
+    # معلومات العملة والصرف
+    exchange_rate = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        default=Decimal('0.7100'),
+        validators=[MinValueValidator(Decimal('0.0001'))],
+        verbose_name=_('سعر الصرف'),
+        help_text=_('سعر صرف العملة الأجنبية مقابل الدينار الأردني')
+    )
+
+    foreign_currency = models.CharField(
+        max_length=3,
+        default='GBP',
+        verbose_name=_('العملة الأجنبية'),
+        help_text=_('رمز العملة الأجنبية (مثل: GBP, USD, EUR)')
+    )
+
+    # معلومات السنة الدراسية
+    academic_year = models.CharField(
+        max_length=20,
+        verbose_name=_('السنة الدراسية'),
+        help_text=_('السنة الدراسية (مثال: 2024-2025)')
+    )
+
+    is_current = models.BooleanField(
+        default=True,
+        verbose_name=_('السنة الحالية'),
+        help_text=_('هل هذه هي السنة الدراسية الحالية للمبتعث؟')
+    )
+
+    # معلومات التتبع
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_budgets',
+        verbose_name=_('أنشأ بواسطة')
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('تاريخ الإنشاء')
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('تاريخ التحديث')
+    )
+
+    # الملاحظات
+    notes = models.TextField(
+        blank=True,
+        verbose_name=_('ملاحظات'),
+        help_text=_('ملاحظات إضافية حول الميزانية')
+    )
 
     class Meta:
-        verbose_name = _("ميزانية الابتعاث")
-        verbose_name_plural = _("ميزانيات الابتعاث")
+        verbose_name = _('ميزانية ابتعاث')
+        verbose_name_plural = _('ميزانيات الابتعاث')
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['fiscal_year']),
+            models.Index(fields=['academic_year']),
+            models.Index(fields=['created_at']),
+        ]
 
     def __str__(self):
-        return f"{self.application.applicant.get_full_name()} - {self.total_amount} - {self.academic_year}"
+        return f"{self.application.applicant.get_full_name()} - {self.academic_year} - {self.total_amount} د.أ"
 
-    def get_absolute_url(self):
-        return reverse('finance:budget_detail', args=[self.id])
+    def save(self, *args, **kwargs):
+        """حفظ محسن مع التحقق من البيانات"""
+        # التأكد من أن تاريخ النهاية بعد تاريخ البداية
+        if self.start_date and self.end_date and self.end_date <= self.start_date:
+            raise ValueError(_("تاريخ النهاية يجب أن يكون بعد تاريخ البداية"))
 
-    def get_remaining_amount(self):
-        """حساب المبلغ المتبقي مع تقريب دقيق"""
-        from decimal import Decimal, ROUND_HALF_UP
+        # تحديث حالة السنة الحالية
+        if self.is_current:
+            # إلغاء تحديد السنة الحالية للميزانيات الأخرى لنفس المتقدم
+            ScholarshipBudget.objects.filter(
+                application__applicant=self.application.applicant
+            ).exclude(id=self.id).update(is_current=False)
 
-        spent = self.get_spent_amount()
-        remaining = self.total_amount - spent
+        super().save(*args, **kwargs)
 
-        return remaining.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
+    # دوال الحساب المحسنة
     def get_spent_amount(self):
-        """حساب إجمالي المبلغ المصروف مع تقريب دقيق"""
-        from decimal import Decimal, ROUND_HALF_UP
-
+        """حساب إجمالي المبلغ المصروف مع تقريب دقيق ومتسق"""
         total = self.expenses.filter(status='approved').aggregate(
             total=models.Sum('amount')
         )['total'] or Decimal('0.00')
 
         return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-    def get_spent_percentage(self):
-        """حساب نسبة الصرف مع تقريب دقيق"""
-        from decimal import Decimal, ROUND_HALF_UP
+    def get_remaining_amount(self):
+        """حساب المبلغ المتبقي مع تقريب دقيق ومتسق"""
+        spent = self.get_spent_amount()
+        remaining = self.total_amount - spent
 
+        return remaining.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def get_spent_percentage(self):
+        """حساب نسبة الصرف مع تقريب دقيق ومتسق"""
         if self.total_amount <= 0:
             return Decimal('0.00')
 
@@ -164,136 +299,370 @@ class ScholarshipBudget(models.Model):
         return percentage.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def get_yearly_costs_total(self):
-        """حساب إجمالي التكاليف السنوية مع تقريب دقيق"""
-        from decimal import Decimal, ROUND_HALF_UP
+        """حساب إجمالي التكاليف السنوية بنفس طريقة حساب الميزانية الأصلية"""
+        # الحصول على الإعدادات
+        try:
+            settings = ScholarshipSettings.objects.first()
+            if not settings:
+                # استخدام القيم الافتراضية
+                life_insurance_rate = Decimal('0.0034')
+                add_percentage = Decimal('50.0')
+            else:
+                life_insurance_rate = settings.life_insurance_rate
+                add_percentage = settings.add_percentage
+        except:
+            life_insurance_rate = Decimal('0.0034')
+            add_percentage = Decimal('50.0')
 
-        total = Decimal('0.00')
+        # حساب إجمالي التكاليف الأساسية
+        base_total = Decimal('0.00')
 
         for cost in self.yearly_costs.all():
-            monthly_total = cost.monthly_allowance * cost.monthly_duration
+            monthly_total = (cost.monthly_allowance * cost.monthly_duration).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
             year_cost = (
                     cost.travel_tickets +
                     monthly_total +
                     cost.visa_fees +
                     cost.health_insurance +
                     cost.tuition_fees_local
+            ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            base_total += year_cost
+
+        # تطبيق نفس الحسابات المستخدمة في إنشاء الميزانية
+        # إضافة التأمين على الحياة
+        if life_insurance_rate > 0:
+            insurance = (base_total * life_insurance_rate).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
             )
-            total += year_cost
+            base_total += insurance
 
-        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # إضافة النسبة الإضافية
+        if add_percentage > 0:
+            additional = (base_total * (add_percentage / Decimal('100'))).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+            base_total += additional
 
-    def save(self, *args, **kwargs):
-        """تقريب القيم العشرية عند الحفظ"""
-        # تقريب القيم المالية إلى منزلتين عشريتين
-        if self.total_amount:
-            self.total_amount = Decimal(self.total_amount).quantize(Decimal('0.01'))
-        if self.exchange_rate:
-            self.exchange_rate = Decimal(self.exchange_rate).quantize(Decimal('0.01'))
+        return base_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-        super().save(*args, **kwargs)
+    def recalculate_total_amount(self):
+        """إعادة حساب إجمالي الميزانية بناءً على التكاليف السنوية الحالية"""
+        calculated_total = self.get_yearly_costs_total()
 
-    def close_current_year_open_new(self):
-        """إغلاق السنة الدراسية الحالية وفتح سنة جديدة"""
-        if not self.is_current or self.status == 'closed':
-            return None
-
-        # تحديث السنة الحالية
-        current_year = self.academic_year
-        year_parts = current_year.split('-')
-        next_year = f"{int(year_parts[0]) + 1}-{int(year_parts[1]) + 1}"
-
-        # إغلاق السنة الحالية
-        self.is_current = False
-        self.status = 'closed'
+        # تحديث إجمالي الميزانية
+        old_total = self.total_amount
+        self.total_amount = calculated_total
         self.save()
 
-        # إنشاء ميزانية جديدة للسنة التالية
-        new_budget = ScholarshipBudget.objects.create(
-            application=self.application,
-            fiscal_year=self.fiscal_year,
-            total_amount=self.total_amount,
-            start_date=self.end_date + datetime.timedelta(days=1),
-            end_date=self.end_date + datetime.timedelta(days=365),
-            created_by=self.created_by,
-            academic_year=next_year,
-            exchange_rate=self.exchange_rate,
-            foreign_currency=self.foreign_currency,
-            is_current=True
+        return {
+            'old_total': old_total,
+            'new_total': calculated_total,
+            'difference': abs(calculated_total - old_total)
+        }
+
+    def validate_budget_calculation(self, tolerance=Decimal('0.10')):
+        """التحقق من صحة حساب الميزانية"""
+        calculated_total = self.get_yearly_costs_total()
+        difference = abs(self.total_amount - calculated_total)
+
+        return {
+            'is_valid': difference <= tolerance,
+            'saved_total': self.total_amount,
+            'calculated_total': calculated_total,
+            'difference': difference,
+            'tolerance': tolerance
+        }
+
+    # دوال مساعدة إضافية
+    def get_duration_in_days(self):
+        """حساب مدة الميزانية بالأيام"""
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days
+        return 0
+
+    def get_duration_in_months(self):
+        """حساب مدة الميزانية بالأشهر تقريباً"""
+        days = self.get_duration_in_days()
+        return round(days / 30.44)  # متوسط أيام الشهر
+
+    def is_expired(self):
+        """التحقق من انتهاء صلاحية الميزانية"""
+        if self.end_date:
+            return timezone.now().date() > self.end_date
+        return False
+
+    def is_active_now(self):
+        """التحقق من أن الميزانية نشطة حالياً"""
+        now = timezone.now().date()
+        return (
+                self.status == 'active' and
+                self.start_date <= now <= self.end_date
         )
 
-        return new_budget
+    def get_category_percentage(self, category_amount):
+        """حساب نسبة فئة معينة من إجمالي الميزانية"""
+        if self.total_amount <= 0:
+            return Decimal('0.00')
+
+        percentage = (category_amount / self.total_amount * 100)
+        return percentage.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def can_be_modified(self):
+        """التحقق من إمكانية تعديل الميزانية"""
+        return self.status in ['draft', 'pending', 'active']
+
+    def can_be_deleted(self):
+        """التحقق من إمكانية حذف الميزانية"""
+        # لا يمكن حذف الميزانية إذا كانت لها مصروفات معتمدة
+        has_approved_expenses = self.expenses.filter(status='approved').exists()
+        return not has_approved_expenses and self.status != 'closed'
+
 
 class YearlyScholarshipCosts(models.Model):
     """نموذج التكاليف السنوية للابتعاث"""
-    budget = models.ForeignKey(ScholarshipBudget, on_delete=models.CASCADE,
-                               related_name="yearly_costs", verbose_name=_("الميزانية"))
-    year_number = models.PositiveIntegerField(_("رقم السنة"), help_text=_("رقم السنة من الابتعاث (1, 2, 3, ...)"))
-    academic_year = models.CharField(_("السنة الدراسية"), max_length=9, help_text=_("مثال: 2024-2025"))
 
-    # تفاصيل التكاليف
-    travel_tickets = models.DecimalField(_("تذكرة سفر"), max_digits=10, decimal_places=2, default=0)
-    monthly_allowance = models.DecimalField(_("المخصص الشهري"), max_digits=10, decimal_places=2, default=0)
-    monthly_duration = models.PositiveIntegerField(_("عدد الأشهر"), default=12)
-    visa_fees = models.DecimalField(_("رسوم الفيزا"), max_digits=10, decimal_places=2, default=0)
-    health_insurance = models.DecimalField(_("التأمين الصحي"), max_digits=10, decimal_places=2, default=0)
-    tuition_fees_local = models.DecimalField(_("الرسوم الدراسية (بالدينار)"), max_digits=10, decimal_places=2,
-                                             default=0)
-    tuition_fees_foreign = models.DecimalField(_("الرسوم الدراسية (بالعملة الأجنبية)"), max_digits=10, decimal_places=2,
-                                               default=0)
+    # العلاقات الأساسية
+    budget = models.ForeignKey(
+        ScholarshipBudget,
+        on_delete=models.CASCADE,
+        related_name='yearly_costs',
+        verbose_name=_('الميزانية')
+    )
 
-    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
-                                    verbose_name=_("السنة المالية"),
-                                    related_name="yearly_scholarship_costs",
-                                    null=True, blank=True)
-    created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
-    updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
+    fiscal_year = models.ForeignKey(
+        'FiscalYear',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='yearly_scholarship_costs',
+        verbose_name=_('السنة المالية')
+    )
 
-    def total_monthly_allowance(self):
-        """إجمالي المخصصات الشهرية"""
-        return self.monthly_allowance * self.monthly_duration
+    # معلومات السنة
+    year_number = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        verbose_name=_('رقم السنة'),
+        help_text=_('رقم السنة الدراسية (1، 2، 3، إلخ)')
+    )
 
+    academic_year = models.CharField(
+        max_length=20,
+        verbose_name=_('السنة الدراسية'),
+        help_text=_('السنة الدراسية (مثال: 2024-2025)')
+    )
+
+    # التكاليف الأساسية
+    travel_tickets = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('تذاكر السفر'),
+        help_text=_('تكلفة تذاكر السفر للسنة بالدينار الأردني')
+    )
+
+    monthly_allowance = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('1000.00'),
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name=_('المخصص الشهري'),
+        help_text=_('المبلغ الشهري للمعيشة بالدينار الأردني')
+    )
+
+    monthly_duration = models.PositiveSmallIntegerField(
+        default=12,
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
+        verbose_name=_('عدد الأشهر'),
+        help_text=_('عدد أشهر صرف المخصص الشهري')
+    )
+
+    visa_fees = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('رسوم الفيزا'),
+        help_text=_('رسوم الحصول على الفيزا بالدينار الأردني')
+    )
+
+    health_insurance = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('500.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('التأمين الصحي'),
+        help_text=_('تكلفة التأمين الصحي للسنة بالدينار الأردني')
+    )
+
+    # الرسوم الدراسية
+    tuition_fees_foreign = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('الرسوم الدراسية (عملة أجنبية)'),
+        help_text=_('الرسوم الدراسية بالعملة الأجنبية')
+    )
+
+    tuition_fees_local = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        verbose_name=_('الرسوم الدراسية (دينار أردني)'),
+        help_text=_('الرسوم الدراسية بالدينار الأردني')
+    )
+
+    # معلومات التتبع
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('تاريخ الإنشاء')
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_('تاريخ التحديث')
+    )
+
+    # الملاحظات
+    notes = models.TextField(
+        blank=True,
+        verbose_name=_('ملاحظات'),
+        help_text=_('ملاحظات خاصة بهذه السنة الدراسية')
+    )
+
+    class Meta:
+        verbose_name = _('التكاليف السنوية للابتعاث')
+        verbose_name_plural = _('التكاليف السنوية للابتعاث')
+        ordering = ['budget', 'year_number']
+        unique_together = ['budget', 'year_number']
+        indexes = [
+            models.Index(fields=['budget', 'year_number']),
+            models.Index(fields=['fiscal_year']),
+            models.Index(fields=['academic_year']),
+        ]
+
+    def __str__(self):
+        return f"{self.budget.application.applicant.get_full_name()} - السنة {self.year_number} ({self.academic_year})"
+
+    def save(self, *args, **kwargs):
+        """حفظ محسن مع التحقق من البيانات"""
+        # التأكد من أن الرسوم المحلية محسوبة إذا لم تكن موجودة
+        if self.tuition_fees_foreign > 0 and self.tuition_fees_local == 0:
+            if self.budget and self.budget.exchange_rate > 0:
+                self.tuition_fees_local = (
+                        self.tuition_fees_foreign * self.budget.exchange_rate
+                ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        # تعيين السنة المالية من الميزانية إذا لم تكن محددة
+        if not self.fiscal_year and self.budget and self.budget.fiscal_year:
+            self.fiscal_year = self.budget.fiscal_year
+
+        super().save(*args, **kwargs)
 
     def total_year_cost(self):
-        """حساب إجمالي تكلفة السنة مع تقريب دقيق"""
-        from decimal import Decimal, ROUND_HALF_UP
+        """حساب إجمالي تكلفة السنة مع تقريب دقيق ومتسق"""
+        monthly_total = (self.monthly_allowance * self.monthly_duration).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
 
-        monthly_total = self.monthly_allowance * self.monthly_duration
         total = (
                 self.travel_tickets +
                 monthly_total +
                 self.visa_fees +
                 self.health_insurance +
                 self.tuition_fees_local
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        return total
+
+    def get_monthly_total(self):
+        """حساب إجمالي المخصصات الشهرية"""
+        return (self.monthly_allowance * self.monthly_duration).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
         )
 
-        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    def get_tuition_in_foreign_currency(self):
+        """حساب الرسوم الدراسية بالعملة الأجنبية من المبلغ المحلي"""
+        if self.budget and self.budget.exchange_rate > 0 and self.tuition_fees_local > 0:
+            return (self.tuition_fees_local / self.budget.exchange_rate).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+        return self.tuition_fees_foreign
 
-    def save(self, *args, **kwargs):
-        """تقريب القيم العشرية عند الحفظ"""
-        # تقريب القيم المالية إلى منزلتين عشريتين
-        if self.travel_tickets:
-            self.travel_tickets = Decimal(self.travel_tickets).quantize(Decimal('0.01'))
-        if self.monthly_allowance:
-            self.monthly_allowance = Decimal(self.monthly_allowance).quantize(Decimal('0.01'))
-        if self.visa_fees:
-            self.visa_fees = Decimal(self.visa_fees).quantize(Decimal('0.01'))
-        if self.health_insurance:
-            self.health_insurance = Decimal(self.health_insurance).quantize(Decimal('0.01'))
-        if self.tuition_fees_local:
-            self.tuition_fees_local = Decimal(self.tuition_fees_local).quantize(Decimal('0.01'))
-        if self.tuition_fees_foreign:
-            self.tuition_fees_foreign = Decimal(self.tuition_fees_foreign).quantize(Decimal('0.01'))
+    def update_tuition_from_foreign(self, foreign_amount, exchange_rate):
+        """تحديث الرسوم المحلية من المبلغ الأجنبي"""
+        self.tuition_fees_foreign = Decimal(str(foreign_amount)).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
+        self.tuition_fees_local = (
+                self.tuition_fees_foreign * Decimal(str(exchange_rate))
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        self.save()
 
-        super().save(*args, **kwargs)
+    def get_cost_breakdown(self):
+        """إرجاع تفكيك مفصل للتكاليف"""
+        monthly_total = self.get_monthly_total()
+        year_total = self.total_year_cost()
 
-    class Meta:
-        verbose_name = _("تكاليف سنوية للابتعاث")
-        verbose_name_plural = _("التكاليف السنوية للابتعاث")
-        ordering = ['year_number']
-        unique_together = ['budget', 'year_number']
+        return {
+            'travel_tickets': self.travel_tickets,
+            'monthly_allowance': self.monthly_allowance,
+            'monthly_duration': self.monthly_duration,
+            'monthly_total': monthly_total,
+            'visa_fees': self.visa_fees,
+            'health_insurance': self.health_insurance,
+            'tuition_fees_foreign': self.tuition_fees_foreign,
+            'tuition_fees_local': self.tuition_fees_local,
+            'year_total': year_total
+        }
 
-    def __str__(self):
-        return f"{self.budget.application.applicant.get_full_name()} - السنة {self.year_number} ({self.academic_year})"
+    def get_cost_percentages(self):
+        """حساب نسب التكاليف"""
+        total = self.total_year_cost()
+        if total <= 0:
+            return {}
+
+        monthly_total = self.get_monthly_total()
+
+        return {
+            'travel_percentage': (self.travel_tickets / total * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP),
+            'monthly_percentage': (monthly_total / total * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP),
+            'visa_percentage': (self.visa_fees / total * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP),
+            'health_percentage': (self.health_insurance / total * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP),
+            'tuition_percentage': (self.tuition_fees_local / total * 100).quantize(Decimal('0.1'),
+                                                                                   rounding=ROUND_HALF_UP),
+        }
+
+    def is_first_year(self):
+        """التحقق من أن هذه هي السنة الأولى"""
+        return self.year_number == 1
+
+    def is_last_year(self):
+        """التحقق من أن هذه هي السنة الأخيرة"""
+        max_year = self.budget.yearly_costs.aggregate(
+            max_year=models.Max('year_number')
+        )['max_year']
+        return self.year_number == max_year
+
+    def get_next_year(self):
+        """الحصول على السنة التالية"""
+        try:
+            return self.budget.yearly_costs.get(year_number=self.year_number + 1)
+        except YearlyScholarshipCosts.DoesNotExist:
+            return None
+
+    def get_previous_year(self):
+        """الحصول على السنة السابقة"""
+        if self.year_number <= 1:
+            return None
+        try:
+            return self.budget.yearly_costs.get(year_number=self.year_number - 1)
+        except YearlyScholarshipCosts.DoesNotExist:
+            return None
 
 
 class ScholarshipSettings(models.Model):
