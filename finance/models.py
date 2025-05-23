@@ -133,31 +133,54 @@ class ScholarshipBudget(models.Model):
         return reverse('finance:budget_detail', args=[self.id])
 
     def get_remaining_amount(self):
-        """حساب المبلغ المتبقي في الميزانية"""
-        spent_amount = self.expenses.filter(
-            date__gte=self.fiscal_year.start_date if self.fiscal_year else self.start_date,
-            date__lte=self.fiscal_year.end_date if self.fiscal_year else self.end_date,
-            status='approved'
-        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
-        return self.total_amount - spent_amount
+        """حساب المبلغ المتبقي مع تقريب دقيق"""
+        from decimal import Decimal, ROUND_HALF_UP
+
+        spent = self.get_spent_amount()
+        remaining = self.total_amount - spent
+
+        return remaining.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def get_spent_amount(self):
-        """حساب المبلغ المصروف من الميزانية"""
-        return self.expenses.filter(
-            date__gte=self.fiscal_year.start_date if self.fiscal_year else self.start_date,
-            date__lte=self.fiscal_year.end_date if self.fiscal_year else self.end_date,
-            status='approved'
-        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
+        """حساب إجمالي المبلغ المصروف مع تقريب دقيق"""
+        from decimal import Decimal, ROUND_HALF_UP
+
+        total = self.expenses.filter(status='approved').aggregate(
+            total=models.Sum('amount')
+        )['total'] or Decimal('0.00')
+
+        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def get_spent_percentage(self):
-        """حساب نسبة الصرف من الميزانية"""
-        if self.total_amount > 0:
-            return (self.get_spent_amount() / self.total_amount) * 100
-        return 0
+        """حساب نسبة الصرف مع تقريب دقيق"""
+        from decimal import Decimal, ROUND_HALF_UP
+
+        if self.total_amount <= 0:
+            return Decimal('0.00')
+
+        spent = self.get_spent_amount()
+        percentage = (spent / self.total_amount * 100)
+
+        return percentage.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def get_yearly_costs_total(self):
-        """حساب إجمالي التكاليف السنوية للابتعاث"""
-        return sum(cost.total_year_cost() for cost in self.yearly_costs.all())
+        """حساب إجمالي التكاليف السنوية مع تقريب دقيق"""
+        from decimal import Decimal, ROUND_HALF_UP
+
+        total = Decimal('0.00')
+
+        for cost in self.yearly_costs.all():
+            monthly_total = cost.monthly_allowance * cost.monthly_duration
+            year_cost = (
+                    cost.travel_tickets +
+                    monthly_total +
+                    cost.visa_fees +
+                    cost.health_insurance +
+                    cost.tuition_fees_local
+            )
+            total += year_cost
+
+        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):
         """تقريب القيم العشرية عند الحفظ"""
@@ -229,15 +252,21 @@ class YearlyScholarshipCosts(models.Model):
         """إجمالي المخصصات الشهرية"""
         return self.monthly_allowance * self.monthly_duration
 
+
     def total_year_cost(self):
-        """إجمالي تكلفة السنة"""
-        return (
+        """حساب إجمالي تكلفة السنة مع تقريب دقيق"""
+        from decimal import Decimal, ROUND_HALF_UP
+
+        monthly_total = self.monthly_allowance * self.monthly_duration
+        total = (
                 self.travel_tickets +
-                self.total_monthly_allowance() +
+                monthly_total +
                 self.visa_fees +
                 self.health_insurance +
                 self.tuition_fees_local
         )
+
+        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):
         """تقريب القيم العشرية عند الحفظ"""

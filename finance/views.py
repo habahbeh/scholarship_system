@@ -37,6 +37,10 @@ from .forms import (
 from django.forms import formset_factory
 from decimal import Decimal
 
+from decimal import Decimal, ROUND_HALF_UP
+from django.conf import settings as django_settings
+
+
 @login_required
 def finance_home(request):
     """الصفحة الرئيسية للشؤون المالية"""
@@ -749,32 +753,46 @@ def budget_detail(request, budget_id):
     # الحصول على تكاليف السنوات المرتبطة بهذه الميزانية
     yearly_costs = budget.yearly_costs.all().order_by('year_number')
 
-    # الحصول على المصروفات المرتبطة بهذه الميزانية
-    expenses = budget.expenses.all().order_by('-date')
+    # الحصول على المصروفات - استعلامات منفصلة
+    recent_expenses = budget.expenses.all().order_by('-date')[:10]  # للعرض في الجدول
+    approved_expenses = budget.expenses.filter(status='approved')  # للحسابات
 
     # الحصول على التعديلات المرتبطة بهذه الميزانية
-    adjustments = budget.adjustments.all().order_by('-date')
+    adjustments = budget.adjustments.all().order_by('-date')[:5]
 
     # الحصول على سجلات العمليات المرتبطة بهذه الميزانية
-    logs = budget.logs.all().order_by('-created_at')
+    logs = budget.logs.all().order_by('-created_at')[:10]
 
-    # حساب المصروفات حسب الفئة
-    expenses_by_category = expenses.filter(status='approved').values('category__name').annotate(
-        total=models.Sum('amount')).order_by('-total')
+    # حساب المصروفات حسب الفئة من المصروفات المعتمدة
+    expenses_by_category = approved_expenses.values('category__name').annotate(
+        total=models.Sum('amount')
+    ).order_by('-total')
 
-    # حساب القيم اللازمة لعرضها في القالب
+    # حساب القيم مع تقريب دقيق باستخدام Decimal
+    from decimal import Decimal, ROUND_HALF_UP
+
     spent_amount = budget.get_spent_amount()
     remaining_amount = budget.get_remaining_amount()
-    spent_percentage = budget.get_spent_percentage()
     yearly_costs_total = budget.get_yearly_costs_total()
+
+    # تقريب دقيق لجميع القيم
+    spent_amount = spent_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    remaining_amount = remaining_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    yearly_costs_total = yearly_costs_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب النسبة المئوية مع تقريب دقيق
+    if budget.total_amount > 0:
+        spent_percentage = (spent_amount / budget.total_amount * 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    else:
+        spent_percentage = Decimal('0.00')
 
     context = {
         'budget': budget,
         'yearly_costs': yearly_costs,
-        'expenses': expenses,
+        'expenses': recent_expenses,  # للعرض في الجدول
         'adjustments': adjustments,
         'logs': logs,
-        'expenses_by_category': expenses_by_category,
+        'expenses_by_category': expenses_by_category,  # مجمعة حسب الفئة
         'spent_amount': spent_amount,
         'remaining_amount': remaining_amount,
         'spent_percentage': spent_percentage,
@@ -961,7 +979,7 @@ def create_budget(request, application_id):
 
 
 def calculate_total_from_formset(year_formset, settings):
-    """حساب الإجمالي من بيانات السنوات مع استخدام الإعدادات"""
+    """حساب الإجمالي من بيانات السنوات مع استخدام الإعدادات - مع دقة محسنة"""
     years_total = Decimal('0.00')
 
     for year_form in year_formset:
@@ -969,33 +987,43 @@ def calculate_total_from_formset(year_formset, settings):
             year_form.cleaned_data.get('include_year') and
             not year_form.cleaned_data.get('DELETE', False)):
 
-            # حساب تكلفة السنة
-            monthly_total = (
-                Decimal(year_form.cleaned_data.get('monthly_allowance', 0)) *
-                Decimal(year_form.cleaned_data.get('monthly_duration', 12))
-            )
+            # تحويل جميع القيم إلى Decimal بدقة ثابتة
+            monthly_allowance = Decimal(str(year_form.cleaned_data.get('monthly_allowance', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            monthly_duration = Decimal(str(year_form.cleaned_data.get('monthly_duration', 12)))
+            travel_tickets = Decimal(str(year_form.cleaned_data.get('travel_tickets', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            visa_fees = Decimal(str(year_form.cleaned_data.get('visa_fees', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            health_insurance = Decimal(str(year_form.cleaned_data.get('health_insurance', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            tuition_fees_local = Decimal(str(year_form.cleaned_data.get('tuition_fees_local', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            # حساب تكلفة السنة مع دقة محسنة
+            monthly_total = (monthly_allowance * monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
             year_cost = (
-                Decimal(year_form.cleaned_data.get('travel_tickets', 0)) +
+                travel_tickets +
                 monthly_total +
-                Decimal(year_form.cleaned_data.get('visa_fees', 0)) +
-                Decimal(year_form.cleaned_data.get('health_insurance', 0)) +
-                Decimal(year_form.cleaned_data.get('tuition_fees_local', 0))
-            )
+                visa_fees +
+                health_insurance +
+                tuition_fees_local
+            ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
             years_total += year_cost
 
-    # إضافة التأمين والنسبة الإضافية باستخدام الإعدادات
+    # تقريب النتيجة النهائية
+    years_total = years_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # إضافة التأمين والنسبة الإضافية باستخدام الإعدادات مع دقة محسنة
     if settings:
         if settings.life_insurance_rate > 0:
-            insurance = years_total * settings.life_insurance_rate
+            insurance_rate = Decimal(str(settings.life_insurance_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+            insurance = (years_total * insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             years_total += insurance
 
         if settings.add_percentage > 0:
-            additional = years_total * (settings.add_percentage / 100)
+            add_percentage = Decimal(str(settings.add_percentage)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            additional = (years_total * (add_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             years_total += additional
 
-    return years_total.quantize(Decimal('0.01'))
+    return years_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 @login_required
 @permission_required('finance.view_expense', raise_exception=True)
@@ -1451,49 +1479,43 @@ def update_budget(request, budget_id):
 
 
 def update_budget_categories_from_formset(budget, year_formset, settings):
-    """تعيين بيانات الفئات المالية بناءً على تفاصيل السنوات المضمنة فقط"""
+    """تعيين بيانات الفئات المالية بناءً على تفاصيل السنوات المضمنة فقط - مع دقة محسنة"""
 
-    budget.tuition_fees = sum(
-        Decimal(year_form.cleaned_data.get('tuition_fees_local', 0))
-        for year_form in year_formset
-        if year_form.cleaned_data
-        and year_form.cleaned_data.get('include_year')
-        and not year_form.cleaned_data.get('DELETE', False)
-    ).quantize(Decimal('0.01'))
+    # تهيئة المتغيرات بـ Decimal
+    tuition_fees_total = Decimal('0.00')
+    monthly_stipend_total = Decimal('0.00')
+    travel_allowance_total = Decimal('0.00')
+    health_insurance_total = Decimal('0.00')
+    visa_fees_total = Decimal('0.00')
 
-    budget.monthly_stipend = sum(
-        Decimal(year_form.cleaned_data.get('monthly_allowance', 0)) *
-        Decimal(year_form.cleaned_data.get('monthly_duration', 12))
-        for year_form in year_formset
-        if year_form.cleaned_data
-        and year_form.cleaned_data.get('include_year')
-        and not year_form.cleaned_data.get('DELETE', False)
-    ).quantize(Decimal('0.01'))
+    for year_form in year_formset:
+        if (year_form.cleaned_data
+            and year_form.cleaned_data.get('include_year')
+            and not year_form.cleaned_data.get('DELETE', False)):
 
-    budget.travel_allowance = sum(
-        Decimal(year_form.cleaned_data.get('travel_tickets', 0))
-        for year_form in year_formset
-        if year_form.cleaned_data
-        and year_form.cleaned_data.get('include_year')
-        and not year_form.cleaned_data.get('DELETE', False)
-    ).quantize(Decimal('0.01'))
+            # تحويل القيم إلى Decimal مع دقة ثابتة
+            tuition_fees_local = Decimal(str(year_form.cleaned_data.get('tuition_fees_local', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            monthly_allowance = Decimal(str(year_form.cleaned_data.get('monthly_allowance', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            monthly_duration = Decimal(str(year_form.cleaned_data.get('monthly_duration', 12)))
+            travel_tickets = Decimal(str(year_form.cleaned_data.get('travel_tickets', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            health_insurance = Decimal(str(year_form.cleaned_data.get('health_insurance', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            visa_fees = Decimal(str(year_form.cleaned_data.get('visa_fees', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-    budget.health_insurance = sum(
-        Decimal(year_form.cleaned_data.get('health_insurance', 0))
-        for year_form in year_formset
-        if year_form.cleaned_data
-        and year_form.cleaned_data.get('include_year')
-        and not year_form.cleaned_data.get('DELETE', False)
-    ).quantize(Decimal('0.01'))
+            # تجميع التكاليف
+            tuition_fees_total += tuition_fees_local
+            monthly_stipend_total += (monthly_allowance * monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            travel_allowance_total += travel_tickets
+            health_insurance_total += health_insurance
+            visa_fees_total += visa_fees
 
-    # التأمين والمصاريف الأخرى
-    other_expenses = sum(
-        Decimal(year_form.cleaned_data.get('visa_fees', 0))
-        for year_form in year_formset
-        if year_form.cleaned_data
-        and year_form.cleaned_data.get('include_year')
-        and not year_form.cleaned_data.get('DELETE', False)
-    ).quantize(Decimal('0.01'))
+    # تعيين القيم للميزانية مع تقريب نهائي
+    budget.tuition_fees = tuition_fees_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    budget.monthly_stipend = monthly_stipend_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    budget.travel_allowance = travel_allowance_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    budget.health_insurance = health_insurance_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب المصاريف الأخرى (تشمل رسوم الفيزا + التأمين + النسبة الإضافية)
+    other_expenses = visa_fees_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     # إضافة التأمين على الحياة إذا كان مفعلاً في الإعدادات
     base_total = (
@@ -1502,30 +1524,31 @@ def update_budget_categories_from_formset(budget, year_formset, settings):
         budget.travel_allowance +
         budget.health_insurance +
         other_expenses
-    ).quantize(Decimal('0.01'))
+    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     if settings and settings.life_insurance_rate > 0:
-        insurance_amount = (base_total * settings.life_insurance_rate).quantize(Decimal('0.01'))
+        insurance_rate = Decimal(str(settings.life_insurance_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        insurance_amount = (base_total * insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         other_expenses += insurance_amount
 
     # إضافة النسبة الإضافية إذا كانت مفعلة في الإعدادات
     if settings and settings.add_percentage > 0:
         true_cost = base_total
         if settings.life_insurance_rate > 0:
-            true_cost += base_total * settings.life_insurance_rate
+            insurance_rate = Decimal(str(settings.life_insurance_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+            true_cost += (base_total * insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
+        add_percentage = Decimal(str(settings.add_percentage)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         additional_amount = (
             true_cost *
-            Decimal(settings.add_percentage) /
+            add_percentage /
             Decimal('100')
-        ).quantize(Decimal('0.01'))
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         other_expenses += additional_amount
 
-    # تعيين المصاريف الأخرى والقيم الافتراضية للحقول الأخرى
-    budget.other_expenses = other_expenses
-    # budget.books_allowance = budget.books_allowance or Decimal('0.00')
-    # budget.research_allowance = budget.research_allowance or Decimal('0.00')
-    # budget.conference_allowance = budget.conference_allowance or Decimal('0.00')
+    # تعيين المصاريف الأخرى مع تقريب نهائي
+    budget.other_expenses = other_expenses.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
 
 
 @login_required
@@ -3826,3 +3849,286 @@ def api_scholarship_settings(request):
         cache.set(cache_key, settings_data, 300)
 
     return JsonResponse(settings_data)
+
+
+def validate_budget_calculation(budget, calculated_total, tolerance=Decimal('0.10')):
+    """التحقق من صحة حساب الميزانية مع هامش تسامح"""
+
+    saved_total = budget.total_amount
+    difference = abs(calculated_total - saved_total)
+
+    if difference > tolerance:
+        return {
+            'is_valid': False,
+            'difference': difference,
+            'saved_total': saved_total,
+            'calculated_total': calculated_total,
+            'message': f"تحذير: المجموع المحسوب ({calculated_total:.2f}) يختلف عن الميزانية المحفوظة ({saved_total:.2f}) بمقدار {difference:.2f} د.أ"
+        }
+
+    return {
+        'is_valid': True,
+        'difference': difference,
+        'saved_total': saved_total,
+        'calculated_total': calculated_total,
+        'message': f"الحساب صحيح - الفرق: {difference:.2f} د.أ (ضمن الحد المسموح)"
+    }
+
+def recalculate_and_fix_budget(budget, settings):
+    """إعادة حساب وإصلاح الميزانية بناءً على التكاليف السنوية الفعلية"""
+
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget)
+
+    if not yearly_costs.exists():
+        return {
+            'success': False,
+            'message': 'لا توجد تكاليف سنوية مرتبطة بهذه الميزانية'
+        }
+
+    # حساب المجموع الصحيح
+    base_total = Decimal('0.00')
+
+    for cost in yearly_costs:
+        monthly_total = (cost.monthly_allowance * cost.monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        year_cost = (
+            cost.travel_tickets +
+            monthly_total +
+            cost.visa_fees +
+            cost.health_insurance +
+            cost.tuition_fees_local
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        base_total += year_cost
+
+    # تطبيق التأمين والنسبة الإضافية
+    final_total = base_total
+
+    if settings and settings.life_insurance_rate > 0:
+        insurance_rate = Decimal(str(settings.life_insurance_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        insurance = (final_total * insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        final_total += insurance
+
+    if settings and settings.add_percentage > 0:
+        add_percentage = Decimal(str(settings.add_percentage)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        additional = (final_total * (add_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        final_total += additional
+
+    final_total = final_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # تحديث الميزانية
+    old_total = budget.total_amount
+    budget.total_amount = final_total
+
+    # تحديث فئات الميزانية
+    update_budget_categories_from_yearly_costs_direct(budget, yearly_costs, settings)
+
+    budget.save()
+
+    return {
+        'success': True,
+        'old_total': old_total,
+        'new_total': final_total,
+        'difference': abs(final_total - old_total),
+        'message': f'تم إصلاح الميزانية من {old_total:.2f} إلى {final_total:.2f} د.أ'
+    }
+
+
+def update_budget_categories_from_yearly_costs_direct(budget, yearly_costs, settings):
+    """تحديث فئات الميزانية مباشرة من التكاليف السنوية"""
+
+    # تجميع التكاليف
+    tuition_fees_total = sum(cost.tuition_fees_local for cost in yearly_costs)
+    monthly_stipend_total = sum(cost.monthly_allowance * cost.monthly_duration for cost in yearly_costs)
+    travel_allowance_total = sum(cost.travel_tickets for cost in yearly_costs)
+    health_insurance_total = sum(cost.health_insurance for cost in yearly_costs)
+    visa_fees_total = sum(cost.visa_fees for cost in yearly_costs)
+
+    # تحديث فئات الميزانية مع تقريب
+    budget.tuition_fees = Decimal(str(tuition_fees_total)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    budget.monthly_stipend = Decimal(str(monthly_stipend_total)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    budget.travel_allowance = Decimal(str(travel_allowance_total)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    budget.health_insurance = Decimal(str(health_insurance_total)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب المصاريف الأخرى
+    other_expenses = Decimal(str(visa_fees_total)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # إضافة التأمين والنسبة الإضافية للمصاريف الأخرى
+    base_total = (
+        budget.tuition_fees +
+        budget.monthly_stipend +
+        budget.travel_allowance +
+        budget.health_insurance +
+        other_expenses
+    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    if settings and settings.life_insurance_rate > 0:
+        insurance_rate = Decimal(str(settings.life_insurance_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        insurance_amount = (base_total * insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        other_expenses += insurance_amount
+
+    if settings and settings.add_percentage > 0:
+        true_cost = base_total
+        if settings.life_insurance_rate > 0:
+            insurance_rate = Decimal(str(settings.life_insurance_rate)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+            true_cost += (base_total * insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        add_percentage = Decimal(str(settings.add_percentage)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        additional_amount = (true_cost * add_percentage / Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        other_expenses += additional_amount
+
+    budget.other_expenses = other_expenses.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+@login_required
+@permission_required('finance.change_scholarshipbudget', raise_exception=True)
+def fix_budget_calculation(request, budget_id):
+    """إصلاح حسابات الميزانية عند وجود فروقات"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # الحصول على الإعدادات
+    settings = ScholarshipSettings.objects.first()
+    if not settings:
+        settings = ScholarshipSettings.objects.create(
+            life_insurance_rate=Decimal('0.0034'),
+            add_percentage=Decimal('50.0')
+        )
+
+    if request.method == 'POST':
+        # إعادة حساب وإصلاح الميزانية
+        result = recalculate_and_fix_budget(budget, settings)
+
+        if result['success']:
+            # إنشاء سجل للعملية
+            FinancialLog.objects.create(
+                budget=budget,
+                fiscal_year=budget.fiscal_year,
+                action_type='update',
+                description=_("إصلاح حسابات الميزانية") + f" - {result['message']}",
+                created_by=request.user
+            )
+
+            messages.success(request, result['message'])
+        else:
+            messages.error(request, result['message'])
+
+        return redirect('finance:budget_detail', budget_id=budget.id)
+
+    # حساب المجموع الحالي للمقارنة
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget)
+    calculated_total = Decimal('0.00')
+
+    for cost in yearly_costs:
+        monthly_total = cost.monthly_allowance * cost.monthly_duration
+        year_cost = (
+            cost.travel_tickets +
+            monthly_total +
+            cost.visa_fees +
+            cost.health_insurance +
+            cost.tuition_fees_local
+        )
+        calculated_total += year_cost
+
+    # تطبيق التأمين والنسبة الإضافية
+    if settings.life_insurance_rate > 0:
+        insurance = calculated_total * settings.life_insurance_rate
+        calculated_total += insurance
+
+    if settings.add_percentage > 0:
+        additional = calculated_total * (settings.add_percentage / Decimal('100'))
+        calculated_total += additional
+
+    calculated_total = calculated_total.quantize(Decimal('0.01'))
+
+    # التحقق من صحة الحساب
+    validation = validate_budget_calculation(budget, calculated_total)
+
+    context = {
+        'budget': budget,
+        'yearly_costs': yearly_costs,
+        'calculated_total': calculated_total,
+        'saved_total': budget.total_amount,
+        'difference': abs(calculated_total - budget.total_amount),
+        'validation': validation,
+        'settings': settings,
+    }
+
+    return render(request, 'finance/fix_budget_calculation.html', context)
+
+
+@login_required
+def api_validate_budget_calculation(request, budget_id):
+    """API للتحقق من صحة حسابات الميزانية"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # الحصول على الإعدادات
+    settings = ScholarshipSettings.objects.first()
+    if not settings:
+        return JsonResponse({
+            'error': 'لا توجد إعدادات للابتعاث'
+        })
+
+    # حساب المجموع الصحيح
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget)
+    calculated_total = Decimal('0.00')
+
+    yearly_details = []
+    for cost in yearly_costs:
+        monthly_total = (cost.monthly_allowance * cost.monthly_duration).quantize(Decimal('0.01'))
+        year_cost = (
+            cost.travel_tickets +
+            monthly_total +
+            cost.visa_fees +
+            cost.health_insurance +
+            cost.tuition_fees_local
+        ).quantize(Decimal('0.01'))
+
+        calculated_total += year_cost
+
+        yearly_details.append({
+            'year_number': cost.year_number,
+            'academic_year': cost.academic_year,
+            'travel_tickets': float(cost.travel_tickets),
+            'monthly_allowance': float(cost.monthly_allowance),
+            'monthly_duration': cost.monthly_duration,
+            'monthly_total': float(monthly_total),
+            'visa_fees': float(cost.visa_fees),
+            'health_insurance': float(cost.health_insurance),
+            'tuition_fees_local': float(cost.tuition_fees_local),
+            'year_total': float(year_cost)
+        })
+
+    base_total = calculated_total
+
+    # إضافة التأمين
+    insurance_amount = Decimal('0.00')
+    if settings.life_insurance_rate > 0:
+        insurance_amount = (calculated_total * settings.life_insurance_rate).quantize(Decimal('0.01'))
+        calculated_total += insurance_amount
+
+    # إضافة النسبة الإضافية
+    additional_amount = Decimal('0.00')
+    if settings.add_percentage > 0:
+        additional_amount = (calculated_total * (settings.add_percentage / Decimal('100'))).quantize(Decimal('0.01'))
+        calculated_total += additional_amount
+
+    calculated_total = calculated_total.quantize(Decimal('0.01'))
+
+    # التحقق من الصحة
+    validation = validate_budget_calculation(budget, calculated_total)
+
+    return JsonResponse({
+        'budget_id': budget.id,
+        'saved_total': float(budget.total_amount),
+        'calculated_total': float(calculated_total),
+        'base_total': float(base_total),
+        'insurance_amount': float(insurance_amount),
+        'additional_amount': float(additional_amount),
+        'difference': float(validation['difference']),
+        'is_valid': validation['is_valid'],
+        'message': validation['message'],
+        'yearly_details': yearly_details,
+        'settings': {
+            'life_insurance_rate': float(settings.life_insurance_rate),
+            'add_percentage': float(settings.add_percentage)
+        }
+    })

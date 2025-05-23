@@ -1,0 +1,95 @@
+<!-- ملف finance/templates/finance/tags/amount_display.html -->
+<div class="amount-container {{ css_class }}">
+    {% if label %}
+        <span class="amount-label">{{ label }}:</span>
+    {% endif %}
+    <span class="amount-value" data-amount="{{ amount }}">
+        {{ amount }}{% if show_currency %} د.أ{% endif %}
+    </span>
+</div>
+
+<!-- ملف finance/templates/finance/tags/budget_summary.html -->
+<div class="budget-summary-widget">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="summary-item">
+                <div class="summary-label">إجمالي الميزانية</div>
+                <div class="summary-amount total">{{ total_amount }} د.أ</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-item">
+                <div class="summary-label">المبلغ المصروف</div>
+                <div class="summary-amount spent">{{ spent_amount }} د.أ</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-item">
+                <div class="summary-label">المبلغ المتبقي</div>
+                <div class="summary-amount remaining">{{ remaining_amount }} د.أ</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-item">
+                <div class="summary-label">نسبة الصرف</div>
+                <div class="summary-percentage">{{ spent_percentage }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.amount-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.amount-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.amount-value {
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: #28a745;
+    text-align: right;
+    direction: ltr;
+}
+
+.budget-summary-widget {
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.summary-amount {
+    font-size: 1.25rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+.summary-amount.total { color: #007bff; }
+.summary-amount.spent { color: #dc3545; }
+.summary-amount.remaining { color: #28a745; }
+
+.summary-percentage {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #ffc107;
+}
+</style>

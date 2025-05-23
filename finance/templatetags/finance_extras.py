@@ -52,3 +52,31 @@ def get_item(dictionary, key):
 def filter_by_status(queryset, status):
     """Filters a queryset by status"""
     return [item for item in queryset if item.status == status]
+
+
+@register.filter
+def currency(value):
+    """عرض المبلغ بتنسيق العملة مع تقريب دقيق"""
+    if not value:
+        return "0.00 د.أ"
+
+    try:
+        decimal_value = Decimal(str(value))
+        rounded_value = decimal_value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return f"{rounded_value:.2f} د.أ"
+    except:
+        return f"{value} د.أ"
+
+
+@register.filter
+def percentage(value):
+    """عرض النسبة المئوية مع تقريب دقيق"""
+    if not value:
+        return "0.0%"
+
+    try:
+        decimal_value = Decimal(str(value))
+        rounded_value = decimal_value.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+        return f"{rounded_value:.1f}%"
+    except:
+        return f"{value}%"

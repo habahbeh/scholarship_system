@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load finance_extras %}
+{% load humanize %}
 
 {% block finance_content %}
 <div class="container-fluid py-4">
@@ -115,7 +116,7 @@
                         <div class="summary-item mb-3">
                             <div class="d-flex justify-content-between">
                                 <span class="fw-bold">{% trans "إجمالي الميزانية:" %}</span>
-                                <span class="text-primary fw-bold" id="total-budget">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                <span class="text-primary fw-bold" id="total-budget">{{ budget.total_amount|floatformat:2|intcomma }} {% trans "د.أ" %}</span>
                             </div>
                         </div>
                         <div class="summary-item mb-3">
@@ -244,7 +245,7 @@
                         <div class="text-center">
                             <i class="bi bi-check-circle text-success fs-4"></i>
                             <h6 class="mt-2">{% trans "المجموع النهائي" %}</h6>
-                            <span class="fw-bold text-success" id="final-calculated-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                            <span class="fw-bold text-success" id="final-calculated-total">{{ budget.total_amount|floatformat:2|intcomma }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                 </div>
