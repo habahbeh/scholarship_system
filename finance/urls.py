@@ -72,6 +72,7 @@ urlpatterns = [
     path('api/monthly-expenses/', views.api_monthly_expenses, name='api_monthly_expenses'),
     path('api/budget-status/', views.api_budget_status, name='api_budget_status'),
     path('api/fiscal-year-summary/', views.api_fiscal_year_summary, name='api_fiscal_year_summary'),
+    path('api/scholarship-settings/', views.api_scholarship_settings, name='api_scholarship_settings'),
 
     # إضافة مسارات جديدة
     path('budgets/<int:budget_id>/add-year/', views.add_scholarship_year, name='add_scholarship_year'),
