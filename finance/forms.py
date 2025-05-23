@@ -59,9 +59,8 @@ class ScholarshipBudgetForm(forms.ModelForm):
 
     class Meta:
         model = ScholarshipBudget
-        fields = ['fiscal_year', 'total_amount', 'start_date', 'end_date', 'tuition_fees', 'monthly_stipend',
-                  'travel_allowance', 'health_insurance', 'books_allowance', 'research_allowance',
-                  'conference_allowance', 'other_expenses', 'notes']
+        fields = ['fiscal_year', 'total_amount', 'start_date', 'end_date',
+                 'foreign_currency', 'exchange_rate', 'academic_year', 'notes']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
@@ -81,24 +80,6 @@ class ScholarshipBudgetForm(forms.ModelForm):
         # التحقق من تاريخ البداية والنهاية
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError(_("تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية"))
-
-        # التحقق من أن مجموع الفئات يساوي إجمالي الميزانية
-        total_amount = cleaned_data.get('total_amount') or 0
-        tuition_fees = cleaned_data.get('tuition_fees') or 0
-        monthly_stipend = cleaned_data.get('monthly_stipend') or 0
-        travel_allowance = cleaned_data.get('travel_allowance') or 0
-        health_insurance = cleaned_data.get('health_insurance') or 0
-        books_allowance = cleaned_data.get('books_allowance') or 0
-        research_allowance = cleaned_data.get('research_allowance') or 0
-        conference_allowance = cleaned_data.get('conference_allowance') or 0
-        other_expenses = cleaned_data.get('other_expenses') or 0
-
-        sum_categories = (tuition_fees + monthly_stipend + travel_allowance +
-                          health_insurance + books_allowance + research_allowance +
-                          conference_allowance + other_expenses)
-
-        if abs(total_amount - sum_categories) > 0.01:  # تسامح صغير للأرقام العشرية
-            raise forms.ValidationError(_("مجموع فئات الميزانية يجب أن يساوي إجمالي الميزانية"))
 
         return cleaned_data
 

@@ -19,7 +19,7 @@ import datetime
 from decimal import Decimal
 from itertools import groupby
 from operator import attrgetter
-
+from django.db import models
 from applications.models import Application, ApplicationStatus
 from .models import (
     ScholarshipBudget, Expense, ExpenseCategory,
@@ -744,65 +744,44 @@ def budget_list(request):
 @login_required
 @permission_required('finance.view_scholarshipbudget', raise_exception=True)
 def budget_detail(request, budget_id):
-    """عرض تفاصيل ميزانية محددة"""
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
-    # البيانات المحسوبة
-    budget.spent_amount = budget.get_spent_amount()
-    budget.remaining_amount = budget.get_remaining_amount()
-    budget.spent_percentage = budget.get_spent_percentage()
+    # الحصول على تكاليف السنوات المرتبطة بهذه الميزانية
+    yearly_costs = budget.yearly_costs.all().order_by('year_number')
 
-    # المصروفات المرتبطة
-    if budget.fiscal_year:
-        # إذا كانت الميزانية مرتبطة بسنة مالية، اعرض المصروفات خلال تلك السنة فقط
-        expenses = Expense.objects.filter(
-            budget=budget,
-            fiscal_year=budget.fiscal_year
-        ).order_by('-date')
-    else:
-        # وإلا اعرض جميع المصروفات
-        expenses = Expense.objects.filter(budget=budget).order_by('-date')
+    # الحصول على المصروفات المرتبطة بهذه الميزانية
+    expenses = budget.expenses.all().order_by('-date')
 
-    # إجمالي المصروفات حسب الفئة
-    expenses_by_category = expenses.values('category__name').annotate(
-        total=Sum('amount')
-    ).order_by('-total')
+    # الحصول على التعديلات المرتبطة بهذه الميزانية
+    adjustments = budget.adjustments.all().order_by('-date')
 
-    # تعديلات الميزانية
-    if budget.fiscal_year:
-        # إذا كانت الميزانية مرتبطة بسنة مالية، اعرض التعديلات خلال تلك السنة فقط
-        adjustments = BudgetAdjustment.objects.filter(
-            budget=budget,
-            fiscal_year=budget.fiscal_year
-        ).order_by('-date')
-    else:
-        # وإلا اعرض جميع التعديلات
-        adjustments = BudgetAdjustment.objects.filter(budget=budget).order_by('-date')
+    # الحصول على سجلات العمليات المرتبطة بهذه الميزانية
+    logs = budget.logs.all().order_by('-created_at')
 
-    # السنوات الدراسية للابتعاث
-    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget).order_by('year_number')
+    # حساب المصروفات حسب الفئة
+    expenses_by_category = expenses.filter(status='approved').values('category__name').annotate(
+        total=models.Sum('amount')).order_by('-total')
 
-    # سجل العمليات المرتبطة بالميزانية
-    logs = FinancialLog.objects.filter(
-        Q(budget=budget) |
-        Q(expense__budget=budget) |
-        Q(adjustment__budget=budget)
-    ).order_by('-created_at')[:20]
-
-    # الحصول على السنوات المالية المفتوحة للعرض في الواجهة
-    open_fiscal_years = FiscalYear.objects.filter(status='open').order_by('-year')
+    # حساب القيم اللازمة لعرضها في القالب
+    spent_amount = budget.get_spent_amount()
+    remaining_amount = budget.get_remaining_amount()
+    spent_percentage = budget.get_spent_percentage()
+    yearly_costs_total = budget.get_yearly_costs_total()
 
     context = {
         'budget': budget,
-        'expenses': expenses,
-        'expenses_by_category': expenses_by_category,
-        'adjustments': adjustments,
         'yearly_costs': yearly_costs,
+        'expenses': expenses,
+        'adjustments': adjustments,
         'logs': logs,
-        'open_fiscal_years': open_fiscal_years,
+        'expenses_by_category': expenses_by_category,
+        'spent_amount': spent_amount,
+        'remaining_amount': remaining_amount,
+        'spent_percentage': spent_percentage,
+        'yearly_costs_total': yearly_costs_total,
     }
-    return render(request, 'finance/budget_detail.html', context)
 
+    return render(request, 'finance/budget_detail.html', context)
 
 @login_required
 @permission_required('finance.add_scholarshipbudget', raise_exception=True)

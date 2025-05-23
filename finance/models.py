@@ -104,16 +104,6 @@ class ScholarshipBudget(models.Model):
     updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
     notes = models.TextField(_("ملاحظات"), blank=True, null=True)
 
-    # الفئات المالية داخل الميزانية
-    tuition_fees = models.DecimalField(_("الرسوم الدراسية"), max_digits=12, decimal_places=2, default=0)
-    monthly_stipend = models.DecimalField(_("المخصص الشهري"), max_digits=12, decimal_places=2, default=0)
-    travel_allowance = models.DecimalField(_("بدل السفر"), max_digits=12, decimal_places=2, default=0)
-    health_insurance = models.DecimalField(_("التأمين الصحي"), max_digits=12, decimal_places=2, default=0)
-    books_allowance = models.DecimalField(_("بدل الكتب"), max_digits=12, decimal_places=2, default=0)
-    research_allowance = models.DecimalField(_("بدل البحث العلمي"), max_digits=12, decimal_places=2, default=0)
-    conference_allowance = models.DecimalField(_("بدل المؤتمرات"), max_digits=12, decimal_places=2, default=0)
-    other_expenses = models.DecimalField(_("مصاريف أخرى"), max_digits=12, decimal_places=2, default=0)
-
     # حالة الميزانية
     STATUS_CHOICES = [
         ('active', _('نشطة')),
@@ -122,7 +112,7 @@ class ScholarshipBudget(models.Model):
     ]
     status = models.CharField(_("حالة الميزانية"), max_length=20, choices=STATUS_CHOICES, default='active')
 
-    # حقول جديدة للدعم السنوي والعملات
+    # حقول للدعم السنوي والعملات
     academic_year = models.CharField(_("السنة الدراسية"), max_length=9,
                                      help_text=_("مثال: 2024-2025"), default="2024-2025")
     exchange_rate = models.DecimalField(_("سعر الصرف"), max_digits=6, decimal_places=2, default=0.91,
@@ -174,22 +164,6 @@ class ScholarshipBudget(models.Model):
         # تقريب القيم المالية إلى منزلتين عشريتين
         if self.total_amount:
             self.total_amount = Decimal(self.total_amount).quantize(Decimal('0.01'))
-        if self.tuition_fees:
-            self.tuition_fees = Decimal(self.tuition_fees).quantize(Decimal('0.01'))
-        if self.monthly_stipend:
-            self.monthly_stipend = Decimal(self.monthly_stipend).quantize(Decimal('0.01'))
-        if self.travel_allowance:
-            self.travel_allowance = Decimal(self.travel_allowance).quantize(Decimal('0.01'))
-        if self.health_insurance:
-            self.health_insurance = Decimal(self.health_insurance).quantize(Decimal('0.01'))
-        if self.books_allowance:
-            self.books_allowance = Decimal(self.books_allowance).quantize(Decimal('0.01'))
-        if self.research_allowance:
-            self.research_allowance = Decimal(self.research_allowance).quantize(Decimal('0.01'))
-        if self.conference_allowance:
-            self.conference_allowance = Decimal(self.conference_allowance).quantize(Decimal('0.01'))
-        if self.other_expenses:
-            self.other_expenses = Decimal(self.other_expenses).quantize(Decimal('0.01'))
         if self.exchange_rate:
             self.exchange_rate = Decimal(self.exchange_rate).quantize(Decimal('0.01'))
 
@@ -218,14 +192,6 @@ class ScholarshipBudget(models.Model):
             start_date=self.end_date + datetime.timedelta(days=1),
             end_date=self.end_date + datetime.timedelta(days=365),
             created_by=self.created_by,
-            tuition_fees=self.tuition_fees,
-            monthly_stipend=self.monthly_stipend,
-            travel_allowance=self.travel_allowance,
-            health_insurance=self.health_insurance,
-            books_allowance=self.books_allowance,
-            research_allowance=self.research_allowance,
-            conference_allowance=self.conference_allowance,
-            other_expenses=self.other_expenses,
             academic_year=next_year,
             exchange_rate=self.exchange_rate,
             foreign_currency=self.foreign_currency,
@@ -233,7 +199,6 @@ class ScholarshipBudget(models.Model):
         )
 
         return new_budget
-
 
 class YearlyScholarshipCosts(models.Model):
     """نموذج التكاليف السنوية للابتعاث"""

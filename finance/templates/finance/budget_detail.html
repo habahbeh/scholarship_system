@@ -72,20 +72,20 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <p class="mb-1"><strong>{% trans "إجمالي الميزانية" %}:</strong> {{ budget.total_amount }}</p>
-                                            <p class="mb-1"><strong>{% trans "المبلغ المصروف" %}:</strong> {{ budget.spent_amount }}</p>
-                                            <p class="mb-1"><strong>{% trans "المبلغ المتبقي" %}:</strong> {{ budget.remaining_amount }}</p>
+                                            <p class="mb-1"><strong>{% trans "المبلغ المصروف" %}:</strong> {{ spent_amount }}</p>
+                                            <p class="mb-1"><strong>{% trans "المبلغ المتبقي" %}:</strong> {{ remaining_amount }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <p class="mb-1"><strong>{% trans "تاريخ البداية" %}:</strong> {{ budget.start_date }}</p>
                                             <p class="mb-1"><strong>{% trans "تاريخ النهاية" %}:</strong> {{ budget.end_date }}</p>
-                                            <p class="mb-1"><strong>{% trans "نسبة الصرف" %}:</strong> {{ budget.spent_percentage|floatformat:2 }}%</p>
+                                            <p class="mb-1"><strong>{% trans "نسبة الصرف" %}:</strong> {{ spent_percentage|floatformat:2 }}%</p>
                                         </div>
                                     </div>
                                     <div class="progress mt-2" style="height: 10px;">
-                                        <div class="progress-bar {% if budget.spent_percentage <= 50 %}bg-success{% elif budget.spent_percentage <= 80 %}bg-warning{% else %}bg-danger{% endif %}"
+                                        <div class="progress-bar {% if spent_percentage <= 50 %}bg-success{% elif spent_percentage <= 80 %}bg-warning{% else %}bg-danger{% endif %}"
                                              role="progressbar"
-                                             style="width: {{ budget.spent_percentage }}%"
-                                             aria-valuenow="{{ budget.spent_percentage }}"
+                                             style="width: {{ spent_percentage }}%"
+                                             aria-valuenow="{{ spent_percentage }}"
                                              aria-valuemin="0"
                                              aria-valuemax="100"></div>
                                     </div>
@@ -94,75 +94,35 @@
                         </div>
                     </div>
 
-                    <!-- Budget Categories -->
+                    <!-- Additional Budget Information -->
                     <div class="row">
                         <div class="col-12">
                             <div class="card mb-3">
                                 <div class="card-body">
-                                    <h6 class="card-title">{% trans "فئات الميزانية" %}</h6>
+                                    <h6 class="card-title">{% trans "معلومات إضافية للميزانية" %}</h6>
                                     <hr>
                                     <div class="row">
-                                        <div class="col-md-3 mb-3">
+                                        <div class="col-md-4 mb-3">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "الرسوم الدراسية" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.tuition_fees }}</p>
+                                                    <h6 class="card-subtitle text-muted">{% trans "السنة الدراسية" %}</h6>
+                                                    <p class="fs-4 mt-2 mb-0">{{ budget.academic_year }}</p>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3 mb-3">
+                                        <div class="col-md-4 mb-3">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "المخصص الشهري" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.monthly_stipend }}</p>
+                                                    <h6 class="card-subtitle text-muted">{% trans "العملة الأجنبية" %}</h6>
+                                                    <p class="fs-4 mt-2 mb-0">{{ budget.foreign_currency }}</p>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3 mb-3">
+                                        <div class="col-md-4 mb-3">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "بدل السفر" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.travel_allowance }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "التأمين الصحي" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.health_insurance }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "بدل الكتب" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.books_allowance }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "بدل البحث العلمي" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.research_allowance }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "بدل المؤتمرات" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.conference_allowance }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h6 class="card-subtitle text-muted">{% trans "مصاريف أخرى" %}</h6>
-                                                    <p class="fs-4 mt-2 mb-0">{{ budget.other_expenses }}</p>
+                                                    <h6 class="card-subtitle text-muted">{% trans "سعر الصرف" %}</h6>
+                                                    <p class="fs-4 mt-2 mb-0">{{ budget.exchange_rate }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -274,7 +234,7 @@
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="8" class="text-end"><strong>{% trans "إجمالي تكاليف جميع السنوات:" %}</strong></td>
-                                    <td><strong>{{ budget.get_yearly_costs_total }}</strong></td>
+                                    <td><strong>{{ yearly_costs_total }}</strong></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
