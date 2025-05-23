@@ -4,112 +4,47 @@
 
 {% block finance_content %}
 <div class="container-fluid py-4">
-    <!-- Page Header -->
+    <!-- Page Header with Card -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="card-title mb-0">
-                    <i class="bi bi-calendar-plus me-2"></i>
-                    {% trans "إضافة سنة دراسية جديدة" %}
+                    {% if form.instance.id %}
+                        {% trans "تعديل الميزانية" %}
+                    {% else %}
+                        {% trans "إضافة ميزانية جديدة" %}
+                    {% endif %}
                 </h2>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="{% url 'finance:dashboard' %}">{% trans "الرئيسية" %}</a></li>
                         <li class="breadcrumb-item"><a href="{% url 'finance:budget_list' %}">{% trans "الميزانيات" %}</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'finance:budget_detail' budget.id %}">{% trans "تفاصيل الميزانية" %}</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{% trans "إضافة سنة" %}</li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {% if form.instance.id %}
+                                {% trans "تعديل" %}
+                            {% else %}
+                                {% trans "إضافة" %}
+                            {% endif %}
+                        </li>
                     </ol>
                 </nav>
             </div>
         </div>
     </div>
 
-    <!-- Budget Overview -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-circle me-2"></i>
-                        {{ budget.application.applicant.get_full_name }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "الجامعة:" %}</label>
-                                <span>{{ budget.application.university }}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "التخصص:" %}</label>
-                                <span>{{ budget.application.major }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "السنة الدراسية الحالية:" %}</label>
-                                <span>{{ budget.academic_year }}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "إجمالي الميزانية الحالية:" %}</label>
-                                <span class="fw-bold text-success" id="current-budget-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Current Financial Summary -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calculator me-2"></i>
-                        {% trans "الملخص المالي الحالي" %}
-                        <button type="button" class="btn btn-light btn-sm ms-2 float-end" id="refresh-current-summary" title="تحديث الملخص">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="summary-item mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold">{% trans "إجمالي التكاليف السنوية:" %}</span>
-                            <span class="text-primary fw-bold" id="current-years-total">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="summary-item mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold">{% trans "التأمين على الحياة:" %}</span>
-                            <span class="text-info fw-bold" id="current-insurance">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="summary-item mb-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold">{% trans "النسبة الإضافية:" %}</span>
-                            <span class="text-warning fw-bold" id="current-additional">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold">{% trans "المجموع النهائي:" %}</span>
-                            <span class="text-success fw-bold" id="current-final-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add New Year Form -->
+    <!-- Budget Form -->
     <div class="card shadow-sm">
         <div class="card-header bg-light">
-            <h5 class="mb-0">
-                <i class="bi bi-plus-circle me-2"></i>
-                {% trans "بيانات السنة الدراسية الجديدة" %} - {% trans "السنة" %} {{ next_year_number }}
-            </h5>
+            <div class="d-flex align-items-center">
+                <i class="bi bi-currency-exchange me-2"></i>
+                <h5 class="mb-0">
+                    {% if form.instance.id %}
+                        {% trans "تفاصيل الميزانية" %} - {{ form.instance.application.applicant.get_full_name }}
+                    {% else %}
+                        {% trans "بيانات الميزانية الجديدة" %} - {{ application.applicant.get_full_name }}
+                    {% endif %}
+                </h5>
+            </div>
         </div>
         <div class="card-body">
             {% if form.errors %}
@@ -135,198 +70,364 @@
             </div>
             {% endif %}
 
-            <form method="post" class="needs-validation" novalidate>
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
                 {% csrf_token %}
 
-                <!-- Basic Information -->
+                <!-- Budget Details Section -->
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h6 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-info-circle me-2"></i>{% trans "المعلومات الأساسية" %}
-                        </h6>
+                        <h5 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-info-circle me-2"></i>{% trans "بيانات أساسية" %}
+                        </h5>
                     </div>
 
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.year_number.id_for_label }}" class="form-label">{{ form.year_number.label }}</label>
-                        {{ form.year_number }}
-                        <div class="form-text">{% trans "رقم السنة الدراسية (تلقائي)" %}</div>
-                        {% if form.year_number.errors %}
-                        <div class="invalid-feedback">{{ form.year_number.errors.0 }}</div>
+                        <label for="{{ form.application.id_for_label }}" class="form-label">{% trans "المبتعث" %}</label>
+                        <input type="text" class="form-control" value="{{ application.applicant.get_full_name }}" readonly>
+                        <div class="form-text">{% trans "طلب الابتعاث المرتبط بهذه الميزانية" %}</div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.fiscal_year.id_for_label }}" class="form-label">{{ form.fiscal_year.label }}</label>
+                        {{ form.fiscal_year }}
+                        <div class="form-text">{% trans "السنة المالية المرتبطة بالميزانية" %}</div>
+                        {% if form.fiscal_year.errors %}
+                        <div class="invalid-feedback">{{ form.fiscal_year.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-calculator me-1"></i>
+                            {% trans "إجمالي كلفة الابتعاث (محسوب تلقائياً)" %}
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="calculated-total-display" class="form-control bg-light text-primary fw-bold border-primary"
+                                   readonly value="0.00" style="font-size: 1.1em; cursor: not-allowed;">
+                            <span class="input-group-text bg-primary text-white">{% trans "دينار" %}</span>
+                        </div>
+                        <input type="hidden" id="calculated-total-hidden" name="total_amount" value="0.00">
+                        <div class="form-text text-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            {% trans "يتم حساب هذا المبلغ تلقائياً بناءً على تفاصيل السنوات الدراسية والإعدادات" %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.start_date.id_for_label }}" class="form-label">{{ form.start_date.label }}</label>
+                        {{ form.start_date }}
+                        <div class="form-text">{% trans "تاريخ بدء استخدام الميزانية" %}</div>
+                        {% if form.start_date.errors %}
+                        <div class="invalid-feedback">{{ form.start_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.end_date.id_for_label }}" class="form-label">{{ form.end_date.label }}</label>
+                        {{ form.end_date }}
+                        <div class="form-text">{% trans "تاريخ انتهاء الميزانية" %}</div>
+                        {% if form.end_date.errors %}
+                        <div class="invalid-feedback">{{ form.end_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.num_years.id_for_label }}"
+                               class="form-label">{{ form.num_years.label }}</label>
+                        {{ form.num_years }}
+                        <div class="form-text">{% trans "عدد سنوات الدراسة للمبتعث" %}</div>
+                        {% if form.num_years.errors %}
+                            <div class="invalid-feedback">{{ form.num_years.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.foreign_currency.id_for_label }}" class="form-label">{{ form.foreign_currency.label }}</label>
+                        {{ form.foreign_currency }}
+                        <div class="form-text">{% trans "العملة الأجنبية المستخدمة" %}</div>
+                        {% if form.foreign_currency.errors %}
+                        <div class="invalid-feedback">{{ form.foreign_currency.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.exchange_rate.id_for_label }}" class="form-label">{{ form.exchange_rate.label }}</label>
+                        {{ form.exchange_rate }}
+                        <div class="form-text">{% trans "سعر صرف العملة الأجنبية مقابل الدينار" %}</div>
+                        {% if form.exchange_rate.errors %}
+                        <div class="invalid-feedback">{{ form.exchange_rate.errors.0 }}</div>
                         {% endif %}
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.academic_year.id_for_label }}" class="form-label">{{ form.academic_year.label }}</label>
                         {{ form.academic_year }}
-                        <div class="form-text">{% trans "السنة الدراسية (مثال: 2024-2025)" %}</div>
+                        <div class="form-text">{% trans "السنة الدراسية الحالية" %}</div>
                         {% if form.academic_year.errors %}
                         <div class="invalid-feedback">{{ form.academic_year.errors.0 }}</div>
                         {% endif %}
                     </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.fiscal_year.id_for_label }}" class="form-label">{{ form.fiscal_year.label }}</label>
-                        {{ form.fiscal_year }}
-                        <div class="form-text">{% trans "السنة المالية المرتبطة" %}</div>
-                        {% if form.fiscal_year.errors %}
-                        <div class="invalid-feedback">{{ form.fiscal_year.errors.0 }}</div>
-                        {% endif %}
-                    </div>
                 </div>
 
-                <!-- Cost Details -->
+                <!-- Yearly Scholarship Costs Section -->
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h6 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-cash-stack me-2"></i>{% trans "تفاصيل التكاليف" %}
-                        </h6>
+                        <h5 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-calendar-check me-2"></i>{% trans "تفاصيل السنوات الدراسية" %}
+                        </h5>
                     </div>
 
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.travel_tickets.id_for_label }}" class="form-label">{{ form.travel_tickets.label }}</label>
-                        <div class="input-group">
-                            {{ form.travel_tickets }}
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
+                    <!-- Formset management form -->
+                    {{ year_formset.management_form }}
+
+                    <div class="col-12 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{% trans "السنوات الدراسية لمدة الابتعاث" %}</h6>
+                                    <button type="button" class="btn btn-primary btn-sm" id="add-year-btn">
+                                        <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة سنة جديدة" %}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body px-0 pt-0">
+                                <div class="accordion" id="yearAccordion">
+                                    {% for year_form in year_formset %}
+                                    <div class="accordion-item year-form-item" data-index="{{ forloop.counter0 }}">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#year-collapse-{{ forloop.counter0 }}"
+                                                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="year-collapse-{{ forloop.counter0 }}">
+                                                <div class="d-flex justify-content-between align-items-center w-100 pe-3">
+                                                    <span class="year-title">{% trans "السنة" %} {{ forloop.counter }} - <span class="year-academic"></span></span>
+                                                    <div class="form-check form-switch me-3">
+                                                        {{ year_form.include_year }}
+                                                        <label class="form-check-label" for="{{ year_form.include_year.id_for_label }}">
+                                                            {% trans "تضمين" %}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="year-collapse-{{ forloop.counter0 }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                                             data-bs-parent="#yearAccordion">
+                                            <div class="accordion-body">
+                                                <!-- مع إضافة زر حذف السنة للسنوات الإضافية -->
+                                                {% if not forloop.first %}
+                                                <div class="text-end mb-2">
+                                                    <button type="button" class="btn btn-danger btn-sm remove-year-btn"
+                                                            data-index="{{ forloop.counter0 }}">
+                                                        <i class="bi bi-trash me-1"></i>{% trans "حذف هذه السنة" %}
+                                                    </button>
+                                                    {{ year_form.DELETE }}
+                                                </div>
+                                                {% endif %}
+
+                                                <div class="row mb-3 year-details">
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.year_number.id_for_label }}" class="form-label">{{ year_form.year_number.label }}</label>
+                                                        {{ year_form.year_number }}
+                                                        <div class="form-text">{% trans "رقم السنة الدراسية (1, 2, 3, ...)" %}</div>
+                                                        {% if year_form.year_number.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.year_number.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.academic_year.id_for_label }}" class="form-label">{{ year_form.academic_year.label }}</label>
+                                                        {{ year_form.academic_year }}
+                                                        <div class="form-text">{% trans "السنة الدراسية (مثال: 2024-2025)" %}</div>
+                                                        {% if year_form.academic_year.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.academic_year.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.travel_tickets.id_for_label }}" class="form-label">{{ year_form.travel_tickets.label }}</label>
+                                                        <div class="input-group">
+                                                            {{ year_form.travel_tickets }}
+                                                            <span class="input-group-text">{% trans "دينار" %}</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "تكلفة تذاكر السفر لهذه السنة" %}</div>
+                                                        {% if year_form.travel_tickets.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.travel_tickets.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.monthly_allowance.id_for_label }}" class="form-label">{{ year_form.monthly_allowance.label }}</label>
+                                                        <div class="input-group">
+                                                            {{ year_form.monthly_allowance }}
+                                                            <span class="input-group-text">{% trans "دينار" %}</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "المبلغ الشهري المخصص للمعيشة" %}</div>
+                                                        {% if year_form.monthly_allowance.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.monthly_allowance.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.monthly_duration.id_for_label }}" class="form-label">{{ year_form.monthly_duration.label }}</label>
+                                                        {{ year_form.monthly_duration }}
+                                                        <div class="form-text">{% trans "عدد أشهر صرف المخصص الشهري" %}</div>
+                                                        {% if year_form.monthly_duration.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.monthly_duration.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.visa_fees.id_for_label }}" class="form-label">{{ year_form.visa_fees.label }}</label>
+                                                        <div class="input-group">
+                                                            {{ year_form.visa_fees }}
+                                                            <span class="input-group-text">{% trans "دينار" %}</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "رسوم الحصول على الفيزا لهذه السنة" %}</div>
+                                                        {% if year_form.visa_fees.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.visa_fees.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.health_insurance.id_for_label }}" class="form-label">{{ year_form.health_insurance.label }}</label>
+                                                        <div class="input-group">
+                                                            {{ year_form.health_insurance }}
+                                                            <span class="input-group-text">{% trans "دينار" %}</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "تكلفة التأمين الصحي لهذه السنة" %}</div>
+                                                        {% if year_form.health_insurance.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.health_insurance.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.tuition_fees_foreign.id_for_label }}" class="form-label">{{ year_form.tuition_fees_foreign.label }}</label>
+                                                        <div class="input-group">
+                                                            {{ year_form.tuition_fees_foreign }}
+                                                            <span class="input-group-text year-foreign-currency">GBP</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "الرسوم الدراسية بالعملة الأجنبية" %}</div>
+                                                        {% if year_form.tuition_fees_foreign.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.tuition_fees_foreign.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="{{ year_form.tuition_fees_local.id_for_label }}" class="form-label">{{ year_form.tuition_fees_local.label }}</label>
+                                                        <div class="input-group">
+                                                            {{ year_form.tuition_fees_local }}
+                                                            <span class="input-group-text">{% trans "دينار" %}</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "الرسوم الدراسية بالدينار" %}</div>
+                                                        {% if year_form.tuition_fees_local.errors %}
+                                                        <div class="invalid-feedback">{{ year_form.tuition_fees_local.errors.0 }}</div>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="col-md-4 mb-3">
+                                                        <label class="form-label">{% trans "إجمالي تكلفة السنة" %}</label>
+                                                        <div class="input-group">
+                                                            <input type="text" class="form-control year-total bg-light" readonly>
+                                                            <span class="input-group-text">{% trans "دينار" %}</span>
+                                                        </div>
+                                                        <div class="form-text">{% trans "التكلفة الإجمالية لهذه السنة الدراسية" %}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="alert alert-light border mb-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="bi bi-calculator me-2"></i>
+                                                    <strong>{% trans "إجمالي تكاليف السنوات:" %}</strong>
+                                                </div>
+                                                <div>
+                                                    <span id="years-total">0.00</span> {% trans "دينار" %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="alert alert-light border mb-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="bi bi-shield-check me-2"></i>
+                                                    <strong>{% trans "التأمين على الحياة:" %}</strong>
+                                                </div>
+                                                <div>
+                                                    <span id="insurance-amount">0.00</span> {% trans "دينار" %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="alert alert-light border mb-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="bi bi-percent me-2"></i>
+                                                    <strong>{% trans "النسبة الإضافية:" %}</strong>
+                                                </div>
+                                                <div>
+                                                    <span id="additional-amount">0.00</span> {% trans "دينار" %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="alert alert-success border mb-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="bi bi-check-circle me-2"></i>
+                                                    <strong>{% trans "التكلفة النهائية:" %}</strong>
+                                                </div>
+                                                <div>
+                                                    <span id="final-total">0.00</span> {% trans "دينار" %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-text">{% trans "تكلفة تذاكر السفر" %}</div>
-                        {% if form.travel_tickets.errors %}
-                        <div class="invalid-feedback">{{ form.travel_tickets.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.monthly_allowance.id_for_label }}" class="form-label">{{ form.monthly_allowance.label }}</label>
-                        <div class="input-group">
-                            {{ form.monthly_allowance }}
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                        </div>
-                        <div class="form-text">{% trans "المبلغ الشهري للمعيشة" %}</div>
-                        {% if form.monthly_allowance.errors %}
-                        <div class="invalid-feedback">{{ form.monthly_allowance.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.monthly_duration.id_for_label }}" class="form-label">{{ form.monthly_duration.label }}</label>
-                        {{ form.monthly_duration }}
-                        <div class="form-text">{% trans "عدد أشهر صرف المخصص" %}</div>
-                        {% if form.monthly_duration.errors %}
-                        <div class="invalid-feedback">{{ form.monthly_duration.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.visa_fees.id_for_label }}" class="form-label">{{ form.visa_fees.label }}</label>
-                        <div class="input-group">
-                            {{ form.visa_fees }}
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                        </div>
-                        <div class="form-text">{% trans "رسوم الحصول على الفيزا" %}</div>
-                        {% if form.visa_fees.errors %}
-                        <div class="invalid-feedback">{{ form.visa_fees.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.health_insurance.id_for_label }}" class="form-label">{{ form.health_insurance.label }}</label>
-                        <div class="input-group">
-                            {{ form.health_insurance }}
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                        </div>
-                        <div class="form-text">{% trans "تكلفة التأمين الصحي" %}</div>
-                        {% if form.health_insurance.errors %}
-                        <div class="invalid-feedback">{{ form.health_insurance.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.tuition_fees_foreign.id_for_label }}" class="form-label">{{ form.tuition_fees_foreign.label }}</label>
-                        <div class="input-group">
-                            {{ form.tuition_fees_foreign }}
-                            <span class="input-group-text" id="foreign-currency-display">{{ budget.foreign_currency }}</span>
-                        </div>
-                        <div class="form-text">{% trans "الرسوم الدراسية بالعملة الأجنبية" %}</div>
-                        {% if form.tuition_fees_foreign.errors %}
-                        <div class="invalid-feedback">{{ form.tuition_fees_foreign.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.tuition_fees_local.id_for_label }}" class="form-label">{{ form.tuition_fees_local.label }}</label>
-                        <div class="input-group">
-                            {{ form.tuition_fees_local }}
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                        </div>
-                        <div class="form-text">{% trans "الرسوم الدراسية بالدينار الأردني" %}</div>
-                        {% if form.tuition_fees_local.errors %}
-                        <div class="invalid-feedback">{{ form.tuition_fees_local.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">{% trans "إجمالي تكلفة السنة" %}</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control bg-light" id="year-total-preview" readonly value="0.00">
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                        </div>
-                        <div class="form-text">{% trans "يحسب تلقائياً" %}</div>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">{% trans "سعر الصرف المستخدم" %}</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control bg-light" readonly value="{{ budget.exchange_rate|floatformat:2 }}">
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                        </div>
-                        <div class="form-text">{% trans "من إعدادات الميزانية" %}</div>
                     </div>
                 </div>
 
-                <!-- Calculation Preview -->
+                <!-- Notes Section -->
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h6 class="border-bottom pb-2 mb-3 text-bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-calculator me-2"></i>{% trans "معاينة الحساب الجديد" %}
-                        </h6>
+                        <h5 class="border-bottom pb-2 mb-3 text-bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-pencil-square me-2"></i>{% trans "ملاحظات وتفاصيل" %}
+                        </h5>
                     </div>
 
-                    <div class="col-md-3">
-                        <div class="alert alert-light border text-center">
-                            <i class="bi bi-plus-circle text-success fs-4"></i>
-                            <h6 class="mt-2">{% trans "السنة الجديدة" %}</h6>
-                            <span class="fw-bold text-success" id="new-year-cost">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="alert alert-light border text-center">
-                            <i class="bi bi-shield-check text-info fs-4"></i>
-                            <h6 class="mt-2">{% trans "التأمين الإضافي" %}</h6>
-                            <span class="fw-bold text-info" id="additional-insurance">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="alert alert-light border text-center">
-                            <i class="bi bi-percent text-warning fs-4"></i>
-                            <h6 class="mt-2">{% trans "النسبة الإضافية" %}</h6>
-                            <span class="fw-bold text-warning" id="additional-percentage">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="alert alert-success border text-center">
-                            <i class="bi bi-calculator text-success fs-4"></i>
-                            <h6 class="mt-2">{% trans "الميزانية الجديدة" %}</h6>
-                            <span class="fw-bold text-success" id="new-budget-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                        </div>
+                    <div class="col-12 mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                        {{ form.notes }}
+                        <div class="form-text">{% trans "أي ملاحظات إضافية أو تفاصيل مهمة حول هذه الميزانية" %}</div>
+                        {% if form.notes.errors %}
+                        <div class="invalid-feedback">{{ form.notes.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Form Actions -->
+                <!-- Form Buttons -->
                 <div class="d-flex justify-content-between">
-                    <a href="{% url 'finance:budget_detail' budget.id %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-right me-1"></i>{% trans "إلغاء" %}
+                    <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i> {% trans "إلغاء" %}
                     </a>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle me-1"></i>{% trans "إضافة السنة الدراسية" %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>
+                        {% if form.instance.id %}
+                            {% trans "حفظ التعديلات" %}
+                        {% else %}
+                            {% trans "إضافة الميزانية" %}
+                        {% endif %}
                     </button>
                 </div>
             </form>
@@ -334,60 +435,499 @@
     </div>
 </div>
 
-<!-- JavaScript for Dynamic Calculations -->
+<!-- JavaScript for Enhanced Form Functionality -->
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('تهيئة صفحة إضافة السنة الدراسية');
+        console.log('تم تحميل الصفحة - بدء تهيئة النظام');
 
-        // Global settings and budget data
+        // Global variables
+        let formCount = 0;
+        let totalFormsInput = null;
+        let yearFormSet = null;
+        let addYearBtn = null;
+
+        // Initialize form elements
+        initializeFormElements();
+
+        // Initialize yearly costs management
+        initializeYearlyCosts();
+
+        // Load settings from server first
+        loadScholarshipSettings().then(() => {
+            console.log('تم تحميل الإعدادات بنجاح');
+        });
+
+        // Initial calculation after settings are loaded
+        setTimeout(() => {
+            calculateYearTotal();
+            console.log('تم إجراء الحساب الأولي');
+        }, 1000);
+
+        function initializeFormElements() {
+            console.log('بدء تهيئة عناصر النموذج');
+
+            // Apply Bootstrap classes to form fields
+            const formElements = [
+                '{{ form.fiscal_year.id_for_label }}',
+                '{{ form.start_date.id_for_label }}',
+                '{{ form.end_date.id_for_label }}',
+                '{{ form.foreign_currency.id_for_label }}',
+                '{{ form.exchange_rate.id_for_label }}',
+                '{{ form.academic_year.id_for_label }}',
+                '{{ form.num_years.id_for_label }}',
+                '{{ form.notes.id_for_label }}'
+            ];
+
+            formElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.classList.add('form-check-input');
+                    } else {
+                        element.classList.add('form-control');
+                    }
+                }
+            });
+
+            // Apply Bootstrap classes to year form fields
+            document.querySelectorAll('[id^="id_years-"]').forEach(element => {
+                if (element.type === 'checkbox') {
+                    element.classList.add('form-check-input');
+                } else {
+                    element.classList.add('form-control');
+                }
+
+                // Fix number input attributes for proper decimal handling
+                if (element.type === 'number' || element.step) {
+                    element.setAttribute('step', '0.01');
+                    element.setAttribute('min', '0');
+                    element.style.textAlign = 'left';
+                    element.style.direction = 'ltr';
+                }
+            });
+
+            console.log('تم تطبيق فئات Bootstrap على العناصر');
+        }
+
+        function initializeYearlyCosts() {
+            console.log('بدء تهيئة إدارة السنوات الدراسية');
+
+            // Get form management elements
+            addYearBtn = document.getElementById('add-year-btn');
+            yearFormSet = document.getElementById('yearAccordion');
+            totalFormsInput = document.querySelector('input[name="years-TOTAL_FORMS"]');
+
+            if (!addYearBtn || !yearFormSet || !totalFormsInput) {
+                console.error('عناصر إدارة النماذج غير موجودة');
+                return;
+            }
+
+            // Count existing forms
+            const existingForms = document.querySelectorAll('.year-form-item');
+            formCount = existingForms.length;
+            console.log('عدد النماذج الموجودة:', formCount);
+
+            // Add event listeners to existing forms
+            existingForms.forEach((formItem, index) => {
+                attachFieldListeners(formItem);
+                console.log('تم ربط المستمعات للنموذج رقم:', index + 1);
+            });
+
+            // Add year button event
+            addYearBtn.addEventListener('click', addNewYear);
+
+            // Remove year buttons events
+            document.querySelectorAll('.remove-year-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    removeYear(this);
+                });
+            });
+
+            // Update titles and calculate initial values
+            updateYearTitles();
+
+            // Exchange rate and currency change events
+            const exchangeRateField = document.getElementById('{{ form.exchange_rate.id_for_label }}');
+            const foreignCurrencyField = document.getElementById('{{ form.foreign_currency.id_for_label }}');
+
+            if (exchangeRateField) {
+                exchangeRateField.addEventListener('input', handleExchangeRateChange);
+            }
+
+            if (foreignCurrencyField) {
+                foreignCurrencyField.addEventListener('change', handleCurrencyChange);
+            }
+
+
+            // Add refresh settings button event
+            const refreshSettingsBtn = document.getElementById('refresh-settings-btn');
+            if (refreshSettingsBtn) {
+                refreshSettingsBtn.addEventListener('click', function() {
+                    console.log('تحديث الإعدادات يدوياً');
+                    this.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
+
+                    loadScholarshipSettings().then(() => {
+                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                        console.log('تم تحديث الإعدادات بنجاح');
+                    }).catch(() => {
+                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                    });
+                });
+            }
+
+            console.log('تم إنهاء تهيئة إدارة السنوات الدراسية');
+        }
+
+        function attachFieldListeners(formItem) {
+            if (!formItem) return;
+
+            const index = formItem.getAttribute('data-index') || '0';
+            console.log('ربط المستمعات للنموذج بالفهرس:', index);
+
+            // Include year checkbox
+            const includeCheckbox = formItem.querySelector('input[id$="-include_year"]');
+            if (includeCheckbox) {
+                includeCheckbox.addEventListener('change', calculateYearTotal);
+            }
+
+            // Financial fields
+            const financialSelectors = [
+                'input[id$="-travel_tickets"]',
+                'input[id$="-monthly_allowance"]',
+                'input[id$="-monthly_duration"]',
+                'input[id$="-visa_fees"]',
+                'input[id$="-health_insurance"]',
+                'input[id$="-tuition_fees_foreign"]',
+                'input[id$="-tuition_fees_local"]'
+            ];
+
+            financialSelectors.forEach(selector => {
+                const field = formItem.querySelector(selector);
+                if (field) {
+                    // Ensure proper number input setup
+                    if (selector.includes('duration')) {
+                        field.setAttribute('min', '1');
+                        field.setAttribute('max', '12');
+                        field.setAttribute('step', '1');
+                    } else {
+                        field.setAttribute('step', '0.01');
+                        field.setAttribute('min', '0');
+                    }
+
+                    field.addEventListener('input', function() {
+                        handleFinancialFieldChange(this, formItem);
+                    });
+
+                    field.addEventListener('blur', function() {
+                        formatDecimalValue(this);
+                    });
+                }
+            });
+
+            // Academic year change
+            const academicYearField = formItem.querySelector('select[id$="-academic_year"]');
+            if (academicYearField) {
+                academicYearField.addEventListener('change', function() {
+                    updateYearTitle(formItem);
+                });
+            }
+        }
+
+        function handleFinancialFieldChange(field, formItem) {
+            console.log('تغيير في الحقل المالي:', field.id, 'القيمة:', field.value);
+
+            // Handle foreign tuition fees conversion
+            if (field.id && field.id.includes('tuition_fees_foreign')) {
+                const foreignValue = parseFloat(field.value) || 0;
+                const exchangeRate = parseFloat(document.getElementById('{{ form.exchange_rate.id_for_label }}').value) || 0.91;
+                const localField = formItem.querySelector('input[id$="-tuition_fees_local"]');
+
+                if (localField) {
+                    const convertedValue = (foreignValue * exchangeRate);
+                    localField.value = convertedValue.toFixed(2);
+                    console.log('تم تحويل الرسوم:', foreignValue, '*', exchangeRate, '=', convertedValue);
+                }
+            }
+
+            // Recalculate totals
+            calculateYearTotal();
+        }
+
+        function formatDecimalValue(field) {
+            if (field.value && !isNaN(field.value)) {
+                const value = parseFloat(field.value);
+                if (field.id && field.id.includes('duration')) {
+                    field.value = Math.round(value);
+                } else {
+                    field.value = value.toFixed(2);
+                }
+            }
+        }
+
+        function addNewYear() {
+            console.log('إضافة سنة جديدة - العدد الحالي:', formCount);
+
+            // التحقق من عدد السنوات المرئية الحالية
+            const visibleForms = document.querySelectorAll('.year-form-item:not([style*="display: none"])');
+            const maxYears = parseInt(document.getElementById('{{ form.num_years.id_for_label }}').value) || 6;
+
+            if (visibleForms.length >= maxYears) {
+                alert(`لا يمكن إضافة أكثر من ${maxYears} سنوات دراسية`);
+                return;
+            }
+
+            if (visibleForms.length === 0) {
+                console.error('لا يوجد نماذج لاستنساخها');
+                return;
+            }
+
+            const lastForm = visibleForms[visibleForms.length - 1];
+            const newForm = lastForm.cloneNode(true);
+            const newIndex = formCount;
+
+            console.log('إنشاء نموذج جديد بالفهرس:', newIndex);
+
+            // Update form attributes
+            newForm.setAttribute('data-index', newIndex);
+            newForm.style.display = '';
+
+            // Update accordion IDs
+            const accordionButton = newForm.querySelector('.accordion-button');
+            const accordionCollapse = newForm.querySelector('.accordion-collapse');
+
+            if (accordionButton && accordionCollapse) {
+                accordionButton.setAttribute('data-bs-target', `#year-collapse-${newIndex}`);
+                accordionButton.setAttribute('aria-controls', `year-collapse-${newIndex}`);
+                accordionButton.classList.add('collapsed');
+                accordionButton.setAttribute('aria-expanded', 'false');
+
+                accordionCollapse.setAttribute('id', `year-collapse-${newIndex}`);
+                accordionCollapse.classList.remove('show');
+            }
+
+            // Update form fields
+            const currentYearNumber = visibleForms.length + 1;
+
+            newForm.querySelectorAll('input, select, textarea').forEach(field => {
+                const oldId = field.id;
+
+                // Update IDs and names
+                if (field.id) {
+                    field.id = field.id.replace(/-\d+-/, `-${newIndex}-`);
+                }
+                if (field.name) {
+                    field.name = field.name.replace(/-\d+-/, `-${newIndex}-`);
+                }
+
+                // Update labels
+                const label = newForm.querySelector(`label[for="${oldId}"]`);
+                if (label) {
+                    label.setAttribute('for', field.id);
+                }
+
+                // Set default values
+                if (field.type === 'checkbox' && field.name.includes('include_year')) {
+                    field.checked = true;
+                } else if (field.type === 'checkbox' && field.name.includes('DELETE')) {
+                    field.checked = false;
+                    field.style.display = 'none';
+                } else if (!field.classList.contains('year-total') && field.type !== 'hidden') {
+                    if (field.name.includes('year_number')) {
+                        field.value = currentYearNumber;
+                    } else if (field.name.includes('academic_year')) {
+                        // Calculate next academic year based on current number of years
+                        const baseAcademicYear = document.getElementById('{{ form.academic_year.id_for_label }}').value;
+                        if (baseAcademicYear && baseAcademicYear.includes('-')) {
+                            const [firstYear, secondYear] = baseAcademicYear.split('-');
+                            const nextFirstYear = parseInt(firstYear) + currentYearNumber - 1;
+                            const nextSecondYear = parseInt(secondYear) + currentYearNumber - 1;
+                            field.value = `${nextFirstYear}-${nextSecondYear}`;
+                        }
+                    } else if (field.name.includes('monthly_duration')) {
+                        field.value = 12;
+                    } else if (field.name.includes('monthly_allowance')) {
+                        field.value = '1000.00';
+                    } else if (field.name.includes('tuition_fees_foreign')) {
+                        field.value = '22350.00';
+                    } else if (field.name.includes('tuition_fees_local')) {
+                        // Calculate based on current exchange rate
+                        const exchangeRate = parseFloat(document.getElementById('{{ form.exchange_rate.id_for_label }}').value) || 0.91;
+                        field.value = (22350.00 * exchangeRate).toFixed(2);
+                    } else if (field.name.includes('travel_tickets') || field.name.includes('visa_fees')) {
+                        // Only first year gets travel tickets and visa fees
+                        field.value = '0.00';
+                    } else if (field.name.includes('health_insurance')) {
+                        field.value = '500.00';
+                    } else {
+                        field.value = '0.00';
+                    }
+                }
+            });
+
+            // Add remove button
+            const accordionBody = newForm.querySelector('.accordion-body');
+            const existingRemoveDiv = accordionBody.querySelector('.text-end');
+            if (existingRemoveDiv) {
+                existingRemoveDiv.remove();
+            }
+
+            const removeButtonHtml = `
+                <div class="text-end mb-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-year-btn" data-index="${newIndex}">
+                        <i class="bi bi-trash me-1"></i>حذف هذه السنة
+                    </button>
+                    <input type="checkbox" name="years-${newIndex}-DELETE" style="display: none;">
+                </div>
+            `;
+            accordionBody.insertAdjacentHTML('afterbegin', removeButtonHtml);
+
+            // Add to DOM
+            yearFormSet.appendChild(newForm);
+
+            // Update form count
+            formCount++;
+            totalFormsInput.value = formCount;
+
+            console.log('تم إضافة النموذج الجديد - العدد الجديد:', formCount);
+
+            // Apply Bootstrap classes and attach listeners
+            newForm.querySelectorAll('input, select, textarea').forEach(element => {
+                if (element.type === 'checkbox') {
+                    element.classList.add('form-check-input');
+                } else {
+                    element.classList.add('form-control');
+                }
+
+                if (element.type === 'number' || element.step) {
+                    element.setAttribute('step', '0.01');
+                    element.setAttribute('min', '0');
+                    element.style.textAlign = 'left';
+                    element.style.direction = 'ltr';
+                }
+            });
+
+            attachFieldListeners(newForm);
+
+            // Add remove button event
+            const removeBtn = newForm.querySelector('.remove-year-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    removeYear(this);
+                });
+            }
+
+            // Update titles and calculate
+            updateYearTitles();
+            calculateYearTotal();
+
+            // Open the new accordion
+            setTimeout(() => {
+                const newAccordionButton = newForm.querySelector('.accordion-button');
+                if (newAccordionButton) {
+                    newAccordionButton.click();
+                }
+            }, 100);
+        }
+
+        function removeYear(btn) {
+            const formIndex = parseInt(btn.getAttribute('data-index'));
+            const formItem = document.querySelector(`.year-form-item[data-index="${formIndex}"]`);
+
+            console.log('حذف السنة بالفهرس:', formIndex);
+
+            if (!formItem) {
+                console.error('لم يتم العثور على النموذج للحذف');
+                return;
+            }
+
+            // Check if this is the last visible form
+            const visibleForms = document.querySelectorAll('.year-form-item:not([style*="display: none"])');
+            if (visibleForms.length <= 1) {
+                alert('لا يمكن حذف السنة الوحيدة، يجب أن تكون هناك سنة واحدة على الأقل.');
+                return;
+            }
+
+            // Mark for deletion
+            const deleteInput = formItem.querySelector('input[name$="-DELETE"]');
+            if (deleteInput) {
+                deleteInput.checked = true;
+            }
+
+            // Hide the form
+            formItem.style.display = 'none';
+
+            console.log('تم إخفاء النموذج');
+
+            // Update titles and recalculate
+            updateYearTitles();
+            calculateYearTotal();
+        }
+
+        function updateYearTitles() {
+            console.log('تحديث عناوين السنوات');
+
+            const visibleForms = document.querySelectorAll('.year-form-item:not([style*="display: none"])');
+
+            visibleForms.forEach((item, index) => {
+                const yearTitle = item.querySelector('.year-title');
+                const yearNumber = item.querySelector('input[id$="-year_number"]');
+
+                if (yearTitle) {
+                    yearTitle.textContent = `السنة ${index + 1}`;
+                }
+
+                if (yearNumber) {
+                    yearNumber.value = index + 1;
+                }
+
+                updateYearTitle(item);
+            });
+        }
+
+        function updateYearTitle(formItem) {
+            const academicYear = formItem.querySelector('select[id$="-academic_year"]');
+            const academicLabel = formItem.querySelector('.year-academic');
+
+            if (academicYear && academicLabel) {
+                academicLabel.textContent = academicYear.value ? ` (${academicYear.value})` : '';
+            }
+        }
+
+        function handleExchangeRateChange() {
+            console.log('تغيير سعر الصرف');
+
+            const exchangeRate = parseFloat(this.value) || 0.91;
+
+            document.querySelectorAll('.year-form-item:not([style*="display: none"])').forEach(item => {
+                const foreignField = item.querySelector('input[id$="-tuition_fees_foreign"]');
+                const localField = item.querySelector('input[id$="-tuition_fees_local"]');
+
+                if (foreignField && localField) {
+                    const foreignValue = parseFloat(foreignField.value) || 0;
+                    localField.value = (foreignValue * exchangeRate).toFixed(2);
+                }
+            });
+
+            calculateYearTotal();
+        }
+
+        function handleCurrencyChange() {
+            console.log('تغيير العملة الأجنبية');
+
+            const currencyLabels = document.querySelectorAll('.year-foreign-currency');
+            currencyLabels.forEach(label => {
+                label.textContent = this.value;
+            });
+        }
+
+        // Global settings cache
         let scholarshipSettings = {
             life_insurance_rate: 0.0034,
             add_percentage: 50.0
         };
 
-        const budgetData = {
-            current_total: parseFloat('{{ budget.total_amount }}') || 0,
-            exchange_rate: parseFloat('{{ budget.exchange_rate }}') || 0.91,
-            foreign_currency: '{{ budget.foreign_currency }}',
-            existing_years_total: 0  // Will be calculated
-        };
-
-        // Initialize form elements with proper styling
-        initializeFormElements();
-
-        // Load current scholarship settings
-        loadScholarshipSettings();
-
-        // Load current budget breakdown
-        loadCurrentBudgetBreakdown();
-
-        // Attach event listeners for real-time calculation
-        attachEventListeners();
-
-        // Initial calculation
-        calculateNewBudgetPreview();
-
-        function initializeFormElements() {
-            // Apply Bootstrap classes to form fields
-            const formFields = document.querySelectorAll('input, select, textarea');
-            formFields.forEach(field => {
-                if (field.type === 'checkbox') {
-                    field.classList.add('form-check-input');
-                } else {
-                    field.classList.add('form-control');
-                }
-
-                // Setup number inputs
-                if (field.type === 'number' || field.step) {
-                    field.setAttribute('step', '0.01');
-                    field.setAttribute('min', '0');
-                    field.style.textAlign = 'left';
-                    field.style.direction = 'ltr';
-                }
-            });
-        }
-
+        // Load settings from server
         async function loadScholarshipSettings() {
             try {
                 const response = await fetch('{% url "finance:api_scholarship_settings" %}');
@@ -397,206 +937,158 @@
                         life_insurance_rate: data.life_insurance_rate || 0.0034,
                         add_percentage: data.add_percentage || 50.0
                     };
-                    console.log('تم تحميل إعدادات التأمين:', scholarshipSettings);
+                    console.log('تم تحميل الإعدادات من الخادم:', scholarshipSettings);
                 } else {
-                    console.warn('فشل في تحميل الإعدادات، استخدام القيم الافتراضية');
+                    console.warn('فشل في تحميل الإعدادات من الخادم، استخدام القيم الافتراضية');
                 }
             } catch (error) {
                 console.error('خطأ في تحميل الإعدادات:', error);
-                // Use fallback values from Django context
+                // استخدام القيم من Django template كـ fallback
                 scholarshipSettings.life_insurance_rate = parseFloat('{{ settings.life_insurance_rate|default:"0.0034" }}') || 0.0034;
                 scholarshipSettings.add_percentage = parseFloat('{{ settings.add_percentage|default:"50.0" }}') || 50.0;
             }
+
+            // إعادة حساب الإجماليات بعد تحميل الإعدادات
+            calculateYearTotal();
         }
 
-        function loadCurrentBudgetBreakdown() {
-            // For this implementation, we'll calculate based on current budget total
-            // In a real implementation, you'd fetch the actual breakdown from the server
+        function calculateYearTotal() {
+            console.log('بدء حساب الإجماليات');
 
-            // Reverse engineer from current budget total
-            const currentTotal = budgetData.current_total;
+            let yearsTotal = 0;
+            const visibleForms = document.querySelectorAll('.year-form-item:not([style*="display: none"])');
 
-            // Estimate base cost by working backwards
-            // Formula: finalTotal = (baseCost + insurance) * (1 + addPercentage/100)
-            // Where insurance = baseCost * insuranceRate
+            console.log('عدد النماذج المرئية:', visibleForms.length);
 
-            const addPercentageDecimal = scholarshipSettings.add_percentage / 100;
-            const insuranceRate = scholarshipSettings.life_insurance_rate;
+            visibleForms.forEach((item, index) => {
+                const includeCheckbox = item.querySelector('input[id$="-include_year"]');
 
-            // Solve: currentTotal = baseCost * (1 + insuranceRate) * (1 + addPercentageDecimal)
-            const multiplier = (1 + insuranceRate) * (1 + addPercentageDecimal);
-            const estimatedBaseCost = currentTotal / multiplier;
+                if (includeCheckbox && includeCheckbox.checked) {
+                    const travelTickets = parseFloat(item.querySelector('input[id$="-travel_tickets"]').value) || 0;
+                    const monthlyAllowance = parseFloat(item.querySelector('input[id$="-monthly_allowance"]').value) || 0;
+                    const monthlyDuration = parseInt(item.querySelector('input[id$="-monthly_duration"]').value) || 0;
+                    const visaFees = parseFloat(item.querySelector('input[id$="-visa_fees"]').value) || 0;
+                    const healthInsurance = parseFloat(item.querySelector('input[id$="-health_insurance"]').value) || 0;
+                    const tuitionFeesLocal = parseFloat(item.querySelector('input[id$="-tuition_fees_local"]').value) || 0;
 
-            budgetData.existing_years_total = estimatedBaseCost;
+                    const monthlyAllowanceTotal = monthlyAllowance * monthlyDuration;
+                    const yearTotal = travelTickets + monthlyAllowanceTotal + visaFees + healthInsurance + tuitionFeesLocal;
 
-            // Calculate breakdown
-            const insurance = estimatedBaseCost * insuranceRate;
-            const trueCost = estimatedBaseCost + insurance;
-            const additional = trueCost * addPercentageDecimal;
+                    // Update individual year total
+                    const yearTotalElement = item.querySelector('.year-total');
+                    if (yearTotalElement) {
+                        yearTotalElement.value = yearTotal.toFixed(2);
+                    }
 
-            // Update current summary display
-            document.getElementById('current-years-total').textContent = estimatedBaseCost.toFixed(2) + ' د.أ';
-            document.getElementById('current-insurance').textContent = insurance.toFixed(2) + ' د.أ';
-            document.getElementById('current-additional').textContent = additional.toFixed(2) + ' د.أ';
-            document.getElementById('current-final-total').textContent = currentTotal.toFixed(2) + ' د.أ';
+                    yearsTotal += yearTotal;
 
-            console.log('تم حساب تفكيك الميزانية الحالية:', {
-                baseCost: estimatedBaseCost.toFixed(2),
-                insurance: insurance.toFixed(2),
-                additional: additional.toFixed(2),
-                total: currentTotal.toFixed(2)
-            });
-        }
-
-        function attachEventListeners() {
-            // Financial input fields
-            const financialFields = [
-                'id_travel_tickets',
-                'id_monthly_allowance',
-                'id_monthly_duration',
-                'id_visa_fees',
-                'id_health_insurance',
-                'id_tuition_fees_foreign',
-                'id_tuition_fees_local'
-            ];
-
-            financialFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', function() {
-                        // Handle foreign currency conversion
-                        if (fieldId === 'id_tuition_fees_foreign') {
-                            const foreignValue = parseFloat(this.value) || 0;
-                            const localField = document.getElementById('id_tuition_fees_local');
-                            if (localField) {
-                                const convertedValue = foreignValue * budgetData.exchange_rate;
-                                localField.value = convertedValue.toFixed(2);
-                            }
-                        }
-
-                        // Format decimal values
-                        if (this.value && fieldId !== 'id_monthly_duration') {
-                            const value = parseFloat(this.value);
-                            if (!isNaN(value)) {
-                                this.value = value.toFixed(2);
-                            }
-                        }
-
-                        // Recalculate preview
-                        calculateNewBudgetPreview();
-                    });
-
-                    field.addEventListener('blur', function() {
-                        if (this.value && fieldId !== 'id_monthly_duration') {
-                            const value = parseFloat(this.value);
-                            if (!isNaN(value)) {
-                                this.value = value.toFixed(2);
-                            }
-                        }
-                    });
+                    console.log(`السنة ${index + 1}: ${yearTotal.toFixed(2)}`);
+                } else {
+                    // Clear year total if not included
+                    const yearTotalElement = item.querySelector('.year-total');
+                    if (yearTotalElement) {
+                        yearTotalElement.value = '0.00';
+                    }
                 }
             });
 
-            // Refresh button
-            const refreshBtn = document.getElementById('refresh-current-summary');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', function() {
-                    this.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
+            console.log('إجمالي تكاليف السنوات:', yearsTotal.toFixed(2));
 
-                    loadScholarshipSettings().then(() => {
-                        loadCurrentBudgetBreakdown();
-                        calculateNewBudgetPreview();
-                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                        showNotification('تم تحديث الحسابات بنجاح', 'success');
-                    }).catch(() => {
-                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                        showNotification('حدث خطأ في التحديث', 'warning');
-                    });
-                });
+            // Update years total display
+            const yearsTotalElement = document.getElementById('years-total');
+            if (yearsTotalElement) {
+                yearsTotalElement.textContent = yearsTotal.toFixed(2);
             }
-        }
 
-        function calculateNewBudgetPreview() {
-            console.log('حساب معاينة الميزانية الجديدة');
+            // Use cached settings
+            const lifeInsuranceRate = scholarshipSettings.life_insurance_rate;
+            const addPercentage = scholarshipSettings.add_percentage;
 
-            // Get values from form
-            const travelTickets = parseFloat(document.getElementById('id_travel_tickets').value) || 0;
-            const monthlyAllowance = parseFloat(document.getElementById('id_monthly_allowance').value) || 0;
-            const monthlyDuration = parseInt(document.getElementById('id_monthly_duration').value) || 0;
-            const visaFees = parseFloat(document.getElementById('id_visa_fees').value) || 0;
-            const healthInsurance = parseFloat(document.getElementById('id_health_insurance').value) || 0;
-            const tuitionFeesLocal = parseFloat(document.getElementById('id_tuition_fees_local').value) || 0;
+            console.log('معدل التأمين على الحياة:', lifeInsuranceRate);
+            console.log('النسبة الإضافية:', addPercentage);
 
-            // Calculate year total
-            const monthlyTotal = monthlyAllowance * monthlyDuration;
-            const newYearCost = travelTickets + monthlyTotal + visaFees + healthInsurance + tuitionFeesLocal;
+            const insuranceAmount = yearsTotal * lifeInsuranceRate;
+            const trueCost = yearsTotal + insuranceAmount;
+            const additionalAmount = trueCost * (addPercentage / 100);
+            const grandTotal = trueCost + additionalAmount;
 
-            // Update year total preview
-            document.getElementById('year-total-preview').value = newYearCost.toFixed(2);
-            document.getElementById('new-year-cost').textContent = newYearCost.toFixed(2) + ' د.أ';
+            console.log('التأمين:', insuranceAmount.toFixed(2));
+            console.log('النسبة الإضافية:', additionalAmount.toFixed(2));
+            console.log('المجموع النهائي:', grandTotal.toFixed(2));
 
-            // Calculate new total base cost
-            const newBaseCost = budgetData.existing_years_total + newYearCost;
+            // Update display elements
+            const elements = {
+                'insurance-amount': insuranceAmount,
+                'additional-amount': additionalAmount,
+                'final-total': grandTotal
+            };
 
-            // Calculate insurance on new total
-            const newInsurance = newBaseCost * scholarshipSettings.life_insurance_rate;
-            const additionalInsurance = newYearCost * scholarshipSettings.life_insurance_rate;
-
-            // Calculate true cost
-            const newTrueCost = newBaseCost + newInsurance;
-
-            // Calculate additional percentage
-            const additionalAmount = newTrueCost * (scholarshipSettings.add_percentage / 100);
-            const additionalPercentageForNewYear = (newYearCost * scholarshipSettings.life_insurance_rate + newYearCost) * (scholarshipSettings.add_percentage / 100);
-
-            // Calculate final new budget total
-            const newBudgetTotal = newTrueCost + additionalAmount;
-
-            // Update preview displays
-            document.getElementById('additional-insurance').textContent = additionalInsurance.toFixed(2) + ' د.أ';
-            document.getElementById('additional-percentage').textContent = additionalPercentageForNewYear.toFixed(2) + ' د.أ';
-            document.getElementById('new-budget-total').textContent = newBudgetTotal.toFixed(2) + ' د.أ';
-
-            console.log('تفاصيل الحساب الجديد:', {
-                newYearCost: newYearCost.toFixed(2),
-                additionalInsurance: additionalInsurance.toFixed(2),
-                additionalPercentage: additionalPercentageForNewYear.toFixed(2),
-                newBudgetTotal: newBudgetTotal.toFixed(2)
-            });
-        }
-
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = `
-                top: 20px;
-                right: 20px;
-                z-index: 1050;
-                min-width: 300px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            `;
-
-            notification.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
-                    <span>${message}</span>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    notification.remove();
+            Object.entries(elements).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value.toFixed(2);
                 }
-            }, 5000);
+            });
+
+            // Update calculated total fields
+            const calculatedTotalDisplay = document.getElementById('calculated-total-display');
+            const calculatedTotalHidden = document.getElementById('calculated-total-hidden');
+
+            if (calculatedTotalDisplay) {
+                calculatedTotalDisplay.value = grandTotal.toFixed(2);
+            }
+            if (calculatedTotalHidden) {
+                calculatedTotalHidden.value = grandTotal.toFixed(2);
+            }
+
+            console.log('تم إنهاء حساب الإجماليات');
+
+            return {
+                yearsTotal: yearsTotal.toFixed(2),
+                insuranceAmount: insuranceAmount.toFixed(2),
+                additionalAmount: additionalAmount.toFixed(2),
+                grandTotal: grandTotal.toFixed(2)
+            };
+        }
+
+        // Form validation before submit
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                console.log('التحقق من صحة النموذج قبل الإرسال');
+
+                // Check if at least one year is included
+                const includeCheckboxes = document.querySelectorAll('[id^="id_years-"][id$="-include_year"]');
+                const visibleCheckboxes = Array.from(includeCheckboxes).filter(checkbox =>
+                    checkbox.closest('.year-form-item').style.display !== 'none'
+                );
+                const anyYearIncluded = visibleCheckboxes.some(checkbox => checkbox.checked);
+
+                if (!anyYearIncluded) {
+                    event.preventDefault();
+                    alert('يجب تضمين سنة دراسية واحدة على الأقل');
+                    return false;
+                }
+
+                // Check calculated total
+                const totals = calculateYearTotal();
+                const calculatedTotal = parseFloat(totals.grandTotal);
+
+                if (calculatedTotal <= 0) {
+                    event.preventDefault();
+                    alert('يرجى التأكد من صحة البيانات المدخلة للسنوات الدراسية');
+                    return false;
+                }
+
+                console.log('تم التحقق من صحة النموذج بنجاح');
+                return true;
+            });
         }
     });
 </script>
 {% endblock %}
 
-<!-- Enhanced CSS -->
+<!-- Required CSS for enhancements -->
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -604,61 +1096,140 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
     /* استخدام خط Cairo */
-    body, .card, .btn, .form-control, .form-select, .alert {
+    body, .form-control, .form-select, .btn, .card, .alert {
         font-family: 'Cairo', sans-serif !important;
-    }
-
-    .info-item {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .info-item:last-child {
-        border-bottom: none;
-    }
-
-    .info-item label {
-        display: inline-block;
-        min-width: 120px;
-        margin-bottom: 0;
-    }
-
-    .summary-item {
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .summary-item:last-child {
-        border-bottom: none;
     }
 
     .card {
         border: none;
         border-radius: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     .card-header {
+        border-top-left-radius: 0.5rem !important;
+        border-top-right-radius: 0.5rem !important;
+    }
+    .required:after {
+        content: " *";
+        color: #dc3545;
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .form-text {
+        font-size: 0.775rem;
+    }
+    .text-bg-primary {
+        color: #0d6efd !important;
+    }
+    .was-validated .form-control:invalid, .was-validated .form-select:invalid {
+        border-color: #dc3545;
+    }
+    .was-validated .form-control:valid, .was-validated .form-select:valid {
+        border-color: #198754;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+        box-shadow: none;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(13, 110, 253, 0.25);
+    }
+
+    .year-form-item {
+        border: none;
+        margin-bottom: 1rem;
+    }
+
+    .year-title {
+        font-weight: 500;
+    }
+
+    .year-academic {
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    .remove-year-btn {
+        transition: all 0.2s;
+    }
+
+    .remove-year-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .accordion-body {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-bottom-left-radius: 0.5rem;
+        border-bottom-right-radius: 0.5rem;
+    }
+
+    #add-year-btn {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    #add-year-btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* تنسيقات خاصة بحقل الإجمالي المحسوب */
+    #calculated-total-display {
+        background-color: #e7f3ff !important;
+        border: 2px solid #0d6efd !important;
+        font-weight: bold !important;
+        font-size: 1.1em !important;
+        text-align: center !important;
+        cursor: not-allowed !important;
+        box-shadow: inset 0 0 5px rgba(13, 110, 253, 0.2) !important;
+    }
+
+    #calculated-total-display:focus {
+        box-shadow: inset 0 0 8px rgba(13, 110, 253, 0.4) !important;
+        border-color: #0d6efd !important;
+    }
+
+    /* تأثيرات بصرية للحقول المحسوبة */
+    .year-total {
+        background-color: #f8f9fa !important;
+        border: 1px solid #dee2e6 !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        cursor: not-allowed !important;
+    }
+
+    /* تنسيق خاص لبطاقات الإجماليات */
+    .alert-light {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 0.5rem 0.5rem 0 0 !important;
+        border: 1px solid #dee2e6;
     }
 
-    .btn {
-        border-radius: 0.375rem;
-        transition: all 0.2s ease;
+    .alert-success {
+        background: linear-gradient(135deg, #d1edff 0%, #b3d9ff 100%);
+        border: 1px solid #0d6efd;
     }
 
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    /* تحسين الحقول الرقمية */
+    /* تحسين مظهر الحقول المالية */
     input[type="number"] {
         font-family: 'Cairo', sans-serif !important;
         text-align: left;
         direction: ltr;
+    }
+
+    input[type="text"][readonly] {
+        font-family: 'Cairo', sans-serif !important;
+    }
+
+    /* إصلاح مشكلة عرض الحقول الرقمية */
+    input[type="number"], input[step] {
+        -moz-appearance: textfield;
+        text-align: left !important;
+        direction: ltr !important;
+        padding: 0.375rem 0.75rem !important;
     }
 
     input[type="number"]::-webkit-outer-spin-button,
@@ -667,7 +1238,67 @@
         margin: 0;
     }
 
-    /* تأثير الدوران */
+    /* تنسيق خاص للعناوين المهمة */
+    .text-bg-primary.bg-opacity-10 {
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%) !important;
+        border-left: 4px solid #0d6efd;
+    }
+
+    /* تأثيرات الرسوم المتحركة */
+    .year-form-item {
+        transition: all 0.3s ease;
+    }
+
+    .year-form-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* تحسين مظهر الأزرار */
+    .btn {
+        transition: all 0.2s ease;
+        font-family: 'Cairo', sans-serif !important;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* تحسين شكل المدخلات في الـ RTL */
+    .form-control, .form-select {
+        font-family: 'Cairo', sans-serif !important;
+    }
+
+    /* إصلاح مشكلة الحقول الرقمية مع الأرقام العربية */
+    input[type="number"], input[step] {
+        font-variant-numeric: lining-nums;
+        -webkit-font-feature-settings: "lnum";
+        font-feature-settings: "lnum";
+    }
+
+    /* تحسين مظهر الأكورديون */
+    .accordion-button {
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 500;
+    }
+
+    /* تحسين النصوص الصغيرة */
+    .form-text, .text-muted {
+        font-family: 'Cairo', sans-serif !important;
+    }
+
+    /* تحسين العناوين */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Cairo', sans-serif !important;
+    }
+
+    /* تحسين مظهر البطاقات */
+    .card-title, .card-header {
+        font-family: 'Cairo', sans-serif !important;
+    }
+
+    /* تأثير الدوران لزر التحديث */
     .spin {
         animation: spin 1s linear infinite;
     }
@@ -677,47 +1308,22 @@
         to { transform: rotate(360deg); }
     }
 
-    /* تحسين العناوين */
-    .text-bg-primary.bg-opacity-10 {
-        background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%) !important;
-        border-left: 4px solid #0d6efd;
-    }
-
-    .text-bg-success.bg-opacity-10 {
-        background: linear-gradient(135deg, rgba(25, 135, 84, 0.1) 0%, rgba(25, 135, 84, 0.05) 100%) !important;
-        border-left: 4px solid #198754;
-    }
-
-    /* تحسين البطاقات التفاعلية */
-    .alert {
-        transition: all 0.3s ease;
-    }
-
-    .alert:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    /* تحسين النصوص */
-    .form-text {
-        font-size: 0.775rem;
+    /* تحسين زر التحديث */
+    #refresh-settings-btn {
+        font-size: 0.8em;
         color: #6c757d;
+        text-decoration: none !important;
+        transition: color 0.2s;
     }
 
-    /* تحسين التخطيط للأجهزة المحمولة */
-    @media (max-width: 768px) {
-        .info-item label {
-            min-width: 100px;
-            font-size: 0.9em;
-        }
+    #refresh-settings-btn:hover {
+        color: #0d6efd;
+    }
 
-        .alert {
-            font-size: 0.9em;
-        }
-
-        .card-body {
-            padding: 1rem;
-        }
+    /* تحسين مظهر التحديدات */
+    .form-check-label {
+        font-family: 'Cairo', sans-serif !important;
+        line-height: 1.5;
     }
 </style>
 {% endblock %}
