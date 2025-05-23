@@ -1278,7 +1278,7 @@ def finance_dashboard(request):
 @login_required
 @permission_required('finance.change_scholarshipbudget', raise_exception=True)
 def update_budget(request, budget_id):
-    """تحديث ميزانية موجودة مع تفاصيل سنوات دراسية مرنة"""
+    """تحديث ميزانية موجودة مع تفاصيل سنوات دراسية مرنة - نسخة محسنة"""
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
     # التحقق من حالة الميزانية - لا يمكن تعديل الميزانيات المغلقة
@@ -1340,6 +1340,9 @@ def update_budget(request, budget_id):
                 }
                 return render(request, 'finance/budget_with_years_form.html', context)
 
+            # حفظ النسخة القديمة للمقارنة
+            old_total = budget.total_amount
+
             # حساب إجمالي تكاليف السنوات المضمنة فقط
             years_total = calculate_total_from_formset(year_formset, settings)
 
@@ -1348,50 +1351,7 @@ def update_budget(request, budget_id):
             updated_budget.total_amount = years_total  # تعيين الإجمالي المحسوب
 
             # تعيين بيانات الفئات المالية بناءً على تفاصيل السنوات المضمنة فقط
-            updated_budget.tuition_fees = sum(Decimal(year_form.cleaned_data.get('tuition_fees_local', 0))
-                               for year_form in year_formset
-                               if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
-
-            updated_budget.monthly_stipend = sum(Decimal(year_form.cleaned_data.get('monthly_allowance', 0)) *
-                                 Decimal(year_form.cleaned_data.get('monthly_duration', 12))
-                                 for year_form in year_formset
-                                 if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
-
-            updated_budget.travel_allowance = sum(Decimal(year_form.cleaned_data.get('travel_tickets', 0))
-                                  for year_form in year_formset
-                                  if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
-
-            updated_budget.health_insurance = sum(Decimal(year_form.cleaned_data.get('health_insurance', 0))
-                                 for year_form in year_formset
-                                 if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
-
-            # التأمين والمصاريف الأخرى
-            other_expenses = sum(Decimal(year_form.cleaned_data.get('visa_fees', 0))
-                               for year_form in year_formset
-                               if year_form.cleaned_data and year_form.cleaned_data.get('include_year') and not year_form.cleaned_data.get('DELETE', False)).quantize(Decimal('0.01'))
-
-            # إضافة التأمين على الحياة إذا كان مفعلاً في الإعدادات
-            base_total = (updated_budget.tuition_fees + updated_budget.monthly_stipend +
-                          updated_budget.travel_allowance + updated_budget.health_insurance + other_expenses).quantize(Decimal('0.01'))
-
-            if settings and settings.life_insurance_rate > 0:
-                insurance_amount = (base_total * settings.life_insurance_rate).quantize(Decimal('0.01'))
-                other_expenses += insurance_amount
-
-            # إضافة النسبة الإضافية إذا كانت مفعلة في الإعدادات
-            if settings and settings.add_percentage > 0:
-                true_cost = base_total
-                if settings.life_insurance_rate > 0:
-                    true_cost += base_total * settings.life_insurance_rate
-
-                additional_amount = (true_cost * Decimal(settings.add_percentage) / Decimal('100')).quantize(Decimal('0.01'))
-                other_expenses += additional_amount
-
-            # تعيين المصاريف الأخرى والقيم الافتراضية للحقول الأخرى
-            updated_budget.other_expenses = other_expenses
-            updated_budget.books_allowance = Decimal('0.00')
-            updated_budget.research_allowance = Decimal('0.00')
-            updated_budget.conference_allowance = Decimal('0.00')
+            update_budget_categories_from_formset(updated_budget, year_formset, settings)
 
             # حفظ الميزانية
             updated_budget.save()
@@ -1412,9 +1372,13 @@ def update_budget(request, budget_id):
                 budget=updated_budget,
                 fiscal_year=updated_budget.fiscal_year,
                 action_type='update',
-                description=_("تحديث ميزانية مع تفاصيل السنوات الدراسية"),
+                description=_("تحديث ميزانية مع تفاصيل السنوات الدراسية") + f" - من {old_total:,.2f} إلى {years_total:,.2f} دينار أردني",
                 created_by=request.user
             )
+
+            # Clear cache for settings
+            from django.core.cache import cache
+            cache.delete('scholarship_settings')
 
             messages.success(request, _("تم تحديث الميزانية وتفاصيل السنوات الدراسية بنجاح"))
             return redirect('finance:budget_detail', budget_id=updated_budget.id)
@@ -1465,7 +1429,7 @@ def update_budget(request, budget_id):
                 'visa_fees': 358.00,
                 'health_insurance': 500.00,
                 'tuition_fees_foreign': 22350.00,
-                'tuition_fees_local': 20338.50,
+                'tuition_fees_local': float(Decimal('22350.00') * budget.exchange_rate),
                 'include_year': True
             }]
 
@@ -1481,9 +1445,87 @@ def update_budget(request, budget_id):
         'current_fiscal_year': current_fiscal_year,
         'is_update': True,
         'budget': budget,
-        'settings': settings,  # إضافة الإعدادات للقالب
+        'settings': settings,
     }
     return render(request, 'finance/budget_with_years_form.html', context)
+
+
+def update_budget_categories_from_formset(budget, year_formset, settings):
+    """تعيين بيانات الفئات المالية بناءً على تفاصيل السنوات المضمنة فقط"""
+
+    budget.tuition_fees = sum(
+        Decimal(year_form.cleaned_data.get('tuition_fees_local', 0))
+        for year_form in year_formset
+        if year_form.cleaned_data
+        and year_form.cleaned_data.get('include_year')
+        and not year_form.cleaned_data.get('DELETE', False)
+    ).quantize(Decimal('0.01'))
+
+    budget.monthly_stipend = sum(
+        Decimal(year_form.cleaned_data.get('monthly_allowance', 0)) *
+        Decimal(year_form.cleaned_data.get('monthly_duration', 12))
+        for year_form in year_formset
+        if year_form.cleaned_data
+        and year_form.cleaned_data.get('include_year')
+        and not year_form.cleaned_data.get('DELETE', False)
+    ).quantize(Decimal('0.01'))
+
+    budget.travel_allowance = sum(
+        Decimal(year_form.cleaned_data.get('travel_tickets', 0))
+        for year_form in year_formset
+        if year_form.cleaned_data
+        and year_form.cleaned_data.get('include_year')
+        and not year_form.cleaned_data.get('DELETE', False)
+    ).quantize(Decimal('0.01'))
+
+    budget.health_insurance = sum(
+        Decimal(year_form.cleaned_data.get('health_insurance', 0))
+        for year_form in year_formset
+        if year_form.cleaned_data
+        and year_form.cleaned_data.get('include_year')
+        and not year_form.cleaned_data.get('DELETE', False)
+    ).quantize(Decimal('0.01'))
+
+    # التأمين والمصاريف الأخرى
+    other_expenses = sum(
+        Decimal(year_form.cleaned_data.get('visa_fees', 0))
+        for year_form in year_formset
+        if year_form.cleaned_data
+        and year_form.cleaned_data.get('include_year')
+        and not year_form.cleaned_data.get('DELETE', False)
+    ).quantize(Decimal('0.01'))
+
+    # إضافة التأمين على الحياة إذا كان مفعلاً في الإعدادات
+    base_total = (
+        budget.tuition_fees +
+        budget.monthly_stipend +
+        budget.travel_allowance +
+        budget.health_insurance +
+        other_expenses
+    ).quantize(Decimal('0.01'))
+
+    if settings and settings.life_insurance_rate > 0:
+        insurance_amount = (base_total * settings.life_insurance_rate).quantize(Decimal('0.01'))
+        other_expenses += insurance_amount
+
+    # إضافة النسبة الإضافية إذا كانت مفعلة في الإعدادات
+    if settings and settings.add_percentage > 0:
+        true_cost = base_total
+        if settings.life_insurance_rate > 0:
+            true_cost += base_total * settings.life_insurance_rate
+
+        additional_amount = (
+            true_cost *
+            Decimal(settings.add_percentage) /
+            Decimal('100')
+        ).quantize(Decimal('0.01'))
+        other_expenses += additional_amount
+
+    # تعيين المصاريف الأخرى والقيم الافتراضية للحقول الأخرى
+    budget.other_expenses = other_expenses
+    # budget.books_allowance = budget.books_allowance or Decimal('0.00')
+    # budget.research_allowance = budget.research_allowance or Decimal('0.00')
+    # budget.conference_allowance = budget.conference_allowance or Decimal('0.00')
 
 
 @login_required
@@ -3473,13 +3515,8 @@ def update_budget_categories_from_yearly_costs(budget):
     # إضافة رسوم الفيزا للمصاريف الأخرى
     budget.other_expenses = total_visa_fees.quantize(Decimal('0.01'))
 
-    # الفئات الأخرى تبقى كما هي (يمكن تعديلها يدوياً)
-    if not budget.books_allowance:
-        budget.books_allowance = Decimal('0.00')
-    if not budget.research_allowance:
-        budget.research_allowance = Decimal('0.00')
-    if not budget.conference_allowance:
-        budget.conference_allowance = Decimal('0.00')
+    # Note: books_allowance, research_allowance, and conference_allowance fields
+    # don't exist in the ScholarshipBudget model, so they are removed from this function
 
 
 @login_required
