@@ -808,6 +808,23 @@ def budget_detail(request, budget_id):
             add_percentage=Decimal('50.0')
         )
 
+    # حساب التأمين والنسبة الإضافية
+    # حساب مبلغ التأمين
+    insurance_amount = (yearly_costs_total * settings.life_insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب التكلفة الحقيقية (الأساسي + التأمين)
+    true_cost = yearly_costs_total + insurance_amount
+
+    # حساب المبلغ الإضافي
+    additional_amount = (true_cost * settings.add_percentage / 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب الإجمالي النهائي
+    final_total = true_cost + additional_amount
+
+    # تنسيق معدلات النسبة للعرض
+    insurance_rate_display = (settings.life_insurance_rate * 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    additional_rate_display = settings.add_percentage.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+
     context = {
         'budget': budget,
         'yearly_costs': yearly_costs,
@@ -822,9 +839,114 @@ def budget_detail(request, budget_id):
         'settings': settings,
         'can_activate': budget.status == 'draft',  # هل يمكن التفعيل؟
         'can_revert': budget.status == 'active' and not budget.expenses.filter(status='approved').exists(),  # هل يمكن الإرجاع؟
+        # القيم الجديدة المضافة
+        'insurance_amount': insurance_amount,
+        'additional_amount': additional_amount,
+        'final_total': final_total,
+        'insurance_rate_display': insurance_rate_display,
+        'additional_rate_display': additional_rate_display,
     }
 
     return render(request, 'finance/budget_detail.html', context)
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def recalculate_budget(request, budget_id):
+    from django.http import JsonResponse
+    from decimal import Decimal, ROUND_HALF_UP
+
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+    yearly_costs = budget.yearly_costs.all().order_by('year_number')
+    settings = ScholarshipSettings.objects.first()
+
+    if not settings:
+        settings = ScholarshipSettings.objects.create(
+            life_insurance_rate=Decimal('0.0034'),
+            add_percentage=Decimal('50.0')
+        )
+
+    # حساب إجمالي تكاليف السنوات الأساسية
+    yearly_costs_total = Decimal('0.00')
+    for cost in yearly_costs:
+        # حساب تكلفة كل سنة
+        monthly_total = (cost.monthly_allowance * cost.monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        year_cost = (
+            cost.travel_tickets +
+            monthly_total +
+            cost.visa_fees +
+            cost.health_insurance +
+            cost.tuition_fees_local
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        yearly_costs_total += year_cost
+
+    # تقريب إجمالي تكاليف السنوات
+    yearly_costs_total = yearly_costs_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب مبلغ التأمين
+    insurance_amount = (yearly_costs_total * settings.life_insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب التكلفة الحقيقية (الأساسي + التأمين)
+    true_cost = yearly_costs_total + insurance_amount
+
+    # حساب المبلغ الإضافي
+    additional_amount = (true_cost * settings.add_percentage / 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب الإجمالي النهائي
+    final_total = true_cost + additional_amount
+
+    # تنسيق معدلات النسبة للعرض
+    insurance_rate_display = (settings.life_insurance_rate * 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    additional_rate_display = settings.add_percentage.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+
+    # تنسيق القيم باستخدام فلتر تنسيق العملة
+    from finance.templatetags.currency_format import currency
+
+    # التحقق من تطابق الميزانية المحفوظة مع المحسوبة
+    budget_total = budget.total_amount
+    difference = abs(budget_total - final_total)
+    has_discrepancy = difference > Decimal('0.01')  # السماح بفروق صغيرة للتقريب
+
+    return JsonResponse({
+        'yearly_costs_total': currency(yearly_costs_total),
+        'insurance_amount': currency(insurance_amount),
+        'additional_amount': currency(additional_amount),
+        'final_total': currency(final_total),
+        'insurance_rate_display': str(insurance_rate_display),
+        'additional_rate_display': str(additional_rate_display),
+        'has_discrepancy': has_discrepancy,
+        'saved_budget_total': currency(budget_total) if has_discrepancy else None,
+        'difference': currency(difference) if has_discrepancy else None,
+    })
+
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def refresh_budget_summary(request, budget_id):
+    from django.http import JsonResponse
+    from decimal import Decimal, ROUND_HALF_UP
+    from finance.templatetags.currency_format import currency
+
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # حساب القيم
+    spent_amount = budget.get_spent_amount().quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    remaining_amount = budget.get_remaining_amount().quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب النسبة المئوية مع تقريب دقيق
+    if budget.total_amount > 0:
+        spent_percentage = (spent_amount / budget.total_amount * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+    else:
+        spent_percentage = Decimal('0.0')
+
+    return JsonResponse({
+        'total_amount': currency(budget.total_amount),
+        'spent_amount': currency(spent_amount),
+        'remaining_amount': currency(remaining_amount),
+        'spent_percentage': str(spent_percentage),
+    })
+
+
 
 @login_required
 @permission_required('finance.add_scholarshipbudget', raise_exception=True)

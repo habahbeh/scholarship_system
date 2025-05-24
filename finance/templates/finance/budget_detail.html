@@ -241,8 +241,8 @@
                         <div class="text-center">
                             <i class="bi bi-shield-check text-info fs-4"></i>
                             <h6 class="mt-2">{% trans "التأمين على الحياة" %}</h6>
-                            <span class="fw-bold text-info" id="insurance-amount">0.00 {% trans "د.أ" %}</span>
-                            <small class="d-block text-muted" id="insurance-rate">0.34%</small>
+                            <span class="fw-bold text-info" id="insurance-amount">{{ insurance_amount|currency }} {% trans "د.أ" %}</span>
+                            <small class="d-block text-muted" id="insurance-rate">{{ insurance_rate_display }}%</small>
                         </div>
                     </div>
                 </div>
@@ -251,8 +251,8 @@
                         <div class="text-center">
                             <i class="bi bi-percent text-warning fs-4"></i>
                             <h6 class="mt-2">{% trans "النسبة الإضافية" %}</h6>
-                            <span class="fw-bold text-warning" id="additional-amount">0.00 {% trans "د.أ" %}</span>
-                            <small class="d-block text-muted" id="additional-rate">50%</small>
+                            <span class="fw-bold text-warning" id="additional-amount">{{ additional_amount|currency }} {% trans "د.أ" %}</span>
+                            <small class="d-block text-muted" id="additional-rate">{{ additional_rate_display }}%</small>
                         </div>
                     </div>
                 </div>
@@ -261,7 +261,7 @@
                         <div class="text-center">
                             <i class="bi bi-check-circle text-success fs-4"></i>
                             <h6 class="mt-2">{% trans "إجمالي الميزانية" %}</h6>
-                            <span class="fw-bold text-success" id="final-calculated-total">{{ budget.total_amount|currency }} {% trans "د.أ" %}</span>
+                            <span class="fw-bold text-success" id="final-calculated-total">{{ final_total|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                 </div>
@@ -519,127 +519,6 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Global settings cache
-        let scholarshipSettings = {
-            life_insurance_rate: 0.0034,
-            add_percentage: 50.0
-        };
-
-        // دالة تنسيق الأرقام بالطريقة المطلوبة: 256,121.23
-        function formatNumber(number) {
-            // تحويل الرقم إلى نص
-            let str = parseFloat(number).toFixed(2);
-
-            // تقسيم الرقم إلى جزء صحيح وجزء عشري
-            let parts = str.split('.');
-            let integerPart = parts[0];
-            let decimalPart = parts.length > 1 ? parts[1] : '';
-
-            // إضافة فواصل للآلاف
-            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-            // إعادة تركيب الرقم بالنقطة كفاصل عشري
-            return integerPart + (decimalPart ? '.' + decimalPart : '');
-        }
-
-        // Load settings from server
-        async function loadScholarshipSettings() {
-            try {
-                const response = await fetch('{% url "finance:api_scholarship_settings" %}');
-                if (response.ok) {
-                    const data = await response.json();
-                    scholarshipSettings = {
-                        life_insurance_rate: data.life_insurance_rate || 0.0034,
-                        add_percentage: data.add_percentage || 50.0
-                    };
-                    console.log('تم تحميل الإعدادات من الخادم:', scholarshipSettings);
-                    return true;
-                } else {
-                    console.warn('فشل في تحميل الإعدادات من الخادم، استخدام القيم الافتراضية');
-                    return false;
-                }
-            } catch (error) {
-                console.error('خطأ في تحميل الإعدادات:', error);
-                // استخدام القيم من Django template كـ fallback
-                scholarshipSettings.life_insurance_rate = parseFloat('{{ settings.life_insurance_rate|default:"0.0034" }}') || 0.0034;
-                scholarshipSettings.add_percentage = parseFloat('{{ settings.add_percentage|default:"50.0" }}') || 50.0;
-                return false;
-            }
-        }
-
-        // Calculate detailed breakdown
-        function calculateDetailedBreakdown() {
-            console.log('بدء إعادة الحساب التفصيلي');
-
-            const baseTotal = parseFloat('{{ yearly_costs_total|default:"0" }}') || 0;
-
-            if (baseTotal <= 0) {
-                console.log('لا توجد تكاليف سنوية لحسابها');
-
-                // Reset all displays to zero with proper formatting
-                document.getElementById('base-total').textContent = '0.00 {% trans "د.أ" %}';
-                document.getElementById('insurance-amount').textContent = '0.00 {% trans "د.أ" %}';
-                document.getElementById('additional-amount').textContent = '0.00 {% trans "د.أ" %}';
-                document.getElementById('final-calculated-total').textContent = '0.00 {% trans "د.أ" %}';
-                return;
-            }
-
-            // Calculate insurance with current settings
-            const insuranceAmount = baseTotal * scholarshipSettings.life_insurance_rate;
-            const trueCost = baseTotal + insuranceAmount;
-
-            // Calculate additional percentage with current settings
-            const additionalAmount = trueCost * (scholarshipSettings.add_percentage / 100);
-            const finalTotal = trueCost + additionalAmount;
-
-            console.log('تفاصيل الحساب المحدث:');
-            console.log('- إجمالي تكاليف السنوات (أساسي):', formatNumber(baseTotal));
-            console.log('- معدل التأمين:', (scholarshipSettings.life_insurance_rate * 100).toFixed(4) + '%');
-            console.log('- مبلغ التأمين:', formatNumber(insuranceAmount));
-            console.log('- النسبة الإضافية:', scholarshipSettings.add_percentage + '%');
-            console.log('- مبلغ النسبة الإضافية:', formatNumber(additionalAmount));
-            console.log('- إجمالي الميزانية المحسوب:', formatNumber(finalTotal));
-
-            // Update display elements with animation and proper formatting
-            updateElementWithAnimation('base-total', formatNumber(baseTotal) + ' {% trans "د.أ" %}');
-            updateElementWithAnimation('insurance-amount', formatNumber(insuranceAmount) + ' {% trans "د.أ" %}');
-            updateElementWithAnimation('additional-amount', formatNumber(additionalAmount) + ' {% trans "د.أ" %}');
-            updateElementWithAnimation('final-calculated-total', formatNumber(finalTotal) + ' {% trans "د.أ" %}');
-
-            // Update rates display
-            document.getElementById('insurance-rate').textContent = (scholarshipSettings.life_insurance_rate * 100).toFixed(2) + '%';
-            document.getElementById('additional-rate').textContent = scholarshipSettings.add_percentage.toFixed(1) + '%';
-
-            // Check if budget total matches calculated total
-            const budgetTotal = parseFloat('{{ budget.total_amount }}') || 0;
-            const difference = Math.abs(budgetTotal - finalTotal);
-
-            const finalTotalElement = document.getElementById('final-calculated-total');
-
-            if (difference > 0.01) {  // Allow for small rounding differences
-                console.warn('تحذير: إجمالي الميزانية المحفوظة (' + formatNumber(budgetTotal) + ') لا يتطابق مع المحسوب (' + formatNumber(finalTotal) + ')');
-                console.warn('الفرق: ' + formatNumber(difference) + ' د.أ');
-
-                // Highlight the discrepancy
-                finalTotalElement.classList.remove('text-success');
-                finalTotalElement.classList.add('text-warning');
-                finalTotalElement.title = 'يختلف عن إجمالي الميزانية المحفوظة: ' + formatNumber(budgetTotal) + ' د.أ (الفرق: ' + formatNumber(difference) + ' د.أ)';
-
-                // Show warning message
-                showNotification('تحذير: المجموع المحسوب يختلف عن الميزانية المحفوظة بمقدار ' + formatNumber(difference) + ' د.أ', 'warning');
-            } else {
-                // Remove warning styling
-                finalTotalElement.classList.remove('text-warning');
-                finalTotalElement.classList.add('text-success');
-                finalTotalElement.removeAttribute('title');
-
-                console.log('✓ المجموع المحسوب يتطابق مع الميزانية المحفوظة');
-                showNotification('تم إعادة الحساب بنجاح - المجموع متطابق', 'success');
-            }
-
-            console.log('تم إنهاء إعادة الحساب التفصيلي');
-        }
-
         // Helper function to update element with animation
         function updateElementWithAnimation(elementId, newValue) {
             const element = document.getElementById(elementId);
@@ -692,19 +571,23 @@
             console.log('بدء تحديث الملخص المالي');
 
             try {
-                const settingsLoaded = await loadScholarshipSettings();
+                // Make API request to refresh summary
+                const response = await fetch('{% url "finance:refresh_budget_summary" budget.id %}');
 
-                if (settingsLoaded) {
-                    console.log('تم تحميل الإعدادات الجديدة بنجاح');
-                    showNotification('تم تحديث إعدادات التأمين من الخادم', 'success');
-                } else {
-                    console.log('تم استخدام الإعدادات الافتراضية');
-                    showNotification('تم استخدام الإعدادات الافتراضية', 'info');
+                if (!response.ok) {
+                    throw new Error('فشل في تحديث الملخص المالي');
                 }
 
-                // Recalculate with updated settings
-                calculateDetailedBreakdown();
+                const data = await response.json();
 
+                // Update summary elements
+                document.getElementById('total-budget').textContent = data.total_amount + ' {% trans "د.أ" %}';
+                document.getElementById('spent-amount').textContent = data.spent_amount + ' {% trans "د.أ" %}';
+                document.getElementById('remaining-amount').textContent = data.remaining_amount + ' {% trans "د.أ" %}';
+                document.getElementById('spent-percentage').textContent = data.spent_percentage + '%';
+                document.getElementById('spent-progress').style.width = data.spent_percentage + '%';
+
+                showNotification('تم تحديث الملخص المالي بنجاح', 'success');
                 console.log('تم تحديث الملخص المالي بنجاح');
 
             } catch (error) {
@@ -724,6 +607,7 @@
             });
         }
 
+        // Recalculate button event
         const recalculateBtn = document.getElementById('recalculate-btn');
         if (recalculateBtn) {
             recalculateBtn.addEventListener('click', function() {
@@ -734,31 +618,37 @@
                 this.innerHTML = '<i class="bi bi-calculator spin"></i> {% trans "جاري الحساب..." %}';
                 this.disabled = true;
 
-                // Simulate calculation delay for better UX
-                setTimeout(() => {
-                    try {
-                        // First reload settings, then recalculate
-                        loadScholarshipSettings().then(() => {
-                            calculateDetailedBreakdown();
+                // Make AJAX request to recalculate
+                fetch('{% url "finance:recalculate_budget" budget.id %}')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update the displayed values
+                        updateElementWithAnimation('base-total', data.yearly_costs_total + ' {% trans "د.أ" %}');
+                        updateElementWithAnimation('insurance-amount', data.insurance_amount + ' {% trans "د.أ" %}');
+                        updateElementWithAnimation('additional-amount', data.additional_amount + ' {% trans "د.أ" %}');
+                        updateElementWithAnimation('final-calculated-total', data.final_total + ' {% trans "د.أ" %}');
 
-                            // Restore button state
-                            this.innerHTML = originalText;
-                            this.disabled = false;
+                        // Update rates display
+                        document.getElementById('insurance-rate').textContent = data.insurance_rate_display + '%';
+                        document.getElementById('additional-rate').textContent = data.additional_rate_display + '%';
 
-                            console.log('تم إنهاء إعادة الحساب بنجاح');
-                        }).catch((error) => {
-                            console.error('خطأ في إعادة تحميل الإعدادات:', error);
+                        // Restore button state
+                        this.innerHTML = originalText;
+                        this.disabled = false;
 
-                            // Try to calculate with existing settings
-                            calculateDetailedBreakdown();
+                        // Check for discrepancy
+                        if (data.has_discrepancy) {
+                            const finalTotalElement = document.getElementById('final-calculated-total');
+                            finalTotalElement.classList.remove('text-success');
+                            finalTotalElement.classList.add('text-warning');
+                            finalTotalElement.title = 'يختلف عن إجمالي الميزانية المحفوظة: ' + data.saved_budget_total + ' د.أ (الفرق: ' + data.difference + ' د.أ)';
 
-                            // Restore button state
-                            this.innerHTML = originalText;
-                            this.disabled = false;
-
-                            showNotification('تم إعادة الحساب بالإعدادات المتاحة', 'warning');
-                        });
-                    } catch (error) {
+                            showNotification('تحذير: المجموع المحسوب يختلف عن الميزانية المحفوظة بمقدار ' + data.difference + ' د.أ', 'warning');
+                        } else {
+                            showNotification('تم إعادة الحساب بنجاح', 'success');
+                        }
+                    })
+                    .catch(error => {
                         console.error('خطأ في إعادة الحساب:', error);
 
                         // Restore button state
@@ -766,15 +656,9 @@
                         this.disabled = false;
 
                         showNotification('حدث خطأ في إعادة الحساب', 'danger');
-                    }
-                }, 800); // Small delay for better UX
+                    });
             });
         }
-
-        // Initial load
-        loadScholarshipSettings().then(() => {
-            calculateDetailedBreakdown();
-        });
     });
 </script>
 {% endblock %}

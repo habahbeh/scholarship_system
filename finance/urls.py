@@ -26,6 +26,8 @@ urlpatterns = [
     path('applications/<int:application_id>/budget/create/', views.create_budget, name='create_budget'),
     path('budgets/<int:budget_id>/update/', views.update_budget, name='update_budget'),
     path('budgets/<int:budget_id>/delete/', views.delete_budget, name='delete_budget'),
+    path('budget/<int:budget_id>/recalculate/', views.recalculate_budget, name='recalculate_budget'),
+    path('budget/<int:budget_id>/refresh-summary/', views.refresh_budget_summary, name='refresh_budget_summary'),
 
     # إدارة المصروفات
     path('expenses/', views.expense_list, name='expense_list'),

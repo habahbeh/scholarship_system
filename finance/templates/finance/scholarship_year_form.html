@@ -1,6 +1,7 @@
 {% extends "finance/base.html" %}
 {% load i18n %}
 {% load static %}
+{% load currency_format %}
 
 {% block finance_content %}
 <div class="container-fluid py-4">
@@ -53,7 +54,7 @@
                             </div>
                             <div class="info-item mb-3">
                                 <label class="fw-bold text-primary">{% trans "إجمالي الميزانية الحالية:" %}</label>
-                                <span class="fw-bold text-success" id="current-budget-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                <span class="fw-bold text-success" id="current-budget-total">{{ budget.total_amount|currency }} {% trans "د.أ" %}</span>
                             </div>
                         </div>
                     </div>
@@ -95,7 +96,7 @@
                     <div class="summary-item">
                         <div class="d-flex justify-content-between">
                             <span class="fw-bold">{% trans "المجموع النهائي:" %}</span>
-                            <span class="text-success fw-bold" id="current-final-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                            <span class="text-success fw-bold" id="current-final-total">{{ budget.total_amount|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                 </div>
@@ -275,7 +276,7 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label">{% trans "سعر الصرف المستخدم" %}</label>
                         <div class="input-group">
-                            <input type="text" class="form-control bg-light" readonly value="{{ budget.exchange_rate|floatformat:2 }}">
+                            <input type="text" class="form-control bg-light" readonly value="{{ budget.exchange_rate|currency }}">
                             <span class="input-group-text">{% trans "د.أ" %}</span>
                         </div>
                         <div class="form-text">{% trans "من إعدادات الميزانية" %}</div>
@@ -315,7 +316,7 @@
                         <div class="alert alert-success border text-center">
                             <i class="bi bi-calculator text-success fs-4"></i>
                             <h6 class="mt-2">{% trans "الميزانية الجديدة" %}</h6>
-                            <span class="fw-bold text-success" id="new-budget-total">{{ budget.total_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                            <span class="fw-bold text-success" id="new-budget-total">{{ budget.total_amount|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                 </div>
