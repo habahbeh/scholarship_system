@@ -3762,7 +3762,7 @@ def update_budget_categories_from_yearly_costs(budget):
 
 @login_required
 @transaction.atomic
-@permission_required('finance.add_scholarshipyearcost', raise_exception=True)
+@permission_required('finance.add_yearlyscholarshipcosts', raise_exception=True)
 def add_scholarship_year(request, budget_id):
     """
     إضافة سنة دراسية جديدة للميزانية
@@ -3775,7 +3775,7 @@ def add_scholarship_year(request, budget_id):
         return redirect('finance:budget_detail', budget_id=budget.id)
 
     # التحقق من وجود سنوات دراسية حالية
-    existing_years = ScholarshipYearCost.objects.filter(budget=budget).order_by('-year_number')
+    existing_years = YearlyScholarshipCosts.objects.filter(budget=budget).order_by('-year_number')
     next_year_number = 1
 
     if existing_years.exists():
@@ -3808,7 +3808,7 @@ def add_scholarship_year(request, budget_id):
     additional_amount = budget.get_additional_amount()
 
     if request.method == 'POST':
-        form = ScholarshipYearCostForm(request.POST)
+        form = YearlyScholarshipCostsForm(request.POST)
         if form.is_valid():
             year_cost = form.save(commit=False)
             year_cost.budget = budget
@@ -3845,12 +3845,12 @@ def add_scholarship_year(request, budget_id):
             budget.save()
 
             # تسجيل العملية في السجل
-            LogEntry.objects.create(
-                user=request.user,
-                content_type=ContentType.objects.get_for_model(ScholarshipYearCost),
-                object_id=year_cost.id,
-                action_flag=ADDITION,
-                change_message=f'تمت إضافة سنة دراسية جديدة (السنة {year_cost.year_number}) للميزانية رقم {budget.id}'
+            FinancialLog.objects.create(
+                budget=budget,
+                fiscal_year=budget.fiscal_year,
+                action_type='create',
+                description=f'تمت إضافة سنة دراسية جديدة (السنة {year_cost.year_number}) للميزانية',
+                created_by=request.user
             )
 
             messages.success(request, _('تمت إضافة السنة الدراسية بنجاح وتحديث إجمالي الميزانية'))
@@ -3876,7 +3876,7 @@ def add_scholarship_year(request, budget_id):
                 'tuition_fees_local': latest_year.tuition_fees_local,
             })
 
-        form = ScholarshipYearCostForm(initial=initial_data)
+        form = YearlyScholarshipCostsForm(initial=initial_data)
 
     context = {
         'form': form,

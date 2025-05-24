@@ -273,6 +273,60 @@ class ScholarshipBudget(models.Model):
 
         super().save(*args, **kwargs)
 
+    def get_insurance_amount(self):
+        """
+        حساب مبلغ التأمين على الحياة بناءً على إجمالي التكاليف السنوية
+        """
+        from decimal import Decimal
+
+        # الحصول على إعدادات المنح الدراسية
+        settings = ScholarshipSettings.get_settings()
+        life_insurance_rate = settings.life_insurance_rate
+
+        # حساب إجمالي التكاليف السنوية
+        yearly_costs_total = self.get_yearly_costs_total()
+
+        # حساب التأمين
+        insurance_rate_decimal = Decimal(life_insurance_rate) / Decimal('100')
+        insurance_amount = yearly_costs_total * insurance_rate_decimal
+
+        return insurance_amount
+
+    def get_true_cost(self):
+        """
+        حساب التكلفة الحقيقية (التكاليف السنوية + التأمين)
+        """
+        return self.get_yearly_costs_total() + self.get_insurance_amount()
+
+    def get_additional_amount(self):
+        """
+        حساب مبلغ النسبة الإضافية بناءً على التكلفة الحقيقية
+        """
+        from decimal import Decimal
+
+        # الحصول على إعدادات المنح الدراسية
+        settings = ScholarshipSettings.get_settings()
+        add_percentage = settings.add_percentage
+
+        # حساب التكلفة الحقيقية
+        true_cost = self.get_true_cost()
+
+        # حساب النسبة الإضافية
+        add_percentage_decimal = Decimal(add_percentage) / Decimal('100')
+        additional_amount = true_cost * add_percentage_decimal
+
+        return additional_amount
+
+    def calculate_total_amount(self):
+        """
+        حساب المبلغ الإجمالي للميزانية
+        (التكاليف السنوية + التأمين + النسبة الإضافية)
+        """
+        true_cost = self.get_true_cost()
+        additional_amount = self.get_additional_amount()
+
+        return true_cost + additional_amount
+
     # دالة لتفعيل الميزانية
     def activate(self):
         """تفعيل الميزانية بعد المراجعة"""
@@ -691,6 +745,17 @@ class ScholarshipSettings(models.Model):
 
     def __str__(self):
         return _("إعدادات نظام الابتعاث")
+
+    @classmethod
+    def get_settings(cls):
+        """الحصول على إعدادات النظام أو إنشاء إعدادات افتراضية إذا لم تكن موجودة"""
+        settings = cls.objects.first()
+        if not settings:
+            settings = cls.objects.create(
+                life_insurance_rate=Decimal('0.0034'),
+                add_percentage=Decimal('50.0')
+            )
+        return settings
 
 
 class ExpenseCategory(models.Model):
