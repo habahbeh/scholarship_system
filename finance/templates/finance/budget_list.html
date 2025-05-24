@@ -1,6 +1,7 @@
 {% extends "finance/base.html" %}
 {% load i18n %}
 {% load static %}
+{% load currency_format %}
 
 {% block finance_content %}
 <div class="container-fluid py-4">
@@ -120,15 +121,15 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="fw-bold">{{ budget.total_amount|floatformat:2 }}</span>
+                                <span class="fw-bold">{{ budget.total_amount|currency }}</span>
                                 <small class="text-muted">{% trans "دينار" %}</small>
                             </td>
                             <td>
-                                <span class="fw-bold">{{ budget.spent_amount|floatformat:2 }}</span>
+                                <span class="fw-bold">{{ budget.spent_amount|currency }}</span>
                                 <small class="text-muted">{% trans "دينار" %}</small>
                             </td>
                             <td>
-                                <span class="fw-bold">{{ budget.remaining_amount|floatformat:2 }}</span>
+                                <span class="fw-bold">{{ budget.remaining_amount|currency }}</span>
                                 <small class="text-muted">{% trans "دينار" %}</small>
                             </td>
                             <td>

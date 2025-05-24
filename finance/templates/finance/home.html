@@ -1,7 +1,9 @@
 {% extends "finance/base.html" %}
 {% load static i18n %}
+{% load currency_format %}
 {% block title %}{% trans "الشؤون المالية" %}{% endblock %}
 {% block finance_content %}
+
 <div class="finance-home-container">
     <div class="page-header d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-home me-2"></i>{% trans "الشؤون المالية" %}</h2>
@@ -20,7 +22,7 @@
                         <i class="fas fa-coins text-primary fa-2x"></i>
                     </div>
                     <h5 class="text-muted">{% trans "الميزانية الإجمالية" %}</h5>
-                    <h3 class="mb-0">{{ fiscal_year_stats.total_budget|floatformat:2 }}</h3>
+                    <h3 class="mb-0">{{ fiscal_year_stats.total_budget|currency }}</h3>
                     <small class="text-muted">{% trans "دينار" %}</small>
                 </div>
             </div>
@@ -30,7 +32,7 @@
                         <i class="fas fa-chart-line text-success fa-2x"></i>
                     </div>
                     <h5 class="text-muted">{% trans "المصروفات" %}</h5>
-                    <h3 class="mb-0">{{ fiscal_year_stats.spent_amount|floatformat:2 }}</h3>
+                    <h3 class="mb-0">{{ fiscal_year_stats.spent_amount|currency }}</h3>
                     <small class="text-muted">{% trans "دينار" %}</small>
                 </div>
             </div>
@@ -40,7 +42,7 @@
                         <i class="fas fa-wallet text-danger fa-2x"></i>
                     </div>
                     <h5 class="text-muted">{% trans "المتبقي" %}</h5>
-                    <h3 class="mb-0">{{ fiscal_year_stats.remaining_amount|floatformat:2 }}</h3>
+                    <h3 class="mb-0">{{ fiscal_year_stats.remaining_amount|currency }}</h3>
                     <small class="text-muted">{% trans "دينار" %}</small>
                 </div>
             </div>
@@ -139,14 +141,14 @@
                     <div class="col-md-6 mb-3">
                         <div class="amount-card bg-primary-light p-3 rounded text-center h-100">
                             <h6 class="text-primary">{% trans "إجمالي مبالغ الميزانيات" %}</h6>
-                            <h3>{{ total_budget_amount|floatformat:2 }}</h3>
+                            <h3>{{ total_budget_amount|currency }}</h3>
                             <small class="text-muted">{% trans "دينار" %}</small>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="amount-card bg-success-light p-3 rounded text-center h-100">
                             <h6 class="text-success">{% trans "إجمالي المصروفات المعتمدة" %}</h6>
-                            <h3>{{ total_expense_amount|floatformat:2 }}</h3>
+                            <h3>{{ total_expense_amount|currency }}</h3>
                             <small class="text-muted">{% trans "دينار" %}</small>
                         </div>
                     </div>
@@ -174,7 +176,7 @@
                     <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <span class="fw-bold">{{ budget.application.applicant.get_full_name }}</span>
-                            <small class="d-block text-muted">{{ budget.total_amount|floatformat:2 }} {% trans "دينار" %}</small>
+                            <small class="d-block text-muted">{{ budget.total_amount|currency }} {% trans "دينار" %}</small>
                         </div>
                         <span class="badge {% if budget.status == 'active' %}bg-success{% elif budget.status == 'suspended' %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill">
                             {{ budget.get_status_display }}
@@ -204,7 +206,7 @@
                         <div class="d-flex w-100 justify-content-between align-items-center">
                             <div>
                                 <span class="fw-bold">{{ expense.budget.application.applicant.get_full_name }}</span>
-                                <small class="d-block text-muted">{{ expense.category.name }} - {{ expense.amount|floatformat:2 }} {% trans "دينار" %}</small>
+                                <small class="d-block text-muted">{{ expense.category.name }} - {{ expense.amount|currency }} {% trans "دينار" %}</small>
                             </div>
                             <span class="badge {% if expense.status == 'approved' %}bg-success{% elif expense.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} rounded-pill">
                                 {{ expense.get_status_display }}
@@ -246,7 +248,7 @@
                     <tr>
                         <td>{{ fiscal_year.year }}</td>
                         <td>{{ fiscal_year.start_date|date:"Y-m-d" }} - {{ fiscal_year.end_date|date:"Y-m-d" }}</td>
-                        <td>{{ fiscal_year.total_budget|floatformat:2 }} {% trans "دينار" %}</td>
+                        <td>{{ fiscal_year.total_budget|currency }} {% trans "دينار" %}</td>
                         <td>
                             <div class="progress" style="height: 8px;">
                                 <div class="progress-bar {% if fiscal_year.spent_percentage > 80 %}bg-danger{% elif fiscal_year.spent_percentage > 60 %}bg-warning{% else %}bg-success{% endif %}"

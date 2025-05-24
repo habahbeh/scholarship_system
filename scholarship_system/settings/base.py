@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',  # إضافة middleware للترجمة
+    'core.middleware.EnglishCurrencyMiddleware',  # Add this line - after locale middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -178,3 +179,43 @@ LOGOUT_REDIRECT_URL = 'home'
 
 # Email settings (للتطوير فقط)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+
+
+# تحديد فواصل الأرقام
+# DECIMAL_SEPARATOR = '.'  # النقطة كفاصل عشري
+# THOUSAND_SEPARATOR = '#'  # الفاصلة لفصل الآلاف
+# NUMBER_GROUPING = 3  # تجميع الأرقام كل 3 أرقام
+# USE_THOUSAND_SEPARATOR = True  # استخدام فواصل الآلاف
+
+
+
+
+# # أنشئ مجلد formats في المجلد الرئيسي للمشروع (scholarship_system)
+# # ثم أنشئ ملف ar/formats.py بهذا المحتوى (إذا كنت ستستخدم FORMAT_MODULE_PATH):
+#
+# # scholarship_system/formats/ar/formats.py
+# # تنسيق الأرقام للغة العربية مع استخدام النقطة كفاصل عشري
+#
+# # الفاصل العشري
+# DECIMAL_SEPARATOR = '.'
+#
+# # فاصل الآلاف
+# THOUSAND_SEPARATOR = ','
+#
+# # تجميع الأرقام كل 3 أرقام
+# NUMBER_GROUPING = 3
+#
+# # استخدام فواصل الآلاف
+# USE_THOUSAND_SEPARATOR = True
+#
+# # تنسيق التاريخ والوقت
+# DATE_FORMAT = 'Y-m-d'
+# TIME_FORMAT = 'H:i'
+# DATETIME_FORMAT = 'Y-m-d H:i'
+# YEAR_MONTH_FORMAT = 'F Y'
+# MONTH_DAY_FORMAT = 'j F'
+# SHORT_DATE_FORMAT = 'Y-m-d'
+# SHORT_DATETIME_FORMAT = 'Y-m-d H:i'
+# FIRST_DAY_OF_WEEK = 6  # السبت هو أول يوم في الأسبوع

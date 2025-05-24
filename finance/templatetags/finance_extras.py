@@ -1,7 +1,10 @@
 from django import template
 from django.template.defaultfilters import floatformat
+from decimal import Decimal, ROUND_HALF_UP
+import re
 
 register = template.Library()
+
 
 @register.filter(name='mul')
 def mul(value, arg):
@@ -11,6 +14,7 @@ def mul(value, arg):
     except (ValueError, TypeError):
         return value
 
+
 @register.filter(name='div')
 def div(value, arg):
     """Divides the value by the argument"""
@@ -18,6 +22,7 @@ def div(value, arg):
         return float(value) / float(arg)
     except (ValueError, TypeError, ZeroDivisionError):
         return 0
+
 
 @register.filter(name='sub')
 def sub(value, arg):
@@ -27,6 +32,7 @@ def sub(value, arg):
     except (ValueError, TypeError):
         return value
 
+
 @register.filter(name='add')
 def add(value, arg):
     """Adds the argument to the value"""
@@ -34,6 +40,7 @@ def add(value, arg):
         return float(value) + float(arg)
     except (ValueError, TypeError):
         return value
+
 
 @register.filter(name='abs')
 def abs_filter(value):
@@ -43,10 +50,12 @@ def abs_filter(value):
     except (ValueError, TypeError):
         return value
 
+
 @register.filter(name='get_item')
 def get_item(dictionary, key):
     """Gets an item from a dictionary"""
     return dictionary.get(key)
+
 
 @register.filter(name='filter_by_status')
 def filter_by_status(queryset, status):
@@ -80,3 +89,59 @@ def percentage(value):
         return f"{rounded_value:.1f}%"
     except:
         return f"{value}%"
+
+
+@register.filter
+def format_number(value, decimal_places=2):
+    """
+    تنسيق الرقم مع نقطة عشرية (.) وفواصل للآلاف (,)
+    مثال: 1,234.56
+    """
+    if value is None:
+        return "0.00"
+
+    try:
+        # تحويل القيمة إلى Decimal للتعامل الدقيق
+        decimal_value = Decimal(str(value))
+
+        # تقريب القيمة
+        rounded_value = decimal_value.quantize(
+            Decimal('0.' + '0' * int(decimal_places)),
+            rounding=ROUND_HALF_UP
+        )
+
+        # تحويل إلى نص مع تحديد عدد المنازل العشرية
+        formatted = f"{rounded_value:.{decimal_places}f}"
+
+        # إضافة فواصل للآلاف يدوياً
+        parts = formatted.split('.')
+        integer_part = parts[0]
+        decimal_part = parts[1] if len(parts) > 1 else ""
+
+        # إضافة الفواصل للآلاف (كل 3 أرقام)
+        integer_with_commas = ""
+        for i in range(len(integer_part), 0, -3):
+            start = max(0, i - 3)
+            if i == len(integer_part):
+                integer_with_commas = integer_part[start:i] + integer_with_commas
+            else:
+                integer_with_commas = integer_part[start:i] + "," + integer_with_commas
+
+        # إعادة تجميع الرقم
+        if decimal_part:
+            return f"{integer_with_commas}.{decimal_part}"
+        else:
+            return integer_with_commas
+    except:
+        # في حالة الخطأ، إرجاع القيمة كما هي
+        return str(value)
+
+
+@register.filter
+def amount_with_currency(value, decimal_places=2):
+    """
+    تنسيق المبلغ مع نقطة عشرية (.) وفواصل للآلاف (,) مع إضافة رمز العملة
+    مثال: 1,234.56 د.أ
+    """
+    formatted = format_number(value, decimal_places)
+    return f"{formatted} د.أ"
