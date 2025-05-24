@@ -80,6 +80,8 @@ urlpatterns = [
     path('budgets/<int:budget_id>/add-year/', views.add_scholarship_year, name='add_scholarship_year'),
     path('budgets/<int:budget_id>/close-year/', views.close_current_year_open_new, name='close_current_year_open_new'),
     path('budgets/<int:budget_id>/costs-report/', views.scholarship_years_costs_report, name='scholarship_years_costs_report'),
+    path('budgets/<int:budget_id>/preview-year-impact/', views.preview_year_impact, name='preview_year_impact'),
+    path('budgets/<int:budget_id>/breakdown/', views.budget_breakdown, name='budget_breakdown'),
 
     # إصلاح حسابات الميزانية
     path('budgets/<int:budget_id>/fix-calculation/', views.fix_budget_calculation, name='fix_budget_calculation'),

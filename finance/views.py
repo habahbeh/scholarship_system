@@ -39,7 +39,7 @@ from decimal import Decimal
 
 from decimal import Decimal, ROUND_HALF_UP
 from django.conf import settings as django_settings
-
+from django.db import transaction
 
 @login_required
 def finance_home(request):
@@ -3761,132 +3761,260 @@ def update_budget_categories_from_yearly_costs(budget):
 
 
 @login_required
-@permission_required('finance.add_yearlyscholarshipcosts', raise_exception=True)
+@transaction.atomic
+@permission_required('finance.add_scholarshipyearcost', raise_exception=True)
 def add_scholarship_year(request, budget_id):
-    """إضافة سنة جديدة لميزانية المبتعث مع تحديث الميزانية تلقائياً"""
+    """
+    إضافة سنة دراسية جديدة للميزانية
+    """
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
     # التحقق من حالة الميزانية
-    if budget.status != 'active':
-        messages.error(request, _("لا يمكن إضافة سنة دراسية لميزانية غير نشطة"))
+    if budget.status not in ['draft', 'active']:
+        messages.error(request, _('لا يمكن إضافة سنة دراسية لميزانية غير نشطة أو مسودة'))
         return redirect('finance:budget_detail', budget_id=budget.id)
 
-    # تحديد رقم السنة الجديدة
-    existing_years = YearlyScholarshipCosts.objects.filter(budget=budget)
-    next_year_number = existing_years.count() + 1
+    # التحقق من وجود سنوات دراسية حالية
+    existing_years = ScholarshipYearCost.objects.filter(budget=budget).order_by('-year_number')
+    next_year_number = 1
 
-    # الحصول على قائمة السنوات المالية المفتوحة
-    fiscal_years = FiscalYear.objects.filter(status='open').order_by('-year')
+    if existing_years.exists():
+        next_year_number = existing_years.first().year_number + 1
 
-    # السنة المالية الافتراضية
-    default_fiscal_year = None
-    if budget.fiscal_year:
-        default_fiscal_year = budget.fiscal_year
+    # الحصول على السنة الأكاديمية القادمة
+    current_academic_year = budget.academic_year if budget.academic_year else ""
+
+    if current_academic_year and '-' in current_academic_year:
+        try:
+            # إذا كان شكل السنة مثل "2023-2024"
+            year_parts = current_academic_year.split('-')
+            start_year = int(year_parts[0])
+            end_year = int(year_parts[1])
+            next_academic_year = f"{start_year + 1}-{end_year + 1}"
+        except (ValueError, IndexError):
+            next_academic_year = ""
     else:
-        # البحث عن السنة المالية الحالية
-        settings = ScholarshipSettings.objects.first()
-        if settings and settings.current_fiscal_year:
-            default_fiscal_year = settings.current_fiscal_year
+        next_academic_year = ""
 
-    # الحصول على الإعدادات
-    settings = ScholarshipSettings.objects.first()
-    if not settings:
-        settings = ScholarshipSettings.objects.create(
-            life_insurance_rate=Decimal('0.0034'),
-            add_percentage=Decimal('50.0'),
-            current_fiscal_year=default_fiscal_year
-        )
+    # الحصول على إعدادات المنح الدراسية
+    settings = ScholarshipSettings.get_settings()
+
+    # الحصول على تفاصيل التكاليف السنوية الحالية
+    yearly_costs = list(existing_years)
+    yearly_costs_total = budget.get_yearly_costs_total()
+
+    # حساب التأمين والمبالغ الإضافية
+    insurance_amount = budget.get_insurance_amount()
+    additional_amount = budget.get_additional_amount()
 
     if request.method == 'POST':
-        form = YearlyScholarshipCostsForm(request.POST)
+        form = ScholarshipYearCostForm(request.POST)
         if form.is_valid():
-            yearly_cost = form.save(commit=False)
-            yearly_cost.budget = budget
+            year_cost = form.save(commit=False)
+            year_cost.budget = budget
 
-            # تعيين السنة المالية إذا تم اختيارها
-            if form.cleaned_data.get('fiscal_year'):
-                yearly_cost.fiscal_year = form.cleaned_data['fiscal_year']
-            elif default_fiscal_year:
-                yearly_cost.fiscal_year = default_fiscal_year
+            # حساب تكلفة السنة الجديدة
+            calculated_year_cost = form.cleaned_data.get('travel_tickets', 0) + \
+                                  (form.cleaned_data.get('monthly_allowance', 0) * form.cleaned_data.get('monthly_duration', 0)) + \
+                                  form.cleaned_data.get('visa_fees', 0) + \
+                                  form.cleaned_data.get('health_insurance', 0) + \
+                                  form.cleaned_data.get('tuition_fees_local', 0)
 
-            yearly_cost.save()
+            # تعيين إجمالي تكلفة السنة
+            year_cost.total_year_cost = calculated_year_cost
+            year_cost.save()
 
-            # حساب إجمالي التكاليف الجديد
-            new_total = calculate_updated_budget_total(budget, settings)
+            # حساب الميزانية الإجمالية الجديدة
+            # إجمالي التكاليف السنوية بعد إضافة السنة الجديدة
+            new_yearly_costs_total = yearly_costs_total + calculated_year_cost
+
+            # حساب التأمين الجديد
+            new_insurance_amount = new_yearly_costs_total * settings.life_insurance_rate / 100
+
+            # حساب التكلفة الحقيقية (التكاليف السنوية + التأمين)
+            new_true_cost = new_yearly_costs_total + new_insurance_amount
+
+            # حساب النسبة الإضافية الجديدة
+            new_additional_amount = new_true_cost * settings.add_percentage / 100
+
+            # حساب المبلغ النهائي الجديد
+            new_total_amount = new_true_cost + new_additional_amount
 
             # تحديث إجمالي الميزانية
-            old_total = budget.total_amount
-            budget.total_amount = new_total
-
-            # تحديث الفئات المالية بناءً على جميع السنوات
-            update_budget_categories_from_yearly_costs(budget)
-
+            budget.total_amount = new_total_amount
             budget.save()
 
-            # إنشاء سجل للعملية - إضافة السنة
-            FinancialLog.objects.create(
-                budget=budget,
-                fiscal_year=yearly_cost.fiscal_year,
-                action_type='create',
-                description=_("إضافة سنة دراسية جديدة للابتعاث") + f" - السنة {yearly_cost.year_number} ({yearly_cost.academic_year})",
-                created_by=request.user
+            # تسجيل العملية في السجل
+            LogEntry.objects.create(
+                user=request.user,
+                content_type=ContentType.objects.get_for_model(ScholarshipYearCost),
+                object_id=year_cost.id,
+                action_flag=ADDITION,
+                change_message=f'تمت إضافة سنة دراسية جديدة (السنة {year_cost.year_number}) للميزانية رقم {budget.id}'
             )
 
-            # إنشاء سجل للعملية - تحديث الميزانية
-            FinancialLog.objects.create(
-                budget=budget,
-                fiscal_year=yearly_cost.fiscal_year,
-                action_type='update',
-                description=_("تحديث إجمالي الميزانية بعد إضافة سنة جديدة") + f" - من {old_total} إلى {new_total}",
-                created_by=request.user
-            )
-
-            messages.success(request, _(f"تمت إضافة السنة الدراسية {yearly_cost.year_number} بنجاح وتم تحديث إجمالي الميزانية من {old_total:,.2f} إلى {new_total:,.2f} دينار أردني"))
+            messages.success(request, _('تمت إضافة السنة الدراسية بنجاح وتحديث إجمالي الميزانية'))
             return redirect('finance:budget_detail', budget_id=budget.id)
     else:
-        # القيم الافتراضية حسب السنة
-        academic_year_parts = budget.academic_year.split('-')
-        next_academic_year = f"{int(academic_year_parts[0]) + next_year_number - 1}-{int(academic_year_parts[1]) + next_year_number - 1}"
-
+        # تعبئة النموذج بقيم افتراضية
         initial_data = {
             'year_number': next_year_number,
             'academic_year': next_academic_year,
-            'monthly_allowance': Decimal('1000.00'),
-            'monthly_duration': 12,
-            'fiscal_year': default_fiscal_year,
+            'fiscal_year': budget.fiscal_year,
         }
 
-        # القيم الافتراضية تختلف حسب السنة
-        if next_year_number == 1:
-            # القيم للسنة الأولى
+        # نسخ قيم آخر سنة إذا وجدت
+        if existing_years.exists():
+            latest_year = existing_years.first()
             initial_data.update({
-                'travel_tickets': Decimal('1100.00'),
-                'visa_fees': Decimal('358.00'),
-                'health_insurance': Decimal('500.00'),
-                'tuition_fees_foreign': Decimal('22350.00'),
-                'tuition_fees_local': Decimal('22350.00') * budget.exchange_rate,
-            })
-        else:
-            # القيم للسنوات اللاحقة (بدون تذاكر أو فيزا)
-            initial_data.update({
-                'travel_tickets': Decimal('0.00'),
-                'visa_fees': Decimal('0.00'),
-                'health_insurance': Decimal('500.00'),
-                'tuition_fees_foreign': Decimal('22350.00'),
-                'tuition_fees_local': Decimal('22350.00') * budget.exchange_rate,
+                'travel_tickets': latest_year.travel_tickets,
+                'monthly_allowance': latest_year.monthly_allowance,
+                'monthly_duration': latest_year.monthly_duration,
+                'visa_fees': latest_year.visa_fees,
+                'health_insurance': latest_year.health_insurance,
+                'tuition_fees_foreign': latest_year.tuition_fees_foreign,
+                'tuition_fees_local': latest_year.tuition_fees_local,
             })
 
-        form = YearlyScholarshipCostsForm(initial=initial_data)
+        form = ScholarshipYearCostForm(initial=initial_data)
 
     context = {
         'form': form,
         'budget': budget,
         'next_year_number': next_year_number,
-        'fiscal_years': fiscal_years,
-        'default_fiscal_year': default_fiscal_year,
-        'settings': settings,
+        'yearly_costs': yearly_costs,
+        'yearly_costs_total': yearly_costs_total,
+        'insurance_amount': insurance_amount,
+        'additional_amount': additional_amount,
+        'life_insurance_rate': settings.life_insurance_rate,
+        'add_percentage': settings.add_percentage,
     }
+
     return render(request, 'finance/scholarship_year_form.html', context)
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def preview_year_impact(request, budget_id):
+    """
+    معاينة تأثير إضافة سنة دراسية جديدة على الميزانية
+    """
+    from django.http import JsonResponse
+    from decimal import Decimal, ROUND_HALF_UP
+    from finance.templatetags.currency_format import currency
+
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # الحصول على تكلفة السنة الجديدة من الطلب
+    try:
+        year_cost = Decimal(request.GET.get('year_cost', '0'))
+    except:
+        year_cost = Decimal('0')
+
+    # الحصول على إعدادات المنح الدراسية
+    settings = ScholarshipSettings.get_settings()
+    life_insurance_rate = settings.life_insurance_rate
+    add_percentage = settings.add_percentage
+
+    # حساب إجمالي التكاليف السنوية الحالية (بدون التأمين والنسبة الإضافية)
+    yearly_costs_total = budget.get_yearly_costs_total()
+
+    # إضافة تكلفة السنة الجديدة
+    new_yearly_costs_total = yearly_costs_total + year_cost
+
+    # حساب التأمين
+    insurance_rate_decimal = life_insurance_rate / 100
+    insurance_amount = new_yearly_costs_total * insurance_rate_decimal
+
+    # حساب التكلفة الحقيقية (التكاليف السنوية + التأمين)
+    true_cost = new_yearly_costs_total + insurance_amount
+
+    # حساب النسبة الإضافية
+    add_percentage_decimal = add_percentage / 100
+    additional_amount = true_cost * add_percentage_decimal
+
+    # حساب المبلغ النهائي
+    new_total = true_cost + additional_amount
+
+    # حساب قيمة التأمين والنسبة الإضافية للسنة الجديدة فقط
+    new_year_insurance = year_cost * insurance_rate_decimal
+    new_year_true_cost = year_cost + new_year_insurance
+    new_year_additional = new_year_true_cost * add_percentage_decimal
+
+    # تقريب الأرقام
+    new_year_insurance = new_year_insurance.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    new_year_additional = new_year_additional.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    new_total = new_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب الزيادة عن الميزانية الحالية
+    increase = new_total - budget.total_amount
+
+    return JsonResponse({
+        'yearly_costs_total': currency(new_yearly_costs_total),
+        'insurance_amount': currency(new_year_insurance),
+        'additional_amount': currency(new_year_additional),
+        'new_total': currency(new_total),
+        'new_total_raw': str(new_total),
+        'increase': currency(increase),
+        'increase_raw': str(increase),
+        'insurance_rate_display': str(life_insurance_rate),
+        'add_percentage_display': str(add_percentage)
+    })
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def budget_breakdown(request, budget_id):
+    """
+    استخراج تفاصيل الميزانية بما في ذلك التكاليف السنوية والتأمين والنسب الإضافية
+    """
+    from django.http import JsonResponse
+    from decimal import Decimal, ROUND_HALF_UP
+    from finance.templatetags.currency_format import currency
+
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # الحصول على إعدادات المنح الدراسية
+    settings = ScholarshipSettings.get_settings()
+    life_insurance_rate = settings.life_insurance_rate
+    add_percentage = settings.add_percentage
+
+    # حساب إجمالي التكاليف السنوية (بدون التأمين والنسبة الإضافية)
+    yearly_costs_total = budget.get_yearly_costs_total()
+
+    # حساب التأمين
+    insurance_rate_decimal = life_insurance_rate / 100
+    insurance_amount = yearly_costs_total * insurance_rate_decimal
+
+    # حساب التكلفة الحقيقية (التكاليف السنوية + التأمين)
+    true_cost = yearly_costs_total + insurance_amount
+
+    # حساب النسبة الإضافية
+    add_percentage_decimal = add_percentage / 100
+    additional_amount = true_cost * add_percentage_decimal
+
+    # حساب المبلغ النهائي
+    calculated_total = true_cost + additional_amount
+
+    # تقريب الأرقام
+    yearly_costs_total = yearly_costs_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    insurance_amount = insurance_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    additional_amount = additional_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    calculated_total = calculated_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # التحقق من وجود اختلاف بين المبلغ المحسوب والمبلغ المحفوظ
+    has_discrepancy = abs(calculated_total - budget.total_amount) > Decimal('0.01')
+    difference = (calculated_total - budget.total_amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    return JsonResponse({
+        'yearly_costs_total': currency(yearly_costs_total),
+        'insurance_amount': currency(insurance_amount),
+        'additional_amount': currency(additional_amount),
+        'calculated_total': currency(calculated_total),
+        'saved_budget_total': currency(budget.total_amount),
+        'has_discrepancy': has_discrepancy,
+        'difference': currency(difference),
+        'insurance_rate_display': str(life_insurance_rate),
+        'add_percentage_display': str(add_percentage)
+    })
 
 @login_required
 @permission_required('finance.change_scholarshipbudget', raise_exception=True)

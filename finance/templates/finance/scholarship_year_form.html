@@ -69,28 +69,28 @@
                     <h5 class="mb-0">
                         <i class="bi bi-calculator me-2"></i>
                         {% trans "الملخص المالي الحالي" %}
-                        <button type="button" class="btn btn-light btn-sm ms-2 float-end" id="refresh-current-summary" title="تحديث الملخص">
+                        <a href="{% url 'finance:budget_breakdown' budget.id %}" class="btn btn-light btn-sm ms-2 float-end" id="refresh-current-summary" title="تحديث الملخص">
                             <i class="bi bi-arrow-clockwise"></i>
-                        </button>
+                        </a>
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="summary-item mb-3">
                         <div class="d-flex justify-content-between">
                             <span class="fw-bold">{% trans "إجمالي التكاليف السنوية:" %}</span>
-                            <span class="text-primary fw-bold" id="current-years-total">0.00 {% trans "د.أ" %}</span>
+                            <span class="text-primary fw-bold" id="current-years-total">{{ yearly_costs_total|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                     <div class="summary-item mb-3">
                         <div class="d-flex justify-content-between">
                             <span class="fw-bold">{% trans "التأمين على الحياة:" %}</span>
-                            <span class="text-info fw-bold" id="current-insurance">0.00 {% trans "د.أ" %}</span>
+                            <span class="text-info fw-bold" id="current-insurance">{{ insurance_amount|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                     <div class="summary-item mb-3">
                         <div class="d-flex justify-content-between">
                             <span class="fw-bold">{% trans "النسبة الإضافية:" %}</span>
-                            <span class="text-warning fw-bold" id="current-additional">0.00 {% trans "د.أ" %}</span>
+                            <span class="text-warning fw-bold" id="current-additional">{{ additional_amount|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
                     <div class="summary-item">
@@ -265,12 +265,15 @@
                     </div>
 
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">{% trans "إجمالي تكلفة السنة" %}</label>
+                        <label for="year-total-preview" class="form-label">{% trans "إجمالي تكلفة السنة" %}</label>
                         <div class="input-group">
                             <input type="text" class="form-control bg-light text-primary fw-bold" id="year-total-preview" readonly value="0.00">
                             <span class="input-group-text">{% trans "د.أ" %}</span>
+                            <button type="button" class="btn btn-primary" id="calculate-year-btn">
+                                <i class="bi bi-calculator"></i> {% trans "حساب" %}
+                            </button>
                         </div>
-                        <div class="form-text">{% trans "يحسب تلقائياً" %}</div>
+                        <div class="form-text">{% trans "اضغط على الزر للحساب التلقائي" %}</div>
                     </div>
 
                     <div class="col-md-4 mb-3">
@@ -286,9 +289,14 @@
                 <!-- Calculation Preview -->
                 <div class="row mb-4">
                     <div class="col-12">
-                        <h6 class="border-bottom pb-2 mb-3 text-bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-calculator me-2"></i>{% trans "معاينة الحساب الجديد" %}
-                        </h6>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="border-bottom pb-2 mb-0 text-bg-success bg-opacity-10 p-2 rounded flex-grow-1">
+                                <i class="bi bi-calculator me-2"></i>{% trans "معاينة الحساب الجديد" %}
+                            </h6>
+                            <button type="button" class="btn btn-outline-primary ms-2" id="preview-calc-btn">
+                                <i class="bi bi-calculator me-1"></i>{% trans "حساب التأثير" %}
+                            </button>
+                        </div>
                     </div>
 
                     <div class="col-md-3">
@@ -303,6 +311,7 @@
                             <i class="bi bi-shield-check text-info fs-4"></i>
                             <h6 class="mt-2">{% trans "التأمين الإضافي" %}</h6>
                             <span class="fw-bold text-info" id="additional-insurance">0.00 {% trans "د.أ" %}</span>
+                            <small class="d-block text-muted" id="insurance-rate">{{ life_insurance_rate|floatformat:2 }}%</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -310,6 +319,7 @@
                             <i class="bi bi-percent text-warning fs-4"></i>
                             <h6 class="mt-2">{% trans "النسبة الإضافية" %}</h6>
                             <span class="fw-bold text-warning" id="additional-percentage">0.00 {% trans "د.أ" %}</span>
+                            <small class="d-block text-muted" id="add-percentage">{{ add_percentage }}%</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -319,6 +329,10 @@
                             <span class="fw-bold text-success" id="new-budget-total">{{ budget.total_amount|currency }} {% trans "د.أ" %}</span>
                         </div>
                     </div>
+
+                    <!-- Hidden inputs for server-side calculations -->
+                    <input type="hidden" name="calculated_year_cost" id="calculated_year_cost" value="0">
+                    <input type="hidden" name="calculated_total" id="calculated_total" value="{{ budget.total_amount }}">
                 </div>
 
                 <!-- Impact on Current Budget -->
@@ -330,7 +344,7 @@
                                 <div>
                                     <h6 class="mb-1">{% trans "تأثير على الميزانية الحالية" %}</h6>
                                     <p class="mb-0">
-                                        {% trans "ستتم إضافة تكلفة السنة الجديدة إلى إجمالي الميزانية الحالية. سيتم حساب التأمين والنسبة الإضافية وتحديث إجمالي الميزانية تلقائياً." %}
+                                        {% trans "ستتم إضافة تكلفة السنة الجديدة إلى إجمالي الميزانية الحالية. سيتم حساب التأمين والنسبة الإضافية وتحديث إجمالي الميزانية تلقائياً من الخادم." %}
                                     </p>
                                 </div>
                             </div>
@@ -352,37 +366,22 @@
     </div>
 </div>
 
-<!-- JavaScript for Dynamic Calculations -->
+<!-- JavaScript for UI Enhancement Only -->
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log('تهيئة صفحة إضافة السنة الدراسية');
 
-        // Global settings and budget data
-        let scholarshipSettings = {
-            life_insurance_rate: 0.0034,
-            add_percentage: 50.0
-        };
-
+        // Budget data from server
         const budgetData = {
-            current_total: parseFloat('{{ budget.total_amount }}') || 0,
             exchange_rate: parseFloat('{{ budget.exchange_rate }}') || 0.91,
-            foreign_currency: '{{ budget.foreign_currency }}',
-            existing_years_total: 0  // Will be calculated
+            foreign_currency: '{{ budget.foreign_currency }}'
         };
 
         // Initialize form elements with proper styling
         initializeFormElements();
 
-        // Load current scholarship settings
-        loadScholarshipSettings().then(() => {
-            // Load current budget breakdown after settings are loaded
-            loadCurrentBudgetBreakdown();
-            // Initial calculation
-            calculateNewBudgetPreview();
-        });
-
-        // Attach event listeners for real-time calculation
+        // Attach event listeners
         attachEventListeners();
 
         function initializeFormElements() {
@@ -403,135 +402,62 @@
                     field.style.direction = 'ltr';
                 }
             });
-        }
 
-        async function loadScholarshipSettings() {
-            try {
-                const response = await fetch('{% url "finance:api_scholarship_settings" %}');
-                if (response.ok) {
-                    const data = await response.json();
-                    scholarshipSettings = {
-                        life_insurance_rate: data.life_insurance_rate || 0.0034,
-                        add_percentage: data.add_percentage || 50.0
-                    };
-                    console.log('تم تحميل إعدادات التأمين:', scholarshipSettings);
-                    return true;
-                } else {
-                    console.warn('فشل في تحميل الإعدادات، استخدام القيم الافتراضية');
-                    return false;
-                }
-            } catch (error) {
-                console.error('خطأ في تحميل الإعدادات:', error);
-                // Use fallback values from Django context
-                scholarshipSettings.life_insurance_rate = parseFloat('{{ settings.life_insurance_rate|default:"0.0034" }}') || 0.0034;
-                scholarshipSettings.add_percentage = parseFloat('{{ settings.add_percentage|default:"50.0" }}') || 50.0;
-                return false;
-            }
-        }
-
-        function loadCurrentBudgetBreakdown() {
-            console.log('تحميل تفكيك الميزانية الحالية');
-
-            // For this implementation, we'll calculate based on current budget total
-            // Reverse engineer from current budget total to get base costs
-            const currentTotal = budgetData.current_total;
-
-            // Estimate base cost by working backwards from the formula:
-            // finalTotal = (baseCost + insurance) * (1 + addPercentage/100)
-            // Where insurance = baseCost * insuranceRate
-
-            const addPercentageDecimal = scholarshipSettings.add_percentage / 100;
-            const insuranceRate = scholarshipSettings.life_insurance_rate;
-
-            // Solve: currentTotal = baseCost * (1 + insuranceRate) * (1 + addPercentageDecimal)
-            const multiplier = (1 + insuranceRate) * (1 + addPercentageDecimal);
-            const estimatedBaseCost = currentTotal / multiplier;
-
-            budgetData.existing_years_total = estimatedBaseCost;
-
-            // Calculate breakdown
-            const insurance = estimatedBaseCost * insuranceRate;
-            const trueCost = estimatedBaseCost + insurance;
-            const additional = trueCost * addPercentageDecimal;
-
-            // Update current summary display
-            document.getElementById('current-years-total').textContent = estimatedBaseCost.toFixed(2) + ' د.أ';
-            document.getElementById('current-insurance').textContent = insurance.toFixed(2) + ' د.أ';
-            document.getElementById('current-additional').textContent = additional.toFixed(2) + ' د.أ';
-            document.getElementById('current-final-total').textContent = currentTotal.toFixed(2) + ' د.أ';
-
-            console.log('تم حساب تفكيك الميزانية الحالية:', {
-                baseCost: estimatedBaseCost.toFixed(2),
-                insurance: insurance.toFixed(2),
-                additional: additional.toFixed(2),
-                total: currentTotal.toFixed(2)
+            // Set initial formatted values
+            const numberFields = document.querySelectorAll('input[type="number"]');
+            numberFields.forEach(field => {
+                field.addEventListener('blur', function() {
+                    if (this.value) {
+                        const value = parseFloat(this.value);
+                        if (!isNaN(value) && this.id !== 'id_monthly_duration') {
+                            this.value = value.toFixed(2);
+                        }
+                    }
+                });
             });
         }
 
         function attachEventListeners() {
-            // Financial input fields
-            const financialFields = [
-                'id_travel_tickets',
-                'id_monthly_allowance',
-                'id_monthly_duration',
-                'id_visa_fees',
-                'id_health_insurance',
-                'id_tuition_fees_foreign',
-                'id_tuition_fees_local'
-            ];
+            // Foreign currency conversion
+            const foreignField = document.getElementById('id_tuition_fees_foreign');
+            const localField = document.getElementById('id_tuition_fees_local');
 
-            financialFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', function() {
-                        // Handle foreign currency conversion
-                        if (fieldId === 'id_tuition_fees_foreign') {
-                            const foreignValue = parseFloat(this.value) || 0;
-                            const localField = document.getElementById('id_tuition_fees_local');
-                            if (localField) {
-                                const convertedValue = foreignValue * budgetData.exchange_rate;
-                                localField.value = convertedValue.toFixed(2);
-                            }
-                        }
+            if (foreignField && localField) {
+                foreignField.addEventListener('input', function() {
+                    const foreignValue = parseFloat(this.value) || 0;
+                    const convertedValue = foreignValue * budgetData.exchange_rate;
+                    localField.value = convertedValue.toFixed(2);
+                });
+            }
 
-                        // Format decimal values
-                        if (this.value && fieldId !== 'id_monthly_duration') {
-                            const value = parseFloat(this.value);
-                            if (!isNaN(value)) {
-                                // Don't format while typing, only on blur
-                                this.dataset.lastValue = value.toString();
-                            }
-                        }
+            // Calculate year total button
+            const calculateYearBtn = document.getElementById('calculate-year-btn');
+            if (calculateYearBtn) {
+                calculateYearBtn.addEventListener('click', function() {
+                    // Calculate year total locally without affecting other budget calculations
+                    calculateYearTotal();
+                });
+            }
 
-                        // Recalculate preview
-                        calculateNewBudgetPreview();
-                    });
+            // Preview calculation button
+            const previewCalcBtn = document.getElementById('preview-calc-btn');
+            if (previewCalcBtn) {
+                previewCalcBtn.addEventListener('click', function() {
+                    this.disabled = true;
+                    this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>{% trans "جاري الحساب..." %}';
 
-                    field.addEventListener('blur', function() {
-                        if (this.value && fieldId !== 'id_monthly_duration') {
-                            const value = parseFloat(this.value);
-                            if (!isNaN(value)) {
-                                this.value = value.toFixed(2);
-                            }
-                        }
-                    });
-                }
-            });
+                    // Calculate year total first
+                    const yearTotal = calculateYearTotal();
 
-            // Refresh button
-            const refreshBtn = document.getElementById('refresh-current-summary');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', function() {
-                    this.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
-
-                    loadScholarshipSettings().then(() => {
-                        loadCurrentBudgetBreakdown();
-                        calculateNewBudgetPreview();
-                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                        showNotification('تم تحديث الحسابات بنجاح', 'success');
-                    }).catch(() => {
-                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                        showNotification('حدث خطأ في التحديث', 'warning');
+                    // Make AJAX request to preview calculation
+                    previewBudgetCalculation(yearTotal).then(() => {
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-calculator me-1"></i>{% trans "حساب التأثير" %}';
+                    }).catch(error => {
+                        console.error('خطأ في معاينة الحساب:', error);
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-calculator me-1"></i>{% trans "حساب التأثير" %}';
+                        showNotification('حدث خطأ في حساب التأثير على الميزانية', 'danger');
                     });
                 });
             }
@@ -540,6 +466,10 @@
             const form = document.getElementById('scholarship-year-form');
             if (form) {
                 form.addEventListener('submit', function(e) {
+                    // Calculate year total and update hidden field
+                    const yearTotal = calculateYearTotal();
+                    document.getElementById('calculated_year_cost').value = yearTotal;
+
                     // Update submit button state
                     const submitBtn = document.getElementById('submit-btn');
                     if (submitBtn) {
@@ -553,9 +483,7 @@
             }
         }
 
-        function calculateNewBudgetPreview() {
-            console.log('حساب معاينة الميزانية الجديدة');
-
+        function calculateYearTotal() {
             // Get values from form
             const travelTickets = parseFloat(document.getElementById('id_travel_tickets').value) || 0;
             const monthlyAllowance = parseFloat(document.getElementById('id_monthly_allowance').value) || 0;
@@ -572,51 +500,65 @@
             document.getElementById('year-total-preview').value = newYearCost.toFixed(2);
             document.getElementById('new-year-cost').textContent = newYearCost.toFixed(2) + ' د.أ';
 
-            // Calculate new total base cost (existing + new year)
-            const newBaseCost = budgetData.existing_years_total + newYearCost;
+            // Return the calculated year total
+            return newYearCost;
+        }
 
-            // Calculate insurance on new total
-            const newInsurance = newBaseCost * scholarshipSettings.life_insurance_rate;
-            const additionalInsurance = newYearCost * scholarshipSettings.life_insurance_rate;
+        async function previewBudgetCalculation(yearTotal) {
+            try {
+                // Format the URL with the budget ID and year cost
+                const url = `{% url 'finance:preview_year_impact' budget.id %}?year_cost=${yearTotal.toFixed(2)}`;
 
-            // Calculate true cost (base + insurance)
-            const newTrueCost = newBaseCost + newInsurance;
+                // Make API request to get calculation preview
+                const response = await fetch(url);
 
-            // Calculate additional percentage
-            const additionalAmount = newTrueCost * (scholarshipSettings.add_percentage / 100);
-            const additionalPercentageForNewYear = (newYearCost + additionalInsurance) * (scholarshipSettings.add_percentage / 100);
+                if (!response.ok) {
+                    throw new Error('فشل في الحصول على معاينة الحساب');
+                }
 
-            // Calculate final new budget total
-            const newBudgetTotal = newTrueCost + additionalAmount;
+                const data = await response.json();
 
-            // Update preview displays
-            document.getElementById('additional-insurance').textContent = additionalInsurance.toFixed(2) + ' د.أ';
-            document.getElementById('additional-percentage').textContent = additionalPercentageForNewYear.toFixed(2) + ' د.أ';
-            document.getElementById('new-budget-total').textContent = newBudgetTotal.toFixed(2) + ' د.أ';
+                // Update UI elements with calculated values
+                document.getElementById('additional-insurance').textContent = data.insurance_amount + ' {% trans "د.أ" %}';
+                document.getElementById('additional-percentage').textContent = data.additional_amount + ' {% trans "د.أ" %}';
+                document.getElementById('new-budget-total').textContent = data.new_total + ' {% trans "د.أ" %}';
 
-            // Highlight the budget increase
-            const currentTotal = budgetData.current_total;
-            const increase = newBudgetTotal - currentTotal;
-            const newBudgetElement = document.getElementById('new-budget-total');
+                // Update rates display if provided
+                if (data.insurance_rate_display) {
+                    document.getElementById('insurance-rate').textContent = data.insurance_rate_display + '%';
+                }
+                if (data.add_percentage_display) {
+                    document.getElementById('add-percentage').textContent = data.add_percentage_display + '%';
+                }
 
-            if (increase > 0) {
-                newBudgetElement.classList.remove('text-success');
-                newBudgetElement.classList.add('text-primary');
-                newBudgetElement.parentElement.querySelector('h6').innerHTML =
-                    '{% trans "الميزانية الجديدة" %} <small class="text-success">(+' + increase.toFixed(2) + ' د.أ)</small>';
-            } else {
-                newBudgetElement.classList.remove('text-primary');
-                newBudgetElement.classList.add('text-success');
-                newBudgetElement.parentElement.querySelector('h6').textContent = '{% trans "الميزانية الجديدة" %}';
+                // Update hidden field
+                document.getElementById('calculated_total').value = data.new_total_raw;
+
+                // Highlight the budget increase
+                const currentTotal = parseFloat('{{ budget.total_amount }}');
+                const newTotal = parseFloat(data.new_total_raw);
+                const increase = newTotal - currentTotal;
+
+                const newBudgetElement = document.getElementById('new-budget-total');
+                if (increase > 0) {
+                    newBudgetElement.classList.remove('text-success');
+                    newBudgetElement.classList.add('text-primary');
+                    newBudgetElement.parentElement.querySelector('h6').innerHTML =
+                        '{% trans "الميزانية الجديدة" %} <small class="text-success">(+' + increase.toFixed(2) + ' د.أ)</small>';
+                } else {
+                    newBudgetElement.classList.remove('text-primary');
+                    newBudgetElement.classList.add('text-success');
+                    newBudgetElement.parentElement.querySelector('h6').textContent = '{% trans "الميزانية الجديدة" %}';
+                }
+
+                // Show success notification
+                showNotification('تم حساب التأثير على الميزانية بنجاح', 'success');
+
+            } catch (error) {
+                console.error('خطأ في حساب التأثير:', error);
+                showNotification('حدث خطأ في حساب التأثير على الميزانية', 'danger');
+                throw error;
             }
-
-            console.log('تفاصيل الحساب الجديد:', {
-                newYearCost: newYearCost.toFixed(2),
-                additionalInsurance: additionalInsurance.toFixed(2),
-                additionalPercentage: additionalPercentageForNewYear.toFixed(2),
-                newBudgetTotal: newBudgetTotal.toFixed(2),
-                increase: increase.toFixed(2)
-            });
         }
 
         function showNotification(message, type = 'info') {
