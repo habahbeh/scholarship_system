@@ -773,7 +773,21 @@ def budget_detail(request, budget_id):
 
     spent_amount = budget.get_spent_amount()
     remaining_amount = budget.get_remaining_amount()
-    yearly_costs_total = budget.get_yearly_costs_total()
+
+    # حساب إجمالي تكاليف السنوات الأساسية فقط (بدون تأمين أو نسبة إضافية)
+    yearly_costs_total = Decimal('0.00')
+    for cost in yearly_costs:
+        # حساب تكلفة كل سنة بشكل أساسي
+        monthly_total = (cost.monthly_allowance * cost.monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        year_cost = (
+            cost.travel_tickets +
+            monthly_total +
+            cost.visa_fees +
+            cost.health_insurance +
+            cost.tuition_fees_local
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        yearly_costs_total += year_cost
 
     # تقريب دقيق لجميع القيم
     spent_amount = spent_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -786,17 +800,28 @@ def budget_detail(request, budget_id):
     else:
         spent_percentage = Decimal('0.00')
 
+    # الحصول على الإعدادات للعرض في القالب
+    settings = ScholarshipSettings.objects.first()
+    if not settings:
+        settings = ScholarshipSettings.objects.create(
+            life_insurance_rate=Decimal('0.0034'),
+            add_percentage=Decimal('50.0')
+        )
+
     context = {
         'budget': budget,
         'yearly_costs': yearly_costs,
-        'expenses': recent_expenses,  # للعرض في الجدول
+        'expenses': recent_expenses,
         'adjustments': adjustments,
         'logs': logs,
-        'expenses_by_category': expenses_by_category,  # مجمعة حسب الفئة
+        'expenses_by_category': expenses_by_category,
         'spent_amount': spent_amount,
         'remaining_amount': remaining_amount,
         'spent_percentage': spent_percentage,
         'yearly_costs_total': yearly_costs_total,
+        'settings': settings,
+        'can_activate': budget.status == 'draft',  # هل يمكن التفعيل؟
+        'can_revert': budget.status == 'active' and not budget.expenses.filter(status='approved').exists(),  # هل يمكن الإرجاع؟
     }
 
     return render(request, 'finance/budget_detail.html', context)
@@ -871,11 +896,12 @@ def create_budget(request, application_id):
             # حساب إجمالي تكاليف السنوات المضمنة فقط
             years_total = calculate_total_from_formset(year_formset, settings)
 
-            # إنشاء الميزانية
+            # إنشاء الميزانية كمسودة
             budget = form.save(commit=False)
             budget.application = application
             budget.created_by = request.user
             budget.total_amount = years_total  # تعيين الإجمالي المحسوب
+            budget.status = 'draft'  # إنشاء كمسودة
 
             # حفظ الميزانية
             budget.save()
@@ -893,18 +919,20 @@ def create_budget(request, application_id):
                 budget=budget,
                 fiscal_year=budget.fiscal_year,
                 action_type='create',
-                description=_("إنشاء ميزانية جديدة مع تفاصيل السنوات الدراسية"),
+                description=_("إنشاء ميزانية جديدة كمسودة مع تفاصيل السنوات الدراسية"),
                 created_by=request.user
             )
 
-            messages.success(request, _("تم إنشاء الميزانية وتفاصيل السنوات الدراسية بنجاح"))
+            messages.success(request, _("تم إنشاء الميزانية كمسودة بنجاح. يرجى مراجعتها وتفعيلها لإضافة المصروفات."))
             return redirect('finance:budget_detail', budget_id=budget.id)
         else:
             # في حالة وجود أخطاء، تجميع رسائل الخطأ من formset
             if year_formset.errors:
                 for i, errors in enumerate(year_formset.errors):
                     for field, error in errors.items():
-                        messages.error(request, f"السنة {i+1} - {field}: {error[0]}")
+                        if error:  # تجنب الأخطاء الفارغة
+                            error_message = error[0] if isinstance(error, list) else error
+                            messages.error(request, f"السنة {i+1} - {field}: {error_message}")
             if year_formset.non_form_errors():
                 for error in year_formset.non_form_errors():
                     messages.error(request, error)
@@ -976,6 +1004,74 @@ def create_budget(request, application_id):
         'settings': settings,  # إضافة الإعدادات للقالب
     }
     return render(request, 'finance/budget_with_years_form.html', context)
+
+@login_required
+@permission_required('finance.change_scholarshipbudget', raise_exception=True)
+def activate_budget(request, budget_id):
+    """تفعيل الميزانية بعد المراجعة"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # التحقق من أن الميزانية مسودة
+    if budget.status != 'draft':
+        messages.error(request, _("يمكن تفعيل الميزانيات المسودة فقط"))
+        return redirect('finance:budget_detail', budget_id=budget.id)
+
+    if request.method == 'POST':
+        # تفعيل الميزانية
+        if budget.activate():
+            # إنشاء سجل للعملية
+            FinancialLog.objects.create(
+                budget=budget,
+                fiscal_year=budget.fiscal_year,
+                action_type='activate',
+                description=_("تفعيل الميزانية بعد المراجعة"),
+                created_by=request.user
+            )
+
+            messages.success(request, _("تم تفعيل الميزانية بنجاح"))
+        else:
+            messages.error(request, _("فشل في تفعيل الميزانية"))
+
+        return redirect('finance:budget_detail', budget_id=budget.id)
+
+    context = {
+        'budget': budget,
+    }
+    return render(request, 'finance/activate_budget_confirm.html', context)
+
+
+# دالة جديدة لإرجاع الميزانية إلى مسودة
+@login_required
+@permission_required('finance.change_scholarshipbudget', raise_exception=True)
+def revert_to_draft(request, budget_id):
+    """إرجاع الميزانية النشطة إلى مسودة للتعديل"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # التحقق من عدم وجود مصروفات معتمدة
+    if budget.expenses.filter(status='approved').exists():
+        messages.error(request, _("لا يمكن إرجاع ميزانية تحتوي على مصروفات معتمدة إلى مسودة"))
+        return redirect('finance:budget_detail', budget_id=budget.id)
+
+    if request.method == 'POST':
+        budget.status = 'draft'
+        budget.save()
+
+        # إنشاء سجل للعملية
+        FinancialLog.objects.create(
+            budget=budget,
+            fiscal_year=budget.fiscal_year,
+            action_type='revert',
+            description=_("إرجاع الميزانية إلى مسودة للتعديل"),
+            created_by=request.user
+        )
+
+        messages.success(request, _("تم إرجاع الميزانية إلى مسودة للتعديل"))
+        return redirect('finance:budget_detail', budget_id=budget.id)
+
+    context = {
+        'budget': budget,
+    }
+    return render(request, 'finance/revert_to_draft_confirm.html', context)
 
 
 def calculate_total_from_formset(year_formset, settings):

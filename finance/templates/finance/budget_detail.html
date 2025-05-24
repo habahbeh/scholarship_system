@@ -1,872 +1,930 @@
-{% extends "finance/base.html" %}
-{% load i18n %}
-{% load static %}
-{% load finance_extras %}
-{% load humanize %}
-{% block finance_content %}
-<div class="container-fluid py-4">
-    <!-- Page Header -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="card-title mb-0">
-                    <i class="bi bi-file-text me-2"></i>
-                    {% trans "تفاصيل الميزانية" %}
-                </h2>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'finance:dashboard' %}">{% trans "الرئيسية" %}</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'finance:budget_list' %}">{% trans "الميزانيات" %}</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{% trans "التفاصيل" %}</li>
-                    </ol>
-                </nav>
-            </div>
-        </div>
-    </div>
-
-    <!-- Budget Overview -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-person-circle me-2"></i>
-                            {{ budget.application.applicant.get_full_name }}
-                        </h5>
-                        <div class="d-flex gap-2">
-                            {% if budget.status == 'active' %}
-                                <span class="badge bg-success">{% trans "نشطة" %}</span>
-                            {% elif budget.status == 'suspended' %}
-                                <span class="badge bg-warning">{% trans "معلقة" %}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{% trans "مغلقة" %}</span>
-                            {% endif %}
-
-                            {% if budget.is_current %}
-                                <span class="badge bg-info">{% trans "السنة الحالية" %}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "الجامعة:" %}</label>
-                                <span>{{ budget.application.university }}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "التخصص:" %}</label>
-                                <span>{{ budget.application.major }}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "السنة الدراسية:" %}</label>
-                                <span>{{ budget.academic_year }}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "العملة الأجنبية:" %}</label>
-                                <span>{{ budget.foreign_currency }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "السنة المالية:" %}</label>
-                                <span>
-                                    {% if budget.fiscal_year %}
-                                        {{ budget.fiscal_year.year }}
-                                    {% else %}
-                                        <span class="text-muted">{% trans "غير محدد" %}</span>
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "سعر الصرف:" %}</label>
-                                <span>{{ budget.exchange_rate }} {% trans "دينار" %}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "فترة الميزانية:" %}</label>
-                                <span>{{ budget.start_date }} - {{ budget.end_date }}</span>
-                            </div>
-                            <div class="info-item mb-3">
-                                <label class="fw-bold text-primary">{% trans "تاريخ الإنشاء:" %}</label>
-                                <span>{{ budget.created_at|date:"Y-m-d" }}</span>
-                            </div>
-                        </div>
-                    </div>
+    {% extends "finance/base.html" %}
+    {% load i18n %}
+    {% load static %}
+    {% load finance_extras %}
+    {% load humanize %}
+    {% block finance_content %}
+    <div class="container-fluid py-4">
+        <!-- Page Header -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="card-title mb-0">
+                        <i class="bi bi-file-text me-2"></i>
+                        {% trans "تفاصيل الميزانية" %}
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'finance:dashboard' %}">{% trans "الرئيسية" %}</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'finance:budget_list' %}">{% trans "الميزانيات" %}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{% trans "التفاصيل" %}</li>
+                        </ol>
+                    </nav>
                 </div>
             </div>
         </div>
 
-        <!-- Budget Financial Summary -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-calculator me-2"></i>
-                        {% trans "الملخص المالي" %}
-                        <button type="button" class="btn btn-light btn-sm ms-2 float-end" id="refresh-summary-btn" title="تحديث الملخص">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </h5>
+        <!-- Status Alert for Draft Budgets -->
+        {% if budget.status == 'draft' %}
+        <div class="alert alert-info mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-3 fs-4"></i>
+                <div>
+                    <strong>{% trans "ميزانية مسودة:" %}</strong>
+                    {% trans "هذه الميزانية في حالة مسودة. يرجى مراجعة التفاصيل وتفعيلها لتتمكن من إضافة المصروفات." %}
                 </div>
-                <div class="card-body">
-                    <div class="financial-summary">
-                        <div class="summary-item mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span class="fw-bold">{% trans "إجمالي الميزانية:" %}</span>
-                                <span class="text-primary fw-bold" id="total-budget">{{ budget.total_amount|floatformat:2|intcomma }} {% trans "د.أ" %}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Budget Overview -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-circle me-2"></i>
+                                {{ budget.application.applicant.get_full_name }}
+                            </h5>
+                            <div class="d-flex gap-2">
+                                {% if budget.status == 'draft' %}
+                                    <span class="badge bg-secondary">{% trans "مسودة" %}</span>
+                                {% elif budget.status == 'active' %}
+                                    <span class="badge bg-success">{% trans "نشطة" %}</span>
+                                {% elif budget.status == 'suspended' %}
+                                    <span class="badge bg-warning">{% trans "معلقة" %}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{% trans "مغلقة" %}</span>
+                                {% endif %}
+
+                                {% if budget.is_current %}
+                                    <span class="badge bg-info">{% trans "السنة الحالية" %}</span>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="summary-item mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span class="fw-bold">{% trans "المبلغ المصروف:" %}</span>
-                                <span class="text-danger fw-bold" id="spent-amount">{{ spent_amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                            </div>
-                        </div>
-                        <div class="summary-item mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span class="fw-bold">{% trans "المبلغ المتبقي:" %}</span>
-                                <span class="text-success fw-bold" id="remaining-amount">{{ remaining_amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                            </div>
-                        </div>
-                        <div class="summary-item mb-3">
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar" role="progressbar" style="width: {{ spent_percentage }}%" id="spent-progress">
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "الجامعة:" %}</label>
+                                    <span>{{ budget.application.university }}</span>
+                                </div>
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "التخصص:" %}</label>
+                                    <span>{{ budget.application.major }}</span>
+                                </div>
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "السنة الدراسية:" %}</label>
+                                    <span>{{ budget.academic_year }}</span>
+                                </div>
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "العملة الأجنبية:" %}</label>
+                                    <span>{{ budget.foreign_currency }}</span>
                                 </div>
                             </div>
-                            <small class="text-muted">{% trans "نسبة الصرف:" %} <span id="spent-percentage">{{ spent_percentage|floatformat:1 }}%</span></small>
+                            <div class="col-md-6">
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "السنة المالية:" %}</label>
+                                    <span>
+                                        {% if budget.fiscal_year %}
+                                            {{ budget.fiscal_year.year }}
+                                        {% else %}
+                                            <span class="text-muted">{% trans "غير محدد" %}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "سعر الصرف:" %}</label>
+                                    <span>{{ budget.exchange_rate }} {% trans "دينار" %}</span>
+                                </div>
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "فترة الميزانية:" %}</label>
+                                    <span>{{ budget.start_date }} - {{ budget.end_date }}</span>
+                                </div>
+                                <div class="info-item mb-3">
+                                    <label class="fw-bold text-primary">{% trans "تاريخ الإنشاء:" %}</label>
+                                    <span>{{ budget.created_at|date:"Y-m-d" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Financial Summary -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calculator me-2"></i>
+                            {% trans "الملخص المالي" %}
+                            <button type="button" class="btn btn-light btn-sm ms-2 float-end" id="refresh-summary-btn" title="تحديث الملخص">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="financial-summary">
+                            <div class="summary-item mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">{% trans "إجمالي الميزانية:" %}</span>
+                                    <span class="text-primary fw-bold" id="total-budget">{{ budget.total_amount|floatformat:2|intcomma }} {% trans "د.أ" %}</span>
+                                </div>
+                            </div>
+                            <div class="summary-item mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">{% trans "المبلغ المصروف:" %}</span>
+                                    <span class="text-danger fw-bold" id="spent-amount">{{ spent_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                </div>
+                            </div>
+                            <div class="summary-item mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold">{% trans "المبلغ المتبقي:" %}</span>
+                                    <span class="text-success fw-bold" id="remaining-amount">{{ remaining_amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                </div>
+                            </div>
+                            <div class="summary-item mb-3">
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ spent_percentage }}%" id="spent-progress">
+                                    </div>
+                                </div>
+                                <small class="text-muted">{% trans "نسبة الصرف:" %} <span id="spent-percentage">{{ spent_percentage|floatformat:1 }}%</span></small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Yearly Costs Overview -->
-    {% if yearly_costs %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-calendar-check me-2"></i>
-                    {% trans "تفاصيل التكاليف السنوية" %}
-                </h5>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="recalculate-btn">
-                        <i class="bi bi-calculator me-1"></i>{% trans "إعادة الحساب" %}
-                    </button>
-                    <a href="{% url 'finance:scholarship_years_costs_report' budget.id %}" class="btn btn-outline-info btn-sm" target="_blank">
-                        <i class="bi bi-file-text me-1"></i>{% trans "تقرير التكاليف" %}
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>{% trans "السنة" %}</th>
-                            <th>{% trans "السنة الدراسية" %}</th>
-                            <th>{% trans "تذاكر السفر" %}</th>
-                            <th>{% trans "المخصص الشهري" %}</th>
-                            <th>{% trans "عدد الأشهر" %}</th>
-                            <th>{% trans "رسوم الفيزا" %}</th>
-                            <th>{% trans "التأمين الصحي" %}</th>
-                            <th>{% trans "الرسوم الدراسية" %}</th>
-                            <th>{% trans "إجمالي السنة" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cost in yearly_costs %}
-                        <tr>
-                            <td>
-                                <span class="badge bg-secondary">{{ cost.year_number }}</span>
-                            </td>
-                            <td>{{ cost.academic_year }}</td>
-                            <td>{{ cost.travel_tickets|floatformat:2 }} {% trans "د.أ" %}</td>
-                            <td>{{ cost.monthly_allowance|floatformat:2 }} {% trans "د.أ" %}</td>
-                            <td>{{ cost.monthly_duration }} {% trans "شهر" %}</td>
-                            <td>{{ cost.visa_fees|floatformat:2 }} {% trans "د.أ" %}</td>
-                            <td>{{ cost.health_insurance|floatformat:2 }} {% trans "د.أ" %}</td>
-                            <td>{{ cost.tuition_fees_local|floatformat:2 }} {% trans "د.أ" %}</td>
-                            <td>
-                                <span class="fw-bold text-primary">{{ cost.total_year_cost|floatformat:2 }} {% trans "د.أ" %}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th colspan="8">{% trans "إجمالي تكاليف السنوات:" %}</th>
-                            <th>
-                                <span class="fw-bold text-primary" id="years-total">{{ yearly_costs_total|floatformat:2 }} {% trans "د.أ" %}</span>
-                            </th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <!-- Detailed Calculation -->
-            <div class="row mt-4">
-                <div class="col-md-3">
-                    <div class="alert alert-light border mb-0">
-                        <div class="text-center">
-                            <i class="bi bi-calculator text-primary fs-4"></i>
-                            <h6 class="mt-2">{% trans "إجمالي السنوات" %}</h6>
-                            <span class="fw-bold text-primary" id="base-total">{{ yearly_costs_total|floatformat:2 }} {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="alert alert-light border mb-0">
-                        <div class="text-center">
-                            <i class="bi bi-shield-check text-info fs-4"></i>
-                            <h6 class="mt-2">{% trans "التأمين على الحياة" %}</h6>
-                            <span class="fw-bold text-info" id="insurance-amount">0.00 {% trans "د.أ" %}</span>
-                            <small class="d-block text-muted" id="insurance-rate">0.34%</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="alert alert-light border mb-0">
-                        <div class="text-center">
-                            <i class="bi bi-percent text-warning fs-4"></i>
-                            <h6 class="mt-2">{% trans "النسبة الإضافية" %}</h6>
-                            <span class="fw-bold text-warning" id="additional-amount">0.00 {% trans "د.أ" %}</span>
-                            <small class="d-block text-muted" id="additional-rate">50%</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="alert alert-success border mb-0">
-                        <div class="text-center">
-                            <i class="bi bi-check-circle text-success fs-4"></i>
-                            <h6 class="mt-2">{% trans "المجموع النهائي" %}</h6>
-                            <span class="fw-bold text-success" id="final-calculated-total">{{ budget.total_amount|floatformat:2|intcomma }} {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Action Buttons -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2 justify-content-center">
-                        {% if budget.status == 'active' %}
-                            <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-primary">
-                                <i class="bi bi-pencil me-1"></i>{% trans "تعديل الميزانية" %}
-                            </a>
-                            <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-success">
-                                <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة مصروف" %}
-                            </a>
-                            <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-warning">
-                                <i class="bi bi-cash-stack me-1"></i>{% trans "تعديل مبلغ الميزانية" %}
-                            </a>
-                            <a href="{% url 'finance:add_scholarship_year' budget.id %}" class="btn btn-info">
-                                <i class="bi bi-calendar-plus me-1"></i>{% trans "إضافة سنة دراسية" %}
-                            </a>
-                        {% endif %}
-
-                        <a href="{% url 'finance:scholarship_years_costs_report' budget.id %}" class="btn btn-outline-info" target="_blank">
+        <!-- Yearly Costs Overview -->
+        {% if yearly_costs %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        {% trans "تفاصيل التكاليف السنوية" %}
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="recalculate-btn">
+                            <i class="bi bi-calculator me-1"></i>{% trans "إعادة الحساب" %}
+                        </button>
+                        <a href="{% url 'finance:scholarship_years_costs_report' budget.id %}" class="btn btn-outline-info btn-sm" target="_blank">
                             <i class="bi bi-file-text me-1"></i>{% trans "تقرير التكاليف" %}
                         </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "السنة" %}</th>
+                                <th>{% trans "السنة الدراسية" %}</th>
+                                <th>{% trans "تذاكر السفر" %}</th>
+                                <th>{% trans "المخصص الشهري" %}</th>
+                                <th>{% trans "عدد الأشهر" %}</th>
+                                <th>{% trans "رسوم الفيزا" %}</th>
+                                <th>{% trans "التأمين الصحي" %}</th>
+                                <th>{% trans "الرسوم الدراسية" %}</th>
+                                <th>{% trans "إجمالي السنة" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cost in yearly_costs %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">{{ cost.year_number }}</span>
+                                </td>
+                                <td>{{ cost.academic_year }}</td>
+                                <td>{{ cost.travel_tickets|floatformat:2 }} {% trans "د.أ" %}</td>
+                                <td>{{ cost.monthly_allowance|floatformat:2 }} {% trans "د.أ" %}</td>
+                                <td>{{ cost.monthly_duration }} {% trans "شهر" %}</td>
+                                <td>{{ cost.visa_fees|floatformat:2 }} {% trans "د.أ" %}</td>
+                                <td>{{ cost.health_insurance|floatformat:2 }} {% trans "د.أ" %}</td>
+                                <td>{{ cost.tuition_fees_local|floatformat:2 }} {% trans "د.أ" %}</td>
+                                <td>
+                                    <span class="fw-bold text-primary">{{ cost.total_year_cost|floatformat:2 }} {% trans "د.أ" %}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="8">{% trans "إجمالي تكاليف السنوات:" %}</th>
+                                <th>
+                                    <span class="fw-bold text-primary" id="years-total">{{ yearly_costs_total|floatformat:2 }} {% trans "د.أ" %}</span>
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
 
-                        {% if budget.status == 'active' and budget.is_current %}
-                            <a href="{% url 'finance:close_current_year_open_new' budget.id %}" class="btn btn-outline-danger">
-                                <i class="bi bi-door-closed me-1"></i>{% trans "إغلاق السنة وفتح جديدة" %}
+                <!-- Detailed Calculation -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="alert alert-light border mb-0">
+                            <div class="text-center">
+                                <i class="bi bi-calculator text-primary fs-4"></i>
+                                <h6 class="mt-2">{% trans "إجمالي تكاليف السنوات" %}</h6>
+                                <span class="fw-bold text-primary" id="base-total">{{ yearly_costs_total|floatformat:2 }} {% trans "د.أ" %}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="alert alert-light border mb-0">
+                            <div class="text-center">
+                                <i class="bi bi-shield-check text-info fs-4"></i>
+                                <h6 class="mt-2">{% trans "التأمين على الحياة" %}</h6>
+                                <span class="fw-bold text-info" id="insurance-amount">0.00 {% trans "د.أ" %}</span>
+                                <small class="d-block text-muted" id="insurance-rate">0.34%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="alert alert-light border mb-0">
+                            <div class="text-center">
+                                <i class="bi bi-percent text-warning fs-4"></i>
+                                <h6 class="mt-2">{% trans "النسبة الإضافية" %}</h6>
+                                <span class="fw-bold text-warning" id="additional-amount">0.00 {% trans "د.أ" %}</span>
+                                <small class="d-block text-muted" id="additional-rate">50%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="alert alert-success border mb-0">
+                            <div class="text-center">
+                                <i class="bi bi-check-circle text-success fs-4"></i>
+                                <h6 class="mt-2">{% trans "إجمالي الميزانية" %}</h6>
+                                <span class="fw-bold text-success" id="final-calculated-total">{{ budget.total_amount|floatformat:2|intcomma }} {% trans "د.أ" %}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
+                            <!-- أزرار خاصة بالمسودات -->
+                            {% if budget.status == 'draft' %}
+                                <a href="{% url 'finance:activate_budget' budget.id %}" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-1"></i>{% trans "تفعيل الميزانية" %}
+                                </a>
+                                <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-1"></i>{% trans "تعديل المسودة" %}
+                                </a>
+                                <a href="{% url 'finance:add_scholarship_year' budget.id %}" class="btn btn-info">
+                                    <i class="bi bi-calendar-plus me-1"></i>{% trans "إضافة سنة دراسية" %}
+                                </a>
+                            {% endif %}
+
+                            <!-- أزرار خاصة بالميزانيات النشطة -->
+                            {% if budget.status == 'active' %}
+                                <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-1"></i>{% trans "تعديل الميزانية" %}
+                                </a>
+                                <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-success">
+                                    <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة مصروف" %}
+                                </a>
+                                <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-warning">
+                                    <i class="bi bi-cash-stack me-1"></i>{% trans "تعديل مبلغ الميزانية" %}
+                                </a>
+                                <a href="{% url 'finance:add_scholarship_year' budget.id %}" class="btn btn-info">
+                                    <i class="bi bi-calendar-plus me-1"></i>{% trans "إضافة سنة دراسية" %}
+                                </a>
+
+                                <!-- زر الإرجاع إلى مسودة (إذا لم توجد مصروفات معتمدة) -->
+                                {% if can_revert %}
+                                    <a href="{% url 'finance:revert_to_draft' budget.id %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>{% trans "إرجاع إلى مسودة" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- أزرار عامة -->
+                            <a href="{% url 'finance:scholarship_years_costs_report' budget.id %}" class="btn btn-outline-info" target="_blank">
+                                <i class="bi bi-file-text me-1"></i>{% trans "تقرير التكاليف" %}
                             </a>
+
+                            {% if budget.status == 'active' and budget.is_current %}
+                                <a href="{% url 'finance:close_current_year_open_new' budget.id %}" class="btn btn-outline-danger">
+                                    <i class="bi bi-door-closed me-1"></i>{% trans "إغلاق السنة وفتح جديدة" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-receipt me-2"></i>
+                                {% trans "المصروفات" %}
+                                <span class="badge bg-secondary ms-2">{{ expenses.count }}</span>
+                            </h5>
+                            {% if budget.status == 'active' %}
+                                <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-success btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة مصروف" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if expenses %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>{% trans "التاريخ" %}</th>
+                                            <th>{% trans "الفئة" %}</th>
+                                            <th>{% trans "المبلغ" %}</th>
+                                            <th>{% trans "الوصف" %}</th>
+                                            <th>{% trans "الحالة" %}</th>
+                                            <th>{% trans "الإجراءات" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for expense in expenses %}
+                                        <tr>
+                                            <td>{{ expense.date }}</td>
+                                            <td>{{ expense.category.name }}</td>
+                                            <td>
+                                                {% if expense.status == 'approved' %}
+                                                    <span class="fw-bold text-success">{{ expense.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                                {% elif expense.status == 'pending' %}
+                                                    <span class="fw-bold text-warning">{{ expense.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                                {% else %}
+                                                    <span class="fw-bold text-danger">{{ expense.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ expense.description|truncatechars:50 }}</td>
+                                            <td>
+                                                {% if expense.status == 'approved' %}
+                                                    <span class="badge bg-success">{% trans "معتمد" %}</span>
+                                                {% elif expense.status == 'pending' %}
+                                                    <span class="badge bg-warning">{% trans "قيد المراجعة" %}</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">{% trans "مرفوض" %}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    {% if expense.status == 'pending' %}
+                                                        <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-outline-warning btn-sm">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-receipt display-1 text-muted"></i>
+                                <h5 class="text-muted mt-3">{% trans "لا توجد مصروفات حتى الآن" %}</h5>
+                                {% if budget.status == 'active' %}
+                                    <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-success mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة أول مصروف" %}
+                                    </a>
+                                {% elif budget.status == 'draft' %}
+                                    <p class="text-muted">{% trans "يجب تفعيل الميزانية أولاً لإضافة المصروفات" %}</p>
+                                {% endif %}
+                            </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Expenses Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-receipt me-2"></i>
-                            {% trans "المصروفات" %}
-                            <span class="badge bg-secondary ms-2">{{ expenses.count }}</span>
-                        </h5>
-                        {% if budget.status == 'active' %}
-                            <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-success btn-sm">
-                                <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة مصروف" %}
-                            </a>
-                        {% endif %}
+        <!-- Budget Adjustments Section -->
+        {% if adjustments %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>
+                                {% trans "تعديلات الميزانية" %}
+                                <span class="badge bg-secondary ms-2">{{ adjustments.count }}</span>
+                            </h5>
+                            {% if budget.status == 'active' %}
+                                <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة تعديل للمبلغ" %}
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    {% if expenses %}
+                    <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
                                         <th>{% trans "التاريخ" %}</th>
-                                        <th>{% trans "الفئة" %}</th>
+                                        <th>{% trans "النوع" %}</th>
                                         <th>{% trans "المبلغ" %}</th>
-                                        <th>{% trans "الوصف" %}</th>
+                                        <th>{% trans "السبب" %}</th>
                                         <th>{% trans "الحالة" %}</th>
                                         <th>{% trans "الإجراءات" %}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for expense in expenses %}
+                                    {% for adjustment in adjustments %}
                                     <tr>
-                                        <td>{{ expense.date }}</td>
-                                        <td>{{ expense.category.name }}</td>
+                                        <td>{{ adjustment.date }}</td>
                                         <td>
-                                            {% if expense.status == 'approved' %}
-                                                <span class="fw-bold text-success">{{ expense.amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                                            {% elif expense.status == 'pending' %}
-                                                <span class="fw-bold text-warning">{{ expense.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                            {% if adjustment.adjustment_type == 'increase' %}
+                                                <span class="badge bg-success">{% trans "زيادة" %}</span>
                                             {% else %}
-                                                <span class="fw-bold text-danger">{{ expense.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                                <span class="badge bg-danger">{% trans "تخفيض" %}</span>
                                             {% endif %}
                                         </td>
-                                        <td>{{ expense.description|truncatechars:50 }}</td>
                                         <td>
-                                            {% if expense.status == 'approved' %}
+                                            {% if adjustment.adjustment_type == 'increase' %}
+                                                <span class="fw-bold text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                            {% else %}
+                                                <span class="fw-bold text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "د.أ" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ adjustment.reason|truncatechars:50 }}</td>
+                                        <td>
+                                            {% if adjustment.status == 'approved' %}
                                                 <span class="badge bg-success">{% trans "معتمد" %}</span>
-                                            {% elif expense.status == 'pending' %}
+                                            {% elif adjustment.status == 'pending' %}
                                                 <span class="badge bg-warning">{% trans "قيد المراجعة" %}</span>
                                             {% else %}
                                                 <span class="badge bg-danger">{% trans "مرفوض" %}</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-outline-primary btn-sm">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                {% if expense.status == 'pending' %}
-                                                    <a href="{% url 'finance:update_expense' expense.id %}" class="btn btn-outline-warning btn-sm">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </div>
+                                            <a href="{% url 'finance:adjustment_detail' adjustment.id %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="bi bi-receipt display-1 text-muted"></i>
-                            <h5 class="text-muted mt-3">{% trans "لا توجد مصروفات حتى الآن" %}</h5>
-                            {% if budget.status == 'active' %}
-                                <a href="{% url 'finance:create_expense' budget.id %}" class="btn btn-success mt-2">
-                                    <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة أول مصروف" %}
-                                </a>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+        {% endif %}
 
-    <!-- Budget Adjustments Section -->
-    {% if adjustments %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
+        <!-- Notes Section -->
+        {% if budget.notes %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
                         <h5 class="mb-0">
-                            <i class="bi bi-gear me-2"></i>
-                            {% trans "تعديلات الميزانية" %}
-                            <span class="badge bg-secondary ms-2">{{ adjustments.count }}</span>
+                            <i class="bi bi-sticky me-2"></i>
+                            {% trans "ملاحظات" %}
                         </h5>
-                        {% if budget.status == 'active' %}
-                            <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-warning btn-sm">
-                                <i class="bi bi-plus-circle me-1"></i>{% trans "إضافة تعديل للمبلغ" %}
-                            </a>
-                        {% endif %}
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>{% trans "التاريخ" %}</th>
-                                    <th>{% trans "النوع" %}</th>
-                                    <th>{% trans "المبلغ" %}</th>
-                                    <th>{% trans "السبب" %}</th>
-                                    <th>{% trans "الحالة" %}</th>
-                                    <th>{% trans "الإجراءات" %}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for adjustment in adjustments %}
-                                <tr>
-                                    <td>{{ adjustment.date }}</td>
-                                    <td>
-                                        {% if adjustment.adjustment_type == 'increase' %}
-                                            <span class="badge bg-success">{% trans "زيادة" %}</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">{% trans "تخفيض" %}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if adjustment.adjustment_type == 'increase' %}
-                                            <span class="fw-bold text-success">+{{ adjustment.amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                                        {% else %}
-                                            <span class="fw-bold text-danger">-{{ adjustment.amount|floatformat:2 }} {% trans "د.أ" %}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ adjustment.reason|truncatechars:50 }}</td>
-                                    <td>
-                                        {% if adjustment.status == 'approved' %}
-                                            <span class="badge bg-success">{% trans "معتمد" %}</span>
-                                        {% elif adjustment.status == 'pending' %}
-                                            <span class="badge bg-warning">{% trans "قيد المراجعة" %}</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">{% trans "مرفوض" %}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'finance:adjustment_detail' adjustment.id %}" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="card-body">
+                        <p class="mb-0">{{ budget.notes|linebreaks }}</p>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
-    {% endif %}
 
-    <!-- Notes Section -->
-    {% if budget.notes %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-sticky me-2"></i>
-                        {% trans "ملاحظات" %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <p class="mb-0">{{ budget.notes|linebreaks }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
+    <!-- JavaScript for Dynamic Updates -->
+    {% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Global settings cache
+            let scholarshipSettings = {
+                life_insurance_rate: 0.0034,
+                add_percentage: 50.0
+            };
 
-<!-- JavaScript for Dynamic Updates -->
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Global settings cache
-        let scholarshipSettings = {
-            life_insurance_rate: 0.0034,
-            add_percentage: 50.0
-        };
+            // دالة تنسيق الأرقام بالطريقة المطلوبة: 256,121.23
+            function formatNumber(number) {
+                return number.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
 
-        // Load settings from server
-        async function loadScholarshipSettings() {
-            try {
-                const response = await fetch('{% url "finance:api_scholarship_settings" %}');
-                if (response.ok) {
-                    const data = await response.json();
-                    scholarshipSettings = {
-                        life_insurance_rate: data.life_insurance_rate || 0.0034,
-                        add_percentage: data.add_percentage || 50.0
-                    };
-                    console.log('تم تحميل الإعدادات من الخادم:', scholarshipSettings);
-                    return true;
-                } else {
-                    console.warn('فشل في تحميل الإعدادات من الخادم، استخدام القيم الافتراضية');
+            // Load settings from server
+            async function loadScholarshipSettings() {
+                try {
+                    const response = await fetch('{% url "finance:api_scholarship_settings" %}');
+                    if (response.ok) {
+                        const data = await response.json();
+                        scholarshipSettings = {
+                            life_insurance_rate: data.life_insurance_rate || 0.0034,
+                            add_percentage: data.add_percentage || 50.0
+                        };
+                        console.log('تم تحميل الإعدادات من الخادم:', scholarshipSettings);
+                        return true;
+                    } else {
+                        console.warn('فشل في تحميل الإعدادات من الخادم، استخدام القيم الافتراضية');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('خطأ في تحميل الإعدادات:', error);
+                    // استخدام القيم من Django template كـ fallback
+                    scholarshipSettings.life_insurance_rate = parseFloat('{{ settings.life_insurance_rate|default:"0.0034" }}') || 0.0034;
+                    scholarshipSettings.add_percentage = parseFloat('{{ settings.add_percentage|default:"50.0" }}') || 50.0;
                     return false;
                 }
-            } catch (error) {
-                console.error('خطأ في تحميل الإعدادات:', error);
-                // استخدام القيم من Django template كـ fallback
-                scholarshipSettings.life_insurance_rate = parseFloat('{{ settings.life_insurance_rate|default:"0.0034" }}') || 0.0034;
-                scholarshipSettings.add_percentage = parseFloat('{{ settings.add_percentage|default:"50.0" }}') || 50.0;
-                return false;
-            }
-        }
-
-        // Calculate detailed breakdown
-        function calculateDetailedBreakdown() {
-            console.log('بدء إعادة الحساب التفصيلي');
-
-            const baseTotal = parseFloat('{{ yearly_costs_total|default:"0" }}') || 0;
-
-            if (baseTotal <= 0) {
-                console.log('لا توجد تكاليف سنوية لحسابها');
-
-                // Reset all displays to zero
-                document.getElementById('base-total').textContent = '0.00 {% trans "د.أ" %}';
-                document.getElementById('insurance-amount').textContent = '0.00 {% trans "د.أ" %}';
-                document.getElementById('additional-amount').textContent = '0.00 {% trans "د.أ" %}';
-                document.getElementById('final-calculated-total').textContent = '0.00 {% trans "د.أ" %}';
-                return;
             }
 
-            // Calculate insurance with current settings
-            const insuranceAmount = baseTotal * scholarshipSettings.life_insurance_rate;
-            const trueCost = baseTotal + insuranceAmount;
+            // Calculate detailed breakdown
+            function calculateDetailedBreakdown() {
+                console.log('بدء إعادة الحساب التفصيلي');
 
-            // Calculate additional percentage with current settings
-            const additionalAmount = trueCost * (scholarshipSettings.add_percentage / 100);
-            const finalTotal = trueCost + additionalAmount;
+                const baseTotal = parseFloat('{{ yearly_costs_total|default:"0" }}') || 0;
 
-            console.log('تفاصيل الحساب المحدث:');
-            console.log('- إجمالي السنوات:', baseTotal.toFixed(2));
-            console.log('- معدل التأمين:', (scholarshipSettings.life_insurance_rate * 100).toFixed(4) + '%');
-            console.log('- مبلغ التأمين:', insuranceAmount.toFixed(2));
-            console.log('- النسبة الإضافية:', scholarshipSettings.add_percentage + '%');
-            console.log('- مبلغ النسبة الإضافية:', additionalAmount.toFixed(2));
-            console.log('- المجموع النهائي:', finalTotal.toFixed(2));
+                if (baseTotal <= 0) {
+                    console.log('لا توجد تكاليف سنوية لحسابها');
 
-            // Update display elements with animation
-            updateElementWithAnimation('base-total', baseTotal.toFixed(2) + ' {% trans "د.أ" %}');
-            updateElementWithAnimation('insurance-amount', insuranceAmount.toFixed(2) + ' {% trans "د.أ" %}');
-            updateElementWithAnimation('additional-amount', additionalAmount.toFixed(2) + ' {% trans "د.أ" %}');
-            updateElementWithAnimation('final-calculated-total', finalTotal.toFixed(2) + ' {% trans "د.أ" %}');
-
-            // Update rates display
-            document.getElementById('insurance-rate').textContent = (scholarshipSettings.life_insurance_rate * 1000).toFixed(1) + '‰';
-            document.getElementById('additional-rate').textContent = scholarshipSettings.add_percentage.toFixed(1) + '%';
-
-            // Check if budget total matches calculated total
-            const budgetTotal = parseFloat('{{ budget.total_amount }}') || 0;
-            const difference = Math.abs(budgetTotal - finalTotal);
-
-            const finalTotalElement = document.getElementById('final-calculated-total');
-
-            if (difference > 0.01) {  // Allow for small rounding differences
-                console.warn('تحذير: إجمالي الميزانية المحفوظة (' + budgetTotal.toFixed(2) + ') لا يتطابق مع المحسوب (' + finalTotal.toFixed(2) + ')');
-                console.warn('الفرق: ' + difference.toFixed(2) + ' د.أ');
-
-                // Highlight the discrepancy
-                finalTotalElement.classList.remove('text-success');
-                finalTotalElement.classList.add('text-warning');
-                finalTotalElement.title = 'يختلف عن إجمالي الميزانية المحفوظة: ' + budgetTotal.toFixed(2) + ' د.أ (الفرق: ' + difference.toFixed(2) + ' د.أ)';
-
-                // Show warning message
-                showNotification('تحذير: المجموع المحسوب يختلف عن الميزانية المحفوظة بمقدار ' + difference.toFixed(2) + ' د.أ', 'warning');
-            } else {
-                // Remove warning styling
-                finalTotalElement.classList.remove('text-warning');
-                finalTotalElement.classList.add('text-success');
-                finalTotalElement.removeAttribute('title');
-
-                console.log('✓ المجموع المحسوب يتطابق مع الميزانية المحفوظة');
-                showNotification('تم إعادة الحساب بنجاح - المجموع متطابق', 'success');
-            }
-
-            console.log('تم إنهاء إعادة الحساب التفصيلي');
-        }
-
-        // Helper function to update element with animation
-        function updateElementWithAnimation(elementId, newValue) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.style.transition = 'all 0.3s ease';
-                element.style.transform = 'scale(1.1)';
-                element.style.color = '#0d6efd';
-
-                setTimeout(() => {
-                    element.textContent = newValue;
-                    element.style.transform = 'scale(1)';
-                    element.style.color = '';
-                }, 150);
-            }
-        }
-
-        // Helper function to show notifications
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = `
-                top: 20px;
-                right: 20px;
-                z-index: 1050;
-                min-width: 300px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            `;
-
-            notification.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
-                    <span>${message}</span>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-
-            document.body.appendChild(notification);
-
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    notification.remove();
+                    // Reset all displays to zero with proper formatting
+                    document.getElementById('base-total').textContent = '0.00 {% trans "د.أ" %}';
+                    document.getElementById('insurance-amount').textContent = '0.00 {% trans "د.أ" %}';
+                    document.getElementById('additional-amount').textContent = '0.00 {% trans "د.أ" %}';
+                    document.getElementById('final-calculated-total').textContent = '0.00 {% trans "د.أ" %}';
+                    return;
                 }
-            }, 5000);
-        }
 
-        // Refresh financial summary
-        async function refreshFinancialSummary() {
-            console.log('بدء تحديث الملخص المالي');
+                // Calculate insurance with current settings
+                const insuranceAmount = baseTotal * scholarshipSettings.life_insurance_rate;
+                const trueCost = baseTotal + insuranceAmount;
 
-            try {
-                const settingsLoaded = await loadScholarshipSettings();
+                // Calculate additional percentage with current settings
+                const additionalAmount = trueCost * (scholarshipSettings.add_percentage / 100);
+                const finalTotal = trueCost + additionalAmount;
 
-                if (settingsLoaded) {
-                    console.log('تم تحميل الإعدادات الجديدة بنجاح');
-                    showNotification('تم تحديث إعدادات التأمين من الخادم', 'success');
+                console.log('تفاصيل الحساب المحدث:');
+                console.log('- إجمالي تكاليف السنوات (أساسي):', formatNumber(baseTotal));
+                console.log('- معدل التأمين:', (scholarshipSettings.life_insurance_rate * 100).toFixed(4) + '%');
+                console.log('- مبلغ التأمين:', formatNumber(insuranceAmount));
+                console.log('- النسبة الإضافية:', scholarshipSettings.add_percentage + '%');
+                console.log('- مبلغ النسبة الإضافية:', formatNumber(additionalAmount));
+                console.log('- إجمالي الميزانية المحسوب:', formatNumber(finalTotal));
+
+                // Update display elements with animation and proper formatting
+                updateElementWithAnimation('base-total', formatNumber(baseTotal) + ' {% trans "د.أ" %}');
+                updateElementWithAnimation('insurance-amount', formatNumber(insuranceAmount) + ' {% trans "د.أ" %}');
+                updateElementWithAnimation('additional-amount', formatNumber(additionalAmount) + ' {% trans "د.أ" %}');
+                updateElementWithAnimation('final-calculated-total', formatNumber(finalTotal) + ' {% trans "د.أ" %}');
+
+                // Update rates display
+                document.getElementById('insurance-rate').textContent = (scholarshipSettings.life_insurance_rate * 1000).toFixed(1) + '‰';
+                document.getElementById('additional-rate').textContent = scholarshipSettings.add_percentage.toFixed(1) + '%';
+
+                // Check if budget total matches calculated total
+                const budgetTotal = parseFloat('{{ budget.total_amount }}') || 0;
+                const difference = Math.abs(budgetTotal - finalTotal);
+
+                const finalTotalElement = document.getElementById('final-calculated-total');
+
+                if (difference > 0.01) {  // Allow for small rounding differences
+                    console.warn('تحذير: إجمالي الميزانية المحفوظة (' + formatNumber(budgetTotal) + ') لا يتطابق مع المحسوب (' + formatNumber(finalTotal) + ')');
+                    console.warn('الفرق: ' + formatNumber(difference) + ' د.أ');
+
+                    // Highlight the discrepancy
+                    finalTotalElement.classList.remove('text-success');
+                    finalTotalElement.classList.add('text-warning');
+                    finalTotalElement.title = 'يختلف عن إجمالي الميزانية المحفوظة: ' + formatNumber(budgetTotal) + ' د.أ (الفرق: ' + formatNumber(difference) + ' د.أ)';
+
+                    // Show warning message
+                    showNotification('تحذير: المجموع المحسوب يختلف عن الميزانية المحفوظة بمقدار ' + formatNumber(difference) + ' د.أ', 'warning');
                 } else {
-                    console.log('تم استخدام الإعدادات الافتراضية');
-                    showNotification('تم استخدام الإعدادات الافتراضية', 'info');
+                    // Remove warning styling
+                    finalTotalElement.classList.remove('text-warning');
+                    finalTotalElement.classList.add('text-success');
+                    finalTotalElement.removeAttribute('title');
+
+                    console.log('✓ المجموع المحسوب يتطابق مع الميزانية المحفوظة');
+                    showNotification('تم إعادة الحساب بنجاح - المجموع متطابق', 'success');
                 }
 
-                // Recalculate with updated settings
-                calculateDetailedBreakdown();
-
-                console.log('تم تحديث الملخص المالي بنجاح');
-
-            } catch (error) {
-                console.error('خطأ في تحديث الملخص المالي:', error);
-                showNotification('حدث خطأ في تحديث الملخص المالي', 'danger');
+                console.log('تم إنهاء إعادة الحساب التفصيلي');
             }
-        }
 
-        // Event listeners
-        const refreshSummaryBtn = document.getElementById('refresh-summary-btn');
-        if (refreshSummaryBtn) {
-            refreshSummaryBtn.addEventListener('click', function() {
-                this.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
-                refreshFinancialSummary().then(() => {
-                    this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                });
-            });
-        }
+            // Helper function to update element with animation
+            function updateElementWithAnimation(elementId, newValue) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.style.transition = 'all 0.3s ease';
+                    element.style.transform = 'scale(1.1)';
+                    element.style.color = '#0d6efd';
 
-        const recalculateBtn = document.getElementById('recalculate-btn');
-        if (recalculateBtn) {
-            recalculateBtn.addEventListener('click', function() {
-                console.log('المستخدم طلب إعادة الحساب');
+                    setTimeout(() => {
+                        element.textContent = newValue;
+                        element.style.transform = 'scale(1)';
+                        element.style.color = '';
+                    }, 150);
+                }
+            }
 
-                // Update button state
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="bi bi-calculator spin"></i> {% trans "جاري الحساب..." %}';
-                this.disabled = true;
+            // Helper function to show notifications
+            function showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                notification.style.cssText = `
+                    top: 20px;
+                    right: 20px;
+                    z-index: 1050;
+                    min-width: 300px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                `;
 
-                // Simulate calculation delay for better UX
+                notification.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                        <span>${message}</span>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                // Auto remove after 5 seconds
                 setTimeout(() => {
-                    try {
-                        // First reload settings, then recalculate
-                        loadScholarshipSettings().then(() => {
-                            calculateDetailedBreakdown();
-
-                            // Restore button state
-                            this.innerHTML = originalText;
-                            this.disabled = false;
-
-                            console.log('تم إنهاء إعادة الحساب بنجاح');
-                        }).catch((error) => {
-                            console.error('خطأ في إعادة تحميل الإعدادات:', error);
-
-                            // Try to calculate with existing settings
-                            calculateDetailedBreakdown();
-
-                            // Restore button state
-                            this.innerHTML = originalText;
-                            this.disabled = false;
-
-                            showNotification('تم إعادة الحساب بالإعدادات المتاحة', 'warning');
-                        });
-                    } catch (error) {
-                        console.error('خطأ في إعادة الحساب:', error);
-
-                        // Restore button state
-                        this.innerHTML = originalText;
-                        this.disabled = false;
-
-                        showNotification('حدث خطأ في إعادة الحساب', 'danger');
+                    if (document.body.contains(notification)) {
+                        notification.remove();
                     }
-                }, 800); // Small delay for better UX
+                }, 5000);
+            }
+
+            // Refresh financial summary
+            async function refreshFinancialSummary() {
+                console.log('بدء تحديث الملخص المالي');
+
+                try {
+                    const settingsLoaded = await loadScholarshipSettings();
+
+                    if (settingsLoaded) {
+                        console.log('تم تحميل الإعدادات الجديدة بنجاح');
+                        showNotification('تم تحديث إعدادات التأمين من الخادم', 'success');
+                    } else {
+                        console.log('تم استخدام الإعدادات الافتراضية');
+                        showNotification('تم استخدام الإعدادات الافتراضية', 'info');
+                    }
+
+                    // Recalculate with updated settings
+                    calculateDetailedBreakdown();
+
+                    console.log('تم تحديث الملخص المالي بنجاح');
+
+                } catch (error) {
+                    console.error('خطأ في تحديث الملخص المالي:', error);
+                    showNotification('حدث خطأ في تحديث الملخص المالي', 'danger');
+                }
+            }
+
+            // Event listeners
+            const refreshSummaryBtn = document.getElementById('refresh-summary-btn');
+            if (refreshSummaryBtn) {
+                refreshSummaryBtn.addEventListener('click', function() {
+                    this.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
+                    refreshFinancialSummary().then(() => {
+                        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                    });
+                });
+            }
+
+            const recalculateBtn = document.getElementById('recalculate-btn');
+            if (recalculateBtn) {
+                recalculateBtn.addEventListener('click', function() {
+                    console.log('المستخدم طلب إعادة الحساب');
+
+                    // Update button state
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bi bi-calculator spin"></i> {% trans "جاري الحساب..." %}';
+                    this.disabled = true;
+
+                    // Simulate calculation delay for better UX
+                    setTimeout(() => {
+                        try {
+                            // First reload settings, then recalculate
+                            loadScholarshipSettings().then(() => {
+                                calculateDetailedBreakdown();
+
+                                // Restore button state
+                                this.innerHTML = originalText;
+                                this.disabled = false;
+
+                                console.log('تم إنهاء إعادة الحساب بنجاح');
+                            }).catch((error) => {
+                                console.error('خطأ في إعادة تحميل الإعدادات:', error);
+
+                                // Try to calculate with existing settings
+                                calculateDetailedBreakdown();
+
+                                // Restore button state
+                                this.innerHTML = originalText;
+                                this.disabled = false;
+
+                                showNotification('تم إعادة الحساب بالإعدادات المتاحة', 'warning');
+                            });
+                        } catch (error) {
+                            console.error('خطأ في إعادة الحساب:', error);
+
+                            // Restore button state
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+
+                            showNotification('حدث خطأ في إعادة الحساب', 'danger');
+                        }
+                    }, 800); // Small delay for better UX
+                });
+            }
+
+            // Initial load
+            loadScholarshipSettings().then(() => {
+                calculateDetailedBreakdown();
             });
-        }
-
-        // Initial load
-        loadScholarshipSettings().then(() => {
-            calculateDetailedBreakdown();
         });
-    });
-</script>
-{% endblock %}
+    </script>
+    {% endblock %}
 
-<!-- Enhanced CSS -->
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    /* استخدام خط Cairo */
-    body, .card, .btn, .table, .badge, .alert {
-        font-family: 'Cairo', sans-serif !important;
-    }
-
-    .info-item {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .info-item:last-child {
-        border-bottom: none;
-    }
-
-    .info-item label {
-        display: inline-block;
-        min-width: 120px;
-        margin-bottom: 0;
-    }
-
-    .financial-summary {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 0.5rem;
-        padding: 1rem;
-    }
-
-    .summary-item {
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .summary-item:last-child {
-        border-bottom: none;
-    }
-
-    .progress-bar {
-        background: linear-gradient(90deg, #28a745 0%, #dc3545 100%);
-        transition: width 0.3s ease;
-    }
-
-    .card {
-        border: none;
-        border-radius: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .card-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 0.5rem 0.5rem 0 0 !important;
-    }
-
-    .btn {
-        border-radius: 0.375rem;
-        transition: all 0.2s ease;
-    }
-
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .table {
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: none;
-        font-weight: 600;
-    }
-
-    .badge {
-        font-size: 0.75em;
-        padding: 0.5em 0.75em;
-    }
-
-    /* تأثير الدوران للأزرار */
-    .spin {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    /* تحسين التخطيط للأجهزة المحمولة */
-    @media (max-width: 768px) {
-        .d-flex.flex-wrap.gap-2 {
-            flex-direction: column;
+    <!-- Enhanced CSS -->
+    {% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* استخدام خط Cairo */
+        body, .card, .btn, .table, .badge, .alert {
+            font-family: 'Cairo', sans-serif !important;
         }
 
-        .btn {
-            width: 100%;
-            margin-bottom: 0.5rem;
+        .info-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
         }
 
         .info-item label {
-            min-width: 100px;
-            font-size: 0.9em;
-        }
-    }
-
-    /* تحسين الجداول للأجهزة المحمولة */
-    @media (max-width: 576px) {
-        .table-responsive {
-            font-size: 0.875em;
+            display: inline-block;
+            min-width: 120px;
+            margin-bottom: 0;
         }
 
-        .btn-group-sm .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
+        .financial-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0.5rem;
+            padding: 1rem;
         }
-    }
 
-    /* تأثيرات بصرية للبطاقات */
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-    }
+        .summary-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #dee2e6;
+        }
 
-    /* تحسين النصوص */
-    .text-primary { color: #0d6efd !important; }
-    .text-success { color: #198754 !important; }
-    .text-danger { color: #dc3545 !important; }
-    .text-warning { color: #fd7e14 !important; }
-    .text-info { color: #0dcaf0 !important; }
+        .summary-item:last-child {
+            border-bottom: none;
+        }
 
-    /* إضافة تأثير لزر التحديث */
-    #refresh-summary-btn, #recalculate-btn {
-        transition: all 0.2s ease;
-    }
+        .progress-bar {
+            background: linear-gradient(90deg, #28a745 0%, #dc3545 100%);
+            transition: width 0.3s ease;
+        }
 
-    #refresh-summary-btn:hover, #recalculate-btn:hover {
-        transform: scale(1.05);
-    }
-</style>
-{% endblock %}
-{% endblock %}
+        .card {
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0.5rem 0.5rem 0 0 !important;
+        }
+
+        .btn {
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table {
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            font-weight: 600;
+        }
+
+        .badge {
+            font-size: 0.75em;
+            padding: 0.5em 0.75em;
+        }
+
+        /* تأثير الدوران للأزرار */
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* تحسين التخطيط للأجهزة المحمولة */
+        @media (max-width: 768px) {
+            .d-flex.flex-wrap.gap-2 {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .info-item label {
+                min-width: 100px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* تحسين الجداول للأجهزة المحمولة */
+        @media (max-width: 576px) {
+            .table-responsive {
+                font-size: 0.875em;
+            }
+
+            .btn-group-sm .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* تأثيرات بصرية للبطاقات */
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        /* تحسين النصوص */
+        .text-primary { color: #0d6efd !important; }
+        .text-success { color: #198754 !important; }
+        .text-danger { color: #dc3545 !important; }
+        .text-warning { color: #fd7e14 !important; }
+        .text-info { color: #0dcaf0 !important; }
+
+        /* إضافة تأثير لزر التحديث */
+        #refresh-summary-btn, #recalculate-btn {
+            transition: all 0.2s ease;
+        }
+
+        #refresh-summary-btn:hover, #recalculate-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* تحسين عرض المسودات */
+        .alert-info {
+            border-left: 4px solid #0dcaf0;
+        }
+
+        /* تحسين عرض الحالات */
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+    </style>
+    {% endblock %}
+    {% endblock %}

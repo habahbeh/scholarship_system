@@ -84,4 +84,8 @@ urlpatterns = [
     path('api/validate-budget/<int:budget_id>/', views.api_validate_budget_calculation,
          name='api_validate_budget_calculation'),
 
+    # إدارة حالة الميزانية
+    path('budget/<int:budget_id>/activate/', views.activate_budget, name='activate_budget'),
+    path('budget/<int:budget_id>/revert-to-draft/', views.revert_to_draft, name='revert_to_draft'),
+
 ]

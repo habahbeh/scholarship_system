@@ -141,6 +141,7 @@ class ScholarshipBudget(models.Model):
         verbose_name=_('حالة الميزانية')
     )
 
+
     # تفاصيل الفئات المالية
     tuition_fees = models.DecimalField(
         max_digits=10,
@@ -271,6 +272,15 @@ class ScholarshipBudget(models.Model):
             ).exclude(id=self.id).update(is_current=False)
 
         super().save(*args, **kwargs)
+
+    # دالة لتفعيل الميزانية
+    def activate(self):
+        """تفعيل الميزانية بعد المراجعة"""
+        if self.status == 'draft':
+            self.status = 'active'
+            self.save()
+            return True
+        return False
 
     # دوال الحساب المحسنة
     def get_spent_amount(self):
