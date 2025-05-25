@@ -12,7 +12,7 @@
             {% endif %}
         </h2>
     </div>
-    
+
     {% if not is_update %}
     <div class="budget-info">
         <h3>{% trans "معلومات الميزانية" %}</h3>
@@ -38,10 +38,10 @@
         </div>
     </div>
     {% endif %}
-    
+
     <form method="post" class="expense-form" enctype="multipart/form-data">
         {% csrf_token %}
-        
+
         {% if form.errors %}
         <div class="alert alert-danger">
             {% for field in form %}
@@ -54,7 +54,7 @@
             {% endfor %}
         </div>
         {% endif %}
-        
+
         <div class="card">
             <div class="card-header">
                 <h3>{% trans "معلومات المصروف" %}</h3>
@@ -104,7 +104,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="form-actions mt-4">
             <button type="submit" class="btn btn-primary">
                 {% if is_update %}
