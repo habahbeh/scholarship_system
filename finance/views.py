@@ -897,6 +897,8 @@ def budget_detail(request, budget_id):
     }
     return render(request, 'finance/budget_detail.html', context)
 
+
+
 @login_required
 @permission_required('finance.view_scholarshipbudget', raise_exception=True)
 def recalculate_budget(request, budget_id):
