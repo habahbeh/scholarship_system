@@ -790,42 +790,44 @@ def budget_detail(request, budget_id):
 
     if fiscal_year_id:
         current_fiscal_year = get_object_or_404(FiscalYear, id=fiscal_year_id)
+        # تصفية المصروفات حسب السنة المالية المحددة
+        expenses = Expense.objects.filter(
+            budget=budget,
+            fiscal_year=current_fiscal_year
+        ).order_by('-date')
     else:
-        # استخدام السنة المالية الحالية
+        # استخدام السنة المالية الحالية للعرض فقط
         settings = ScholarshipSettings.objects.first()
         if settings and settings.current_fiscal_year:
             current_fiscal_year = settings.current_fiscal_year
         else:
             current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
 
-    # الحصول على المصروفات المرتبطة بهذه الميزانية في السنة المالية المحددة
-    expenses = Expense.objects.filter(
-        budget=budget,
-        fiscal_year=current_fiscal_year
-    ).order_by('-date')
+        # عرض جميع المصروفات بغض النظر عن السنة المالية
+        expenses = Expense.objects.filter(
+            budget=budget
+        ).order_by('-date')
 
-    # حساب المبلغ المصروف في السنة المالية المحددة
-    spent_amount = Expense.objects.filter(
+    # حساب إجمالي المصروفات المعتمدة (كل السنوات المالية)
+    total_spent = Expense.objects.filter(
         budget=budget,
-        fiscal_year=current_fiscal_year,
         status='approved'
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     # المبلغ المتبقي (من إجمالي الميزانية)
-    remaining_amount = budget.total_amount - spent_amount
+    remaining_amount = budget.total_amount - total_spent
 
     # النسبة المئوية للصرف
-    spent_percentage = (spent_amount / budget.total_amount * 100) if budget.total_amount > 0 else 0
+    spent_percentage = (total_spent / budget.total_amount * 100) if budget.total_amount > 0 else 0
 
     # الحصول على قائمة السنوات المالية التي تحتوي على مصروفات لهذه الميزانية
     fiscal_years_with_expenses = FiscalYear.objects.filter(
         expenses__budget=budget
     ).distinct().order_by('-year')
 
-    # الحصول على المصروفات حسب الفئة في السنة المالية الحالية
+    # الحصول على المصروفات حسب الفئة لجميع السنوات المالية
     expenses_by_category = Expense.objects.filter(
         budget=budget,
-        fiscal_year=current_fiscal_year,
         status='approved'
     ).values(
         'category__name'
@@ -833,15 +835,23 @@ def budget_detail(request, budget_id):
         total=Sum('amount')
     ).order_by('-total')
 
+    # إضافة النسبة المئوية لكل فئة
+    for category in expenses_by_category:
+        if total_spent > 0:
+            category['percentage'] = (category['total'] / total_spent * 100)
+        else:
+            category['percentage'] = 0
+
     context = {
         'budget': budget,
         'expenses': expenses,
-        'spent_amount': spent_amount,
+        'total_spent': total_spent,
         'remaining_amount': remaining_amount,
         'spent_percentage': spent_percentage,
         'current_fiscal_year': current_fiscal_year,
         'fiscal_years_with_expenses': fiscal_years_with_expenses,
         'expenses_by_category': expenses_by_category,
+        'fiscal_year_id': fiscal_year_id,  # لاستخدامه في قالب العرض
     }
     return render(request, 'finance/budget_detail.html', context)
 
@@ -4578,18 +4588,6 @@ def budget_all_expenses(request, budget_id):
     # الحصول على جميع المصروفات لهذه الميزانية
     expenses = Expense.objects.filter(budget=budget).order_by('-date')
 
-    # حساب إجماليات لكل سنة مالية
-    fiscal_year_totals = Expense.objects.filter(
-        budget=budget,
-        status='approved'
-    ).values(
-        'fiscal_year__year',
-        'fiscal_year__name'
-    ).annotate(
-        total=Sum('amount'),
-        count=Count('id')
-    ).order_by('-fiscal_year__year')
-
     # حساب المبلغ الإجمالي المصروف
     total_spent = Expense.objects.filter(
         budget=budget,
@@ -4601,6 +4599,30 @@ def budget_all_expenses(request, budget_id):
 
     # النسبة المئوية للصرف
     spent_percentage = (total_spent / budget.total_amount * 100) if budget.total_amount > 0 else 0
+
+    # حساب إجماليات لكل سنة مالية مع النسب المئوية
+    fiscal_year_totals = []
+    raw_totals = Expense.objects.filter(
+        budget=budget,
+        status='approved'
+    ).values(
+        'fiscal_year__year'
+    ).annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-fiscal_year__year')
+
+    for year_total in raw_totals:
+        percentage = 0
+        if total_spent > 0:
+            percentage = (year_total['total'] / total_spent) * 100
+
+        fiscal_year_totals.append({
+            'fiscal_year__year': year_total['fiscal_year__year'],
+            'count': year_total['count'],
+            'total': year_total['total'],
+            'percentage': percentage
+        })
 
     context = {
         'budget': budget,

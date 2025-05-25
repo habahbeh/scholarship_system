@@ -110,6 +110,24 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
+                    <!-- حقل اختيار السنة المالية -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.fiscal_year.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-calendar-alt me-1 text-primary"></i>{{ form.fiscal_year.label }}
+                            </label>
+                            {{ form.fiscal_year.errors }}
+                            <select name="{{ form.fiscal_year.html_name }}" id="{{ form.fiscal_year.id_for_label }}" class="form-select {% if form.fiscal_year.errors %}is-invalid{% endif %}">
+                                {% for choice in form.fiscal_year.field.queryset %}
+                                <option value="{{ choice.id }}" {% if form.fiscal_year.value|stringformat:'s' == choice.id|stringformat:'s' %}selected{% endif %}>{{ choice }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.fiscal_year.help_text %}
+                            <div class="form-text">{{ form.fiscal_year.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="{{ form.category.id_for_label }}" class="form-label fw-bold">
@@ -223,6 +241,7 @@
                     <li>{% trans "سيتم تقديم المصروف بحالة معلق حتى تتم الموافقة عليه" %}</li>
                     <li>{% trans "يجب إرفاق إيصال أو مستند يثبت المصروف إن أمكن" %}</li>
                     <li>{% trans "تأكد من اختيار الفئة المناسبة للمصروف" %}</li>
+                    <li>{% trans "تأكد من أن تاريخ المصروف يقع ضمن فترة السنة المالية المحددة" %}</li>
                 </ul>
             </div>
         </div>
@@ -242,4 +261,55 @@
         </div>
     </form>
 </div>
+
+<!-- إضافة جافاسكريبت للتحقق من صحة النموذج -->
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // التحقق من تاريخ المصروف مع السنة المالية
+        const fiscalYearSelect = document.getElementById('{{ form.fiscal_year.id_for_label }}');
+        const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+
+        // بيانات السنوات المالية (يمكن تحميلها من الخادم)
+        const fiscalYears = {
+            {% for year in form.fiscal_year.field.queryset %}
+                "{{ year.id }}": {
+                    "start_date": "{{ year.start_date|date:'Y-m-d' }}",
+                    "end_date": "{{ year.end_date|date:'Y-m-d' }}"
+                },
+            {% endfor %}
+        };
+
+        function validateDate() {
+            const selectedFiscalYear = fiscalYearSelect.value;
+            const selectedDate = dateInput.value;
+
+            if (selectedFiscalYear && selectedDate && fiscalYears[selectedFiscalYear]) {
+                const startDate = fiscalYears[selectedFiscalYear].start_date;
+                const endDate = fiscalYears[selectedFiscalYear].end_date;
+
+                if (selectedDate < startDate || selectedDate > endDate) {
+                    dateInput.setCustomValidity("{% trans 'تاريخ المصروف يجب أن يكون ضمن فترة السنة المالية المحددة' %}");
+                    return false;
+                }
+            }
+
+            dateInput.setCustomValidity('');
+            return true;
+        }
+
+        fiscalYearSelect.addEventListener('change', validateDate);
+        dateInput.addEventListener('change', validateDate);
+
+        // التحقق عند تقديم النموذج
+        document.querySelector('.expense-form').addEventListener('submit', function(e) {
+            if (!validateDate()) {
+                e.preventDefault();
+                alert("{% trans 'تاريخ المصروف يجب أن يكون ضمن فترة السنة المالية المحددة' %}");
+            }
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}
