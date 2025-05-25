@@ -1353,18 +1353,37 @@ def expense_list(request):
     total_amount = expenses.aggregate(total=Sum('amount'))['total'] or 0
     approved_amount = expenses.filter(status='approved').aggregate(total=Sum('amount'))['total'] or 0
     pending_amount = expenses.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
+    rejected_amount = expenses.filter(status='rejected').aggregate(total=Sum('amount'))['total'] or 0
 
     # الحصول على السنوات المالية للعرض في الواجهة
     fiscal_years = FiscalYear.objects.all().order_by('-year')
 
+    # إحصائيات المصروفات حسب السنة المالية
+    fiscal_year_totals = Expense.objects.filter(
+        fiscal_year__isnull=False
+    ).values(
+        'fiscal_year__year'
+    ).annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-fiscal_year__year')
+
+    # حساب النسبة المئوية
+    for year_total in fiscal_year_totals:
+        if total_amount > 0:
+            year_total['percentage'] = (year_total['total'] / total_amount) * 100
+        else:
+            year_total['percentage'] = 0
+
     context = {
         'expenses': expenses_page,
         'filter_form': filter_form,
-        'total_count': expenses.count(),
         'total_amount': total_amount,
         'approved_amount': approved_amount,
         'pending_amount': pending_amount,
+        'rejected_amount': rejected_amount,
         'fiscal_years': fiscal_years,
+        'fiscal_year_totals': fiscal_year_totals,
     }
     return render(request, 'finance/expense_list.html', context)
 

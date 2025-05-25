@@ -180,9 +180,6 @@
                                 {% trans "تفاصيل التكاليف السنوية" %}
                             </h5>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="recalculate-btn">
-                                    <i class="bi bi-calculator me-1"></i>{% trans "إعادة الحساب" %}
-                                </button>
                                 <a href="{% url 'finance:scholarship_years_costs_report' budget.id %}"
                                    class="btn btn-outline-info btn-sm" target="_blank">
                                     <i class="bi bi-file-text me-1"></i>{% trans "تقرير التكاليف" %}
@@ -628,58 +625,6 @@
                         });
                     }
 
-                    // Recalculate button event
-                    const recalculateBtn = document.getElementById('recalculate-btn');
-                    if (recalculateBtn) {
-                        recalculateBtn.addEventListener('click', function () {
-                            console.log('المستخدم طلب إعادة الحساب');
-
-                            // Update button state
-                            const originalText = this.innerHTML;
-                            this.innerHTML = '<i class="bi bi-calculator spin"></i> {% trans "جاري الحساب..." %}';
-                            this.disabled = true;
-
-                            // Make AJAX request to recalculate
-                            fetch('{% url "finance:recalculate_budget" budget.id %}')
-                                .then(response => response.json())
-                                .then(data => {
-                                    // Update the displayed values
-                                    updateElementWithAnimation('base-total', data.yearly_costs_total + ' {% trans "د.أ" %}');
-                                    updateElementWithAnimation('insurance-amount', data.insurance_amount + ' {% trans "د.أ" %}');
-                                    updateElementWithAnimation('additional-amount', data.additional_amount + ' {% trans "د.أ" %}');
-                                    updateElementWithAnimation('final-calculated-total', data.final_total + ' {% trans "د.أ" %}');
-
-                                    // Update rates display
-                                    document.getElementById('insurance-rate').textContent = data.insurance_rate_display + '%';
-                                    document.getElementById('additional-rate').textContent = data.additional_rate_display + '%';
-
-                                    // Restore button state
-                                    this.innerHTML = originalText;
-                                    this.disabled = false;
-
-                                    // Check for discrepancy
-                                    if (data.has_discrepancy) {
-                                        const finalTotalElement = document.getElementById('final-calculated-total');
-                                        finalTotalElement.classList.remove('text-success');
-                                        finalTotalElement.classList.add('text-warning');
-                                        finalTotalElement.title = 'يختلف عن إجمالي الميزانية المحفوظة: ' + data.saved_budget_total + ' د.أ (الفرق: ' + data.difference + ' د.أ)';
-
-                                        showNotification('تحذير: المجموع المحسوب يختلف عن الميزانية المحفوظة بمقدار ' + data.difference + ' د.أ', 'warning');
-                                    } else {
-                                        showNotification('تم إعادة الحساب بنجاح', 'success');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('خطأ في إعادة الحساب:', error);
-
-                                    // Restore button state
-                                    this.innerHTML = originalText;
-                                    this.disabled = false;
-
-                                    showNotification('حدث خطأ في إعادة الحساب', 'danger');
-                                });
-                        });
-                    }
                 });
             </script>
         {% endblock %}
@@ -841,14 +786,6 @@
                     color: #0dcaf0 !important;
                 }
 
-                /* إضافة تأثير لزر التحديث */
-                #refresh-summary-btn, #recalculate-btn {
-                    transition: all 0.2s ease;
-                }
-
-                #refresh-summary-btn:hover, #recalculate-btn:hover {
-                    transform: scale(1.05);
-                }
 
                 /* تحسين عرض المسودات */
                 .alert-info {

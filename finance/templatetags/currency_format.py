@@ -45,3 +45,24 @@ def currency_with_symbol(value, symbol='JD'):
         return f"{formatted} {symbol}"
     else:
         return f"{symbol} {formatted}"
+
+
+@register.filter
+def div(value, arg):
+    """
+    قسمة قيمة على أخرى
+    """
+    try:
+        return float(value) / float(arg)
+    except (ValueError, ZeroDivisionError):
+        return 0
+
+@register.filter
+def mul(value, arg):
+    """
+    ضرب قيمة بأخرى
+    """
+    try:
+        return float(value) * float(arg)
+    except ValueError:
+        return 0
