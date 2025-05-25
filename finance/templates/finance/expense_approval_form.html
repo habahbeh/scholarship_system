@@ -1,90 +1,181 @@
 {% extends "finance/base.html" %}
 {% load static i18n %}
-
+{% load currency_format %}
 {% block finance_content %}
 <div class="expense-approval-container">
-    <div class="page-header">
-        <h2>{% trans "الموافقة أو رفض المصروف" %}</h2>
+    <div class="page-header mb-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 class="mb-0">
+                <i class="fas fa-check-circle me-2 text-primary"></i>
+                {% trans "الموافقة أو رفض المصروف" %}
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'finance:home' %}">{% trans "الرئيسية" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'finance:expense_list' %}">{% trans "المصروفات" %}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'finance:expense_detail' expense.id %}">{% trans "تفاصيل المصروف" %}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% trans "موافقة/رفض" %}</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-    
-    <div class="expense-info">
-        <h3>{% trans "معلومات المصروف" %}</h3>
-        <table class="table">
-            <tr>
-                <th>{% trans "المبتعث" %}:</th>
-                <td>{{ expense.budget.application.applicant.get_full_name }}</td>
-            </tr>
-            <tr>
-                <th>{% trans "الفئة" %}:</th>
-                <td>{{ expense.category.name }}</td>
-            </tr>
-            <tr>
-                <th>{% trans "المبلغ" %}:</th>
-                <td>{{ expense.amount|floatformat:2 }} {% trans "دينار" %}</td>
-            </tr>
-            <tr>
-                <th>{% trans "التاريخ" %}:</th>
-                <td>{{ expense.date }}</td>
-            </tr>
-            <tr>
-                <th>{% trans "الوصف" %}:</th>
-                <td>{{ expense.description }}</td>
-            </tr>
-            {% if expense.receipt_number %}
-            <tr>
-                <th>{% trans "رقم الإيصال" %}:</th>
-                <td>{{ expense.receipt_number }}</td>
-            </tr>
-            {% endif %}
-            {% if expense.receipt_file %}
-            <tr>
-                <th>{% trans "ملف الإيصال" %}:</th>
-                <td>
-                    <a href="{{ expense.receipt_file.url }}" target="_blank" class="btn btn-sm btn-info">
-                        {% trans "عرض الإيصال" %}
-                    </a>
-                </td>
-            </tr>
-            {% endif %}
-        </table>
+
+    <div class="expense-info mb-4">
+        <div class="card border-primary shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>{% trans "معلومات المصروف" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <th class="border-0" width="40%">
+                                    <i class="fas fa-user me-2 text-primary"></i>{% trans "المبتعث" %}:
+                                </th>
+                                <td class="border-0 fw-bold">{{ expense.budget.application.applicant.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0">
+                                    <i class="fas fa-tag me-2 text-primary"></i>{% trans "الفئة" %}:
+                                </th>
+                                <td class="border-0">{{ expense.category.name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0">
+                                    <i class="fas fa-money-bill-wave me-2 text-primary"></i>{% trans "المبلغ" %}:
+                                </th>
+                                <td class="border-0 fw-bold">{{ expense.amount|currency }} {% trans "دينار" %}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <th class="border-0" width="40%">
+                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>{% trans "التاريخ" %}:
+                                </th>
+                                <td class="border-0">{{ expense.date }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0">
+                                    <i class="fas fa-receipt me-2 text-primary"></i>{% trans "رقم الإيصال" %}:
+                                </th>
+                                <td class="border-0">{{ expense.receipt_number|default:"--" }}</td>
+                            </tr>
+                            {% if expense.receipt_file %}
+                            <tr>
+                                <th class="border-0">
+                                    <i class="fas fa-file-invoice me-2 text-primary"></i>{% trans "ملف الإيصال" %}:
+                                </th>
+                                <td class="border-0">
+                                    <a href="{{ expense.receipt_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>{% trans "عرض الإيصال" %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <h6 class="fw-bold">
+                        <i class="fas fa-align-left me-2 text-primary"></i>{% trans "الوصف" %}:
+                    </h6>
+                    <p class="mb-0 bg-light p-2 rounded">{{ expense.description|default:"لا يوجد وصف" }}</p>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <form method="post" class="approval-form">
         {% csrf_token %}
-        
+
         {% if form.errors %}
         <div class="alert alert-danger">
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-triangle me-2"></i>{% trans "يوجد أخطاء في النموذج" %}
+            </h5>
+            <hr>
             {% for field in form %}
                 {% for error in field.errors %}
-                    <p>{{ field.label }}: {{ error }}</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <span>{{ field.label }}: {{ error }}</span>
+                    </div>
                 {% endfor %}
             {% endfor %}
             {% for error in form.non_field_errors %}
-                <p>{{ error }}</p>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <span>{{ error }}</span>
+                </div>
             {% endfor %}
         </div>
         {% endif %}
-        
-        <div class="card">
-            <div class="card-header">
-                <h3>{% trans "قرار الموافقة" %}</h3>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2 text-primary"></i>{% trans "قرار الموافقة" %}
+                </h5>
             </div>
             <div class="card-body">
-                <div class="form-group">
-                    <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
-                    {{ form.status }}
+                <div class="form-group mb-3">
+                    <label for="{{ form.status.id_for_label }}" class="form-label fw-bold">
+                        <i class="fas fa-check-double me-1 text-primary"></i>{{ form.status.label }}
+                    </label>
+                    {{ form.status.errors }}
+                    <select name="{{ form.status.html_name }}" id="{{ form.status.id_for_label }}" class="form-select {% if form.status.errors %}is-invalid{% endif %}">
+                        {% for choice in form.status.field.choices %}
+                        <option value="{{ choice.0 }}" {% if form.status.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.status.help_text %}
+                    <div class="form-text">{{ form.status.help_text }}</div>
+                    {% endif %}
                 </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.approval_notes.id_for_label }}" class="form-label">{{ form.approval_notes.label }}</label>
-                    {{ form.approval_notes }}
+
+                <div class="form-group mb-3">
+                    <label for="{{ form.approval_notes.id_for_label }}" class="form-label fw-bold">
+                        <i class="fas fa-comment-alt me-1 text-primary"></i>{{ form.approval_notes.label }}
+                    </label>
+                    {{ form.approval_notes.errors }}
+                    <textarea name="{{ form.approval_notes.html_name }}" id="{{ form.approval_notes.id_for_label }}"
+                        class="form-control {% if form.approval_notes.errors %}is-invalid{% endif %}" rows="3">{{ form.approval_notes.value|default:'' }}</textarea>
+                    {% if form.approval_notes.help_text %}
+                    <div class="form-text">{{ form.approval_notes.help_text }}</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        
-        <div class="form-actions mt-4">
-            <button type="submit" class="btn btn-primary">{% trans "حفظ القرار" %}</button>
-            <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-secondary">{% trans "إلغاء" %}</a>
+
+        <div class="alert alert-warning d-flex mb-4">
+            <div class="me-3 fs-4">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div>
+                <h5>{% trans "تنبيه هام" %}</h5>
+                <p class="mb-0">{% trans "بعد الموافقة أو رفض المصروف، لا يمكن التراجع عن القرار. يرجى التأكد من صحة البيانات والقرار قبل الحفظ." %}</p>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'finance:expense_detail' expense.id %}" class="btn btn-secondary">
+                <i class="fas fa-times me-1"></i>{% trans "إلغاء" %}
+            </a>
+            <div>
+                <button type="submit" name="status" value="approved" class="btn btn-success me-2"
+                        onclick="document.getElementById('{{ form.status.id_for_label }}').value='approved';">
+                    <i class="fas fa-check me-1"></i>{% trans "الموافقة على المصروف" %}
+                </button>
+                <button type="submit" name="status" value="rejected" class="btn btn-danger"
+                        onclick="document.getElementById('{{ form.status.id_for_label }}').value='rejected';">
+                    <i class="fas fa-ban me-1"></i>{% trans "رفض المصروف" %}
+                </button>
+            </div>
         </div>
     </form>
 </div>
