@@ -3765,7 +3765,7 @@ def update_budget_categories_from_yearly_costs(budget):
 @permission_required('finance.add_yearlyscholarshipcosts', raise_exception=True)
 def add_scholarship_year(request, budget_id):
     """
-    إضافة سنة دراسية جديدة للميزانية
+    إضافة سنة دراسية جديدة للميزانية - نسخة محسنة مع معالجة دقيقة للحسابات
     """
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
@@ -3803,44 +3803,70 @@ def add_scholarship_year(request, budget_id):
     yearly_costs = list(existing_years)
     yearly_costs_total = budget.get_yearly_costs_total()
 
-    # حساب التأمين والمبالغ الإضافية
-    insurance_amount = budget.get_insurance_amount()
-    additional_amount = budget.get_additional_amount()
+    # حساب التأمين والمبالغ الإضافية باستخدام Decimal لضمان الدقة
+    from decimal import Decimal, ROUND_HALF_UP
+
+    yearly_costs_total_decimal = Decimal(str(yearly_costs_total)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    insurance_rate_decimal = Decimal(str(settings.life_insurance_rate / 100)).quantize(Decimal('0.000001'), rounding=ROUND_HALF_UP)
+    add_percentage_decimal = Decimal(str(settings.add_percentage / 100)).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+    # حساب التأمين على الحياة
+    insurance_amount = (yearly_costs_total_decimal * insurance_rate_decimal).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    # حساب التكلفة الحقيقية (تكاليف + تأمين)
+    true_cost = yearly_costs_total_decimal + insurance_amount
+
+    # حساب المبلغ الإضافي
+    additional_amount = (true_cost * add_percentage_decimal).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     if request.method == 'POST':
         form = YearlyScholarshipCostsForm(request.POST)
         if form.is_valid():
+            # حفظ نموذج السنة الجديدة مع تأجيل الحفظ في قاعدة البيانات
             year_cost = form.save(commit=False)
             year_cost.budget = budget
 
-            # حساب تكلفة السنة الجديدة
-            calculated_year_cost = form.cleaned_data.get('travel_tickets', 0) + \
-                                  (form.cleaned_data.get('monthly_allowance', 0) * form.cleaned_data.get('monthly_duration', 0)) + \
-                                  form.cleaned_data.get('visa_fees', 0) + \
-                                  form.cleaned_data.get('health_insurance', 0) + \
-                                  form.cleaned_data.get('tuition_fees_local', 0)
+            # الحصول على القيم من النموذج باستخدام Decimal لضمان الدقة
+            travel_tickets = Decimal(str(form.cleaned_data.get('travel_tickets', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            monthly_allowance = Decimal(str(form.cleaned_data.get('monthly_allowance', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            monthly_duration = Decimal(str(form.cleaned_data.get('monthly_duration', 0)))
+            visa_fees = Decimal(str(form.cleaned_data.get('visa_fees', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            health_insurance = Decimal(str(form.cleaned_data.get('health_insurance', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            tuition_fees_local = Decimal(str(form.cleaned_data.get('tuition_fees_local', 0))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-            # تعيين إجمالي تكلفة السنة
-            year_cost.total_year_cost = calculated_year_cost
+            # حساب المجموع الشهري
+            monthly_total = (monthly_allowance * monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            # حساب تكلفة السنة الجديدة
+            new_year_cost = (
+                travel_tickets +
+                monthly_total +
+                visa_fees +
+                health_insurance +
+                tuition_fees_local
+            ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            # حفظ السنة الجديدة في قاعدة البيانات
             year_cost.save()
 
             # حساب الميزانية الإجمالية الجديدة
             # إجمالي التكاليف السنوية بعد إضافة السنة الجديدة
-            new_yearly_costs_total = yearly_costs_total + calculated_year_cost
+            new_yearly_costs_total = yearly_costs_total_decimal + new_year_cost
 
             # حساب التأمين الجديد
-            new_insurance_amount = new_yearly_costs_total * settings.life_insurance_rate / 100
+            new_insurance_amount = (new_yearly_costs_total * insurance_rate_decimal).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-            # حساب التكلفة الحقيقية (التكاليف السنوية + التأمين)
+            # حساب التكلفة الحقيقية الجديدة (التكاليف السنوية + التأمين)
             new_true_cost = new_yearly_costs_total + new_insurance_amount
 
             # حساب النسبة الإضافية الجديدة
-            new_additional_amount = new_true_cost * settings.add_percentage / 100
+            new_additional_amount = (new_true_cost * add_percentage_decimal).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
             # حساب المبلغ النهائي الجديد
-            new_total_amount = new_true_cost + new_additional_amount
+            new_total_amount = (new_true_cost + new_additional_amount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
             # تحديث إجمالي الميزانية
+            old_total = budget.total_amount
             budget.total_amount = new_total_amount
             budget.save()
 
@@ -3849,7 +3875,7 @@ def add_scholarship_year(request, budget_id):
                 budget=budget,
                 fiscal_year=budget.fiscal_year,
                 action_type='create',
-                description=f'تمت إضافة سنة دراسية جديدة (السنة {year_cost.year_number}) للميزانية',
+                description=f'تمت إضافة سنة دراسية جديدة (السنة {year_cost.year_number}) وتحديث الميزانية من {old_total} إلى {new_total_amount}',
                 created_by=request.user
             )
 

@@ -69,9 +69,6 @@
                     <h5 class="mb-0">
                         <i class="bi bi-calculator me-2"></i>
                         {% trans "الملخص المالي الحالي" %}
-                        <a href="{% url 'finance:budget_breakdown' budget.id %}" class="btn btn-light btn-sm ms-2 float-end" id="refresh-current-summary" title="تحديث الملخص">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </a>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -265,18 +262,6 @@
                     </div>
 
                     <div class="col-md-4 mb-3">
-                        <label for="year-total-preview" class="form-label">{% trans "إجمالي تكلفة السنة" %}</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control bg-light text-primary fw-bold" id="year-total-preview" readonly value="0.00">
-                            <span class="input-group-text">{% trans "د.أ" %}</span>
-                            <button type="button" class="btn btn-primary" id="calculate-year-btn">
-                                <i class="bi bi-calculator"></i> {% trans "حساب" %}
-                            </button>
-                        </div>
-                        <div class="form-text">{% trans "اضغط على الزر للحساب التلقائي" %}</div>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
                         <label class="form-label">{% trans "سعر الصرف المستخدم" %}</label>
                         <div class="input-group">
                             <input type="text" class="form-control bg-light" readonly value="{{ budget.exchange_rate|currency }}">
@@ -286,71 +271,27 @@
                     </div>
                 </div>
 
-                <!-- Calculation Preview -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="border-bottom pb-2 mb-0 text-bg-success bg-opacity-10 p-2 rounded flex-grow-1">
-                                <i class="bi bi-calculator me-2"></i>{% trans "معاينة الحساب الجديد" %}
-                            </h6>
-                            <button type="button" class="btn btn-outline-primary ms-2" id="preview-calc-btn">
-                                <i class="bi bi-calculator me-1"></i>{% trans "حساب التأثير" %}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3">
-                        <div class="alert alert-light border text-center">
-                            <i class="bi bi-plus-circle text-success fs-4"></i>
-                            <h6 class="mt-2">{% trans "السنة الجديدة" %}</h6>
-                            <span class="fw-bold text-success" id="new-year-cost">0.00 {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="alert alert-light border text-center">
-                            <i class="bi bi-shield-check text-info fs-4"></i>
-                            <h6 class="mt-2">{% trans "التأمين الإضافي" %}</h6>
-                            <span class="fw-bold text-info" id="additional-insurance">0.00 {% trans "د.أ" %}</span>
-                            <small class="d-block text-muted" id="insurance-rate">{{ life_insurance_rate|floatformat:2 }}%</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="alert alert-light border text-center">
-                            <i class="bi bi-percent text-warning fs-4"></i>
-                            <h6 class="mt-2">{% trans "النسبة الإضافية" %}</h6>
-                            <span class="fw-bold text-warning" id="additional-percentage">0.00 {% trans "د.أ" %}</span>
-                            <small class="d-block text-muted" id="add-percentage">{{ add_percentage }}%</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="alert alert-success border text-center">
-                            <i class="bi bi-calculator text-success fs-4"></i>
-                            <h6 class="mt-2">{% trans "الميزانية الجديدة" %}</h6>
-                            <span class="fw-bold text-success" id="new-budget-total">{{ budget.total_amount|currency }} {% trans "د.أ" %}</span>
-                        </div>
-                    </div>
-
-                    <!-- Hidden inputs for server-side calculations -->
-                    <input type="hidden" name="calculated_year_cost" id="calculated_year_cost" value="0">
-                    <input type="hidden" name="calculated_total" id="calculated_total" value="{{ budget.total_amount }}">
-                </div>
-
-                <!-- Impact on Current Budget -->
+                <!-- Impact Information -->
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="alert alert-info border">
                             <div class="d-flex align-items-center">
-                                <i class="bi bi-exclamation-circle fs-4 me-3"></i>
+                                <i class="bi bi-info-circle fs-4 me-3"></i>
                                 <div>
-                                    <h6 class="mb-1">{% trans "تأثير على الميزانية الحالية" %}</h6>
+                                    <h6 class="mb-1">{% trans "معلومات عن تأثير السنة الجديدة" %}</h6>
                                     <p class="mb-0">
-                                        {% trans "ستتم إضافة تكلفة السنة الجديدة إلى إجمالي الميزانية الحالية. سيتم حساب التأمين والنسبة الإضافية وتحديث إجمالي الميزانية تلقائياً من الخادم." %}
+                                        {% trans "ستتم إضافة تكلفة السنة الجديدة إلى إجمالي الميزانية الحالية. سيتم حساب التأمين (معدل" %} <strong>{{ life_insurance_rate }}%</strong>)
+                                        {% trans "والنسبة الإضافية" %} <strong>({{ add_percentage }}%)</strong>
+                                        {% trans "وتحديث إجمالي الميزانية تلقائياً." %}
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Hidden fields for server-side calculation -->
+                <input type="hidden" name="calculated_year_cost" id="calculated_year_cost" value="0">
 
                 <!-- Form Actions -->
                 <div class="d-flex justify-content-between">
@@ -366,7 +307,7 @@
     </div>
 </div>
 
-<!-- JavaScript for UI Enhancement Only -->
+<!-- JavaScript for UI Enhancement -->
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -430,45 +371,12 @@
                 });
             }
 
-            // Calculate year total button
-            const calculateYearBtn = document.getElementById('calculate-year-btn');
-            if (calculateYearBtn) {
-                calculateYearBtn.addEventListener('click', function() {
-                    // Calculate year total locally without affecting other budget calculations
-                    calculateYearTotal();
-                });
-            }
-
-            // Preview calculation button
-            const previewCalcBtn = document.getElementById('preview-calc-btn');
-            if (previewCalcBtn) {
-                previewCalcBtn.addEventListener('click', function() {
-                    this.disabled = true;
-                    this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>{% trans "جاري الحساب..." %}';
-
-                    // Calculate year total first
-                    const yearTotal = calculateYearTotal();
-
-                    // Make AJAX request to preview calculation
-                    previewBudgetCalculation(yearTotal).then(() => {
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-calculator me-1"></i>{% trans "حساب التأثير" %}';
-                    }).catch(error => {
-                        console.error('خطأ في معاينة الحساب:', error);
-                        this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-calculator me-1"></i>{% trans "حساب التأثير" %}';
-                        showNotification('حدث خطأ في حساب التأثير على الميزانية', 'danger');
-                    });
-                });
-            }
-
             // Form submission
             const form = document.getElementById('scholarship-year-form');
             if (form) {
                 form.addEventListener('submit', function(e) {
-                    // Calculate year total and update hidden field
-                    const yearTotal = calculateYearTotal();
-                    document.getElementById('calculated_year_cost').value = yearTotal;
+                    // Calculate and update hidden fields for server-side processing
+                    updateHiddenFields();
 
                     // Update submit button state
                     const submitBtn = document.getElementById('submit-btn');
@@ -483,8 +391,8 @@
             }
         }
 
-        function calculateYearTotal() {
-            // Get values from form
+        function updateHiddenFields() {
+            // Calculate year total for server-side processing
             const travelTickets = parseFloat(document.getElementById('id_travel_tickets').value) || 0;
             const monthlyAllowance = parseFloat(document.getElementById('id_monthly_allowance').value) || 0;
             const monthlyDuration = parseInt(document.getElementById('id_monthly_duration').value) || 0;
@@ -494,71 +402,10 @@
 
             // Calculate year total
             const monthlyTotal = monthlyAllowance * monthlyDuration;
-            const newYearCost = travelTickets + monthlyTotal + visaFees + healthInsurance + tuitionFeesLocal;
+            const yearCost = travelTickets + monthlyTotal + visaFees + healthInsurance + tuitionFeesLocal;
 
-            // Update year total preview
-            document.getElementById('year-total-preview').value = newYearCost.toFixed(2);
-            document.getElementById('new-year-cost').textContent = newYearCost.toFixed(2) + ' د.أ';
-
-            // Return the calculated year total
-            return newYearCost;
-        }
-
-        async function previewBudgetCalculation(yearTotal) {
-            try {
-                // Format the URL with the budget ID and year cost
-                const url = `{% url 'finance:preview_year_impact' budget.id %}?year_cost=${yearTotal.toFixed(2)}`;
-
-                // Make API request to get calculation preview
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    throw new Error('فشل في الحصول على معاينة الحساب');
-                }
-
-                const data = await response.json();
-
-                // Update UI elements with calculated values
-                document.getElementById('additional-insurance').textContent = data.insurance_amount + ' {% trans "د.أ" %}';
-                document.getElementById('additional-percentage').textContent = data.additional_amount + ' {% trans "د.أ" %}';
-                document.getElementById('new-budget-total').textContent = data.new_total + ' {% trans "د.أ" %}';
-
-                // Update rates display if provided
-                if (data.insurance_rate_display) {
-                    document.getElementById('insurance-rate').textContent = data.insurance_rate_display + '%';
-                }
-                if (data.add_percentage_display) {
-                    document.getElementById('add-percentage').textContent = data.add_percentage_display + '%';
-                }
-
-                // Update hidden field
-                document.getElementById('calculated_total').value = data.new_total_raw;
-
-                // Highlight the budget increase
-                const currentTotal = parseFloat('{{ budget.total_amount }}');
-                const newTotal = parseFloat(data.new_total_raw);
-                const increase = newTotal - currentTotal;
-
-                const newBudgetElement = document.getElementById('new-budget-total');
-                if (increase > 0) {
-                    newBudgetElement.classList.remove('text-success');
-                    newBudgetElement.classList.add('text-primary');
-                    newBudgetElement.parentElement.querySelector('h6').innerHTML =
-                        '{% trans "الميزانية الجديدة" %} <small class="text-success">(+' + increase.toFixed(2) + ' د.أ)</small>';
-                } else {
-                    newBudgetElement.classList.remove('text-primary');
-                    newBudgetElement.classList.add('text-success');
-                    newBudgetElement.parentElement.querySelector('h6').textContent = '{% trans "الميزانية الجديدة" %}';
-                }
-
-                // Show success notification
-                showNotification('تم حساب التأثير على الميزانية بنجاح', 'success');
-
-            } catch (error) {
-                console.error('خطأ في حساب التأثير:', error);
-                showNotification('حدث خطأ في حساب التأثير على الميزانية', 'danger');
-                throw error;
-            }
+            // Update hidden field
+            document.getElementById('calculated_year_cost').value = yearCost.toFixed(2);
         }
 
         function showNotification(message, type = 'info') {
@@ -708,17 +555,6 @@
     .form-text {
         font-size: 0.775rem;
         color: #6c757d;
-    }
-
-    /* تحسين حقل معاينة إجمالي السنة */
-    #year-total-preview {
-        background-color: #e7f3ff !important;
-        border: 2px solid #0d6efd !important;
-        font-weight: bold !important;
-        font-size: 1.1em !important;
-        text-align: center !important;
-        cursor: not-allowed !important;
-        box-shadow: inset 0 0 5px rgba(13, 110, 253, 0.2) !important;
     }
 
     /* تحسين التخطيط للأجهزة المحمولة */
