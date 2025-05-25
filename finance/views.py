@@ -73,7 +73,8 @@ def finance_home(request):
         }
 
     # إجمالي الميزانيات والمصروفات
-    total_budget_amount = ScholarshipBudget.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    # تعديل: حساب فقط الميزانيات النشطة
+    total_budget_amount = ScholarshipBudget.objects.filter(status='active').aggregate(total=Sum('total_amount'))['total'] or 0
     total_expense_amount = Expense.objects.filter(status='approved').aggregate(total=Sum('amount'))['total'] or 0
 
     # أحدث 5 ميزانيات
@@ -528,12 +529,16 @@ def fiscal_year_budgets(request, fiscal_year_id):
     except EmptyPage:
         budgets_page = paginator.page(paginator.num_pages)
 
+    # تعديل: حساب مجموع الميزانيات النشطة فقط
+    active_budgets = budgets.filter(status='active')
+    total_budget = active_budgets.aggregate(total=Sum('total_amount'))['total'] or 0
+
     context = {
         'fiscal_year': fiscal_year,
         'budgets': budgets_page,
         'filter_form': filter_form,
-        'total_budget': budgets.aggregate(total=Sum('total_amount'))['total'] or 0,
-        'active_budgets': budgets.filter(status='active').count(),
+        'total_budget': total_budget,
+        'active_budgets': active_budgets.count(),
     }
     return render(request, 'finance/fiscal_year_budgets.html', context)
 
@@ -736,12 +741,16 @@ def budget_list(request):
     # الحصول على السنوات المالية المفتوحة للعرض في الواجهة
     open_fiscal_years = FiscalYear.objects.filter(status='open').order_by('-year')
 
+    # تعديل: حساب فقط مجموع الميزانيات النشطة
+    active_budgets = ScholarshipBudget.objects.filter(status='active')
+    total_budget_amount = active_budgets.aggregate(total=Sum('total_amount'))['total'] or 0
+
     context = {
         'budgets': budgets_page,
         'filter_form': filter_form,
         'total_count': budgets.count(),
         'open_fiscal_years': open_fiscal_years,
-        'total_budget_amount': budgets.aggregate(total=Sum('total_amount'))['total'] or 0,
+        'total_budget_amount': total_budget_amount,
     }
     return render(request, 'finance/budget_list.html', context)
 
@@ -1409,7 +1418,8 @@ def finance_dashboard(request):
     pending_expense_amount = Expense.objects.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
 
     # إجمالي الميزانيات والمصروفات
-    total_budget_amount = ScholarshipBudget.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    # تعديل: حساب فقط الميزانيات النشطة
+    total_budget_amount = ScholarshipBudget.objects.filter(status='active').aggregate(total=Sum('total_amount'))['total'] or 0
 
     # إذا كانت هناك سنة مالية حالية، احسب المصروفات المعتمدة فيها فقط
     if current_fiscal_year:
@@ -2973,8 +2983,8 @@ def generate_budget_summary_data(filters):
     end_date = filters.get('end_date')
     fiscal_year_id = filters.get('fiscal_year_id')
 
-    # إنشاء استعلام أساسي
-    budgets_query = ScholarshipBudget.objects.all()
+    # إنشاء استعلام أساسي - تعديل لاسترجاع فقط الميزانيات النشطة
+    budgets_query = ScholarshipBudget.objects.filter(status='active')
 
     # تطبيق الفلاتر
     if fiscal_year_id:
