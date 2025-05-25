@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "جميع المصروفات" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{% trans "جميع المصروفات - " %} {{ budget.application.applicant.get_full_name }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'budget_detail' budget.id %}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-right ml-1"></i> {% trans "العودة للميزانية" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-user-graduate"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "المبتعث" %}</span>
+                                    <span class="info-box-number">{{ budget.application.applicant.get_full_name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-graduation-cap"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "المنحة" %}</span>
+                                    <span class="info-box-number">{{ budget.application.scholarship.title }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary"><i class="fas fa-money-bill-wave"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "إجمالي الميزانية" %}</span>
+                                    <span class="info-box-number">{{ budget.total_amount|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-chart-pie"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "إجمالي المصروفات" %}</span>
+                                    <span class="info-box-number">{{ total_spent|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger"><i class="fas fa-chart-line"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "المبلغ المتبقي" %}</span>
+                                    <span class="info-box-number">{{ remaining_amount|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تقدم الصرف -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">{% trans "تقدم الصرف الإجمالي" %}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="progress-group">
+                                        <span class="progress-text">{% trans "نسبة الصرف" %}</span>
+                                        <span class="float-left">{{ spent_percentage|floatformat:1 }}%</span>
+                                        <div class="progress progress-sm">
+                                            <div class="progress-bar bg-primary" style="width: {{ spent_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المصروفات حسب السنة المالية -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">{% trans "المصروفات حسب السنة المالية" %}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>{% trans "السنة المالية" %}</th>
+                                                    <th>{% trans "عدد المصروفات" %}</th>
+                                                    <th>{% trans "إجمالي المبلغ" %}</th>
+                                                    <th>{% trans "النسبة" %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for year in fiscal_year_totals %}
+                                                <tr>
+                                                    <td>{{ year.fiscal_year__name }}</td>
+                                                    <td>{{ year.count }}</td>
+                                                    <td>{{ year.total|floatformat:2 }}</td>
+                                                    <td>{{ year.total|div:total_spent|mul:100|floatformat:1 }}%</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="4" class="text-center">{% trans "لا توجد مصروفات" %}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- قائمة جميع المصروفات -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">{% trans "جميع المصروفات" %}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>{% trans "التاريخ" %}</th>
+                                                    <th>{% trans "السنة المالية" %}</th>
+                                                    <th>{% trans "الفئة" %}</th>
+                                                    <th>{% trans "المبلغ" %}</th>
+                                                    <th>{% trans "الوصف" %}</th>
+                                                    <th>{% trans "الحالة" %}</th>
+                                                    <th>{% trans "الإجراءات" %}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for expense in expenses %}
+                                                <tr>
+                                                    <td>{{ expense.date }}</td>
+                                                    <td>{{ expense.fiscal_year.year }}</td>
+                                                    <td>{{ expense.category.name }}</td>
+                                                    <td>{{ expense.amount|floatformat:2 }}</td>
+                                                    <td>{{ expense.description|truncatechars:50 }}</td>
+                                                    <td>
+                                                        <span class="badge 
+                                                            {% if expense.status == 'approved' %}badge-success
+                                                            {% elif expense.status == 'pending' %}badge-warning
+                                                            {% elif expense.status == 'rejected' %}badge-danger
+                                                            {% endif %}">
+                                                            {{ expense.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'expense_detail' expense.id %}" class="btn btn-sm btn-info">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        {% if perms.finance.change_expense %}
+                                                        <a href="{% url 'expense_edit' expense.id %}" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="7" class="text-center">{% trans "لا توجد مصروفات" %}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

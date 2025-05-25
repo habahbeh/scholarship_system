@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "إغلاق السنة المالية" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{% trans "إغلاق السنة المالية وفتح سنة جديدة" %}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'fiscal_year_list' %}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-right ml-1"></i> {% trans "العودة للقائمة" %}
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="icon fas fa-exclamation-triangle"></i> {% trans "تحذير!" %}</h5>
+                        <p>{% trans "إغلاق السنة المالية هو إجراء لا يمكن التراجع عنه. بعد إغلاق السنة المالية الحالية، لن يمكن إضافة مصروفات جديدة إليها." %}</p>
+                        <p>{% trans "سيتم تلقائياً إنشاء سنة مالية جديدة وتعيينها كالسنة المالية الحالية." %}</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-calendar-alt"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "السنة المالية الحالية" %}</span>
+                                    <span class="info-box-number">{{ current_fiscal_year.name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-money-bill-wave"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{% trans "إجمالي الميزانية" %}</span>
+                                    <span class="info-box-number">{{ current_fiscal_year.total_budget|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.current_fiscal_year.id_for_label }}">{{ form.current_fiscal_year.label }}</label>
+                                    {{ form.current_fiscal_year }}
+                                    {% if form.current_fiscal_year.errors %}
+                                    <div class="text-danger">
+                                        {{ form.current_fiscal_year.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.new_year_date.id_for_label }}">{{ form.new_year_date.label }}</label>
+                                    {{ form.new_year_date }}
+                                    <small class="form-text text-muted">{% trans "إذا تُرك فارغاً، سيتم استخدام نفس التاريخ من السنة التالية" %}</small>
+                                    {% if form.new_year_date.errors %}
+                                    <div class="text-danger">
+                                        {{ form.new_year_date.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.confirm }}
+                            <label class="form-check-label" for="{{ form.confirm.id_for_label }}">
+                                {{ form.confirm.label }}
+                            </label>
+                            {% if form.confirm.errors %}
+                            <div class="text-danger">
+                                {{ form.confirm.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-lock ml-1"></i> {% trans "إغلاق السنة المالية وفتح سنة جديدة" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

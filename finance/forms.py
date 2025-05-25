@@ -7,6 +7,7 @@ from .models import (
     YearlyScholarshipCosts, FiscalYear, ScholarshipSettings
 )
 from applications.models import Application
+from django.db.models import Sum
 
 
 class FiscalYearForm(forms.ModelForm):
@@ -89,7 +90,7 @@ class ExpenseForm(forms.ModelForm):
 
     class Meta:
         model = Expense
-        fields = ['fiscal_year', 'category', 'amount', 'date', 'description', 'receipt_number', 'receipt_file']
+        fields = ['fiscal_year', 'category', 'amount', 'date', 'description']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
@@ -102,13 +103,34 @@ class ExpenseForm(forms.ModelForm):
         # عرض فقط السنوات المالية المفتوحة
         self.fields['fiscal_year'].queryset = FiscalYear.objects.filter(status='open')
 
-        # تعيين السنة المالية تلقائيًا إذا كانت الميزانية مرتبطة بسنة مالية
-        if self.budget and self.budget.fiscal_year and not self.instance.pk:
-            self.fields['fiscal_year'].initial = self.budget.fiscal_year
+        # تعيين السنة المالية تلقائيًا
+        # 1. أولاً، نستخدم السنة المالية المفتوحة الحالية
+        settings = ScholarshipSettings.objects.first()
+        current_fiscal_year = None
+
+        if settings and settings.current_fiscal_year:
+            current_fiscal_year = settings.current_fiscal_year
+        else:
+            current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+
+        if current_fiscal_year and not self.instance.pk:
+            self.fields['fiscal_year'].initial = current_fiscal_year
 
         # تعيين الميزانية تلقائيًا إذا تم تمريرها
         if self.budget and not self.instance.pk:
             self.instance.budget = self.budget
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date = cleaned_data.get('date')
+        fiscal_year = cleaned_data.get('fiscal_year')
+
+        # التحقق من توافق التاريخ مع السنة المالية
+        if date and fiscal_year:
+            if date < fiscal_year.start_date or date > fiscal_year.end_date:
+                self.add_error('date', _("تاريخ المصروف يجب أن يكون ضمن فترة السنة المالية المحددة"))
+
+        return cleaned_data
 
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
@@ -119,14 +141,21 @@ class ExpenseForm(forms.ModelForm):
 
         # التحقق من توفر المبلغ في الميزانية إذا كان هناك ميزانية محددة
         if self.budget:
-            remaining = self.budget.get_remaining_amount()
-            if self.instance.pk:  # في حالة التعديل
-                current_amount = Expense.objects.get(pk=self.instance.pk).amount
-                if amount - current_amount > remaining:
-                    raise forms.ValidationError(_("المبلغ المدخل يتجاوز المبلغ المتبقي في الميزانية"))
-            else:  # في حالة الإنشاء
-                if amount > remaining:
-                    raise forms.ValidationError(_("المبلغ المدخل يتجاوز المبلغ المتبقي في الميزانية"))
+            # حساب المبلغ المتبقي من الميزانية الكلية
+            remaining = self.budget.total_amount
+
+            # حساب المصروفات المعتمدة لهذه الميزانية (عبر جميع السنوات المالية)
+            expenses_total = Expense.objects.filter(
+                budget=self.budget,
+                status='approved'
+            ).exclude(pk=self.instance.pk).aggregate(total=Sum('amount'))['total'] or 0
+
+            # حساب المبلغ المتبقي الفعلي
+            remaining = remaining - expenses_total
+
+            # التحقق من المبلغ المطلوب
+            if amount > remaining:
+                raise forms.ValidationError(_("المبلغ المدخل يتجاوز المبلغ المتبقي في الميزانية"))
 
         return amount
 
@@ -145,12 +174,42 @@ class ExpenseCategoryForm(forms.ModelForm):
 class ExpenseApprovalForm(forms.ModelForm):
     """نموذج الموافقة أو رفض المصروفات"""
 
+    # إضافة حقل ملاحظات مخصص للموافقة إذا لم يكن موجوداً في نموذج Expense
+    approval_comment = forms.CharField(
+        label=_("ملاحظات الموافقة"),
+        widget=forms.Textarea(attrs={'rows': 3}),
+        required=False
+    )
+
     class Meta:
         model = Expense
-        fields = ['status', 'approval_notes']
-        widgets = {
-            'approval_notes': forms.Textarea(attrs={'rows': 3}),
-        }
+        fields = ['status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # تقييد خيارات الحالة إلى الموافقة أو الرفض فقط
+        self.fields['status'].choices = [
+            ('approved', _('موافقة')),
+            ('rejected', _('رفض'))
+        ]
+
+        # إذا كان هناك ملاحظات مسبقة، ضعها في حقل التعليق
+        if self.instance and hasattr(self.instance, 'description') and self.instance.description:
+            self.fields['approval_comment'].initial = self.instance.description
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # حفظ التعليق في حقل الوصف (أو أي حقل آخر مناسب)
+        approval_comment = self.cleaned_data.get('approval_comment')
+        if approval_comment and hasattr(instance, 'description'):
+            instance.description = approval_comment
+
+        if commit:
+            instance.save()
+
+        return instance
 
 
 class BudgetAdjustmentForm(forms.ModelForm):
@@ -440,3 +499,27 @@ class ScholarshipBudgetWithYearsForm(forms.ModelForm):
         # تغيير المسميات والوصف
         self.fields['total_amount'].label = _("إجمالي كلفة الابتعاث")
         self.fields['total_amount'].help_text = _("المبلغ الإجمالي المخصص لكامل فترة الابتعاث")
+
+
+class CloseFiscalYearForm(forms.Form):
+    """نموذج إغلاق السنة المالية وفتح سنة جديدة"""
+    current_fiscal_year = forms.ModelChoiceField(
+        queryset=FiscalYear.objects.filter(status='open'),
+        label=_("السنة المالية الحالية"),
+        widget=forms.Select(attrs={'class': 'form-control', 'readonly': 'readonly'})
+    )
+    new_year_date = forms.DateField(
+        required=False,
+        label=_("تاريخ بداية السنة المالية الجديدة"),
+        widget=forms.DateInput(attrs={'class': 'form-control datepicker'})
+    )
+    confirm = forms.BooleanField(
+        label=_("أؤكد إغلاق السنة المالية الحالية وفتح سنة جديدة"),
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    def clean_confirm(self):
+        confirm = self.cleaned_data.get('confirm')
+        if not confirm:
+            raise forms.ValidationError(_("يجب تأكيد إغلاق السنة المالية"))
+        return confirm

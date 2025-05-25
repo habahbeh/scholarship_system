@@ -92,4 +92,9 @@ urlpatterns = [
     path('budget/<int:budget_id>/activate/', views.activate_budget, name='activate_budget'),
     path('budget/<int:budget_id>/revert-to-draft/', views.revert_to_draft, name='revert_to_draft'),
 
+    # مسار جميع المصروفات للميزانية
+    path('budgets/<int:budget_id>/all-expenses/', views.budget_all_expenses, name='budget_all_expenses'),
+
+    # مسار لإغلاق السنة المالية الحالية وفتح سنة جديدة
+    path('fiscal-years/close-and-open-new/', views.close_fiscal_year_and_open_new, name='close_fiscal_year_and_open_new'),
 ]

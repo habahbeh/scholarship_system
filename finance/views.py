@@ -54,34 +54,58 @@ def finance_home(request):
         # في حالة عدم وجود إعدادات، استخدم أحدث سنة مالية مفتوحة
         current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
 
-    # إحصائيات عامة
-    total_budgets = ScholarshipBudget.objects.count()
+    # إحصائيات عامة - فقط للسنة المالية الحالية
+    total_budgets = ScholarshipBudget.objects.filter(status='active').count()
     active_budgets = ScholarshipBudget.objects.filter(status='active').count()
-    total_expenses = Expense.objects.count()
-    pending_expenses = Expense.objects.filter(status='pending').count()
+
+    # المصروفات في السنة المالية الحالية فقط
+    total_expenses = Expense.objects.filter(fiscal_year=current_fiscal_year).count() if current_fiscal_year else 0
+    pending_expenses = Expense.objects.filter(fiscal_year=current_fiscal_year, status='pending').count() if current_fiscal_year else 0
 
     # إحصائيات السنة المالية الحالية
     fiscal_year_stats = {}
     if current_fiscal_year:
+        # إجمالي المصروفات في السنة المالية الحالية
+        total_spent = Expense.objects.filter(
+            fiscal_year=current_fiscal_year,
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        # الميزانية المتاحة في السنة المالية الحالية (من إعدادات السنة المالية)
+        total_budget = current_fiscal_year.total_budget
+
+        # الباقي
+        remaining_amount = total_budget - total_spent
+
+        # النسبة المئوية للصرف
+        spent_percentage = (total_spent / total_budget * 100) if total_budget > 0 else 0
+
         fiscal_year_stats = {
             'year': current_fiscal_year.year,
-            'total_budget': current_fiscal_year.total_budget,
-            'spent_amount': current_fiscal_year.get_spent_amount(),
-            'remaining_amount': current_fiscal_year.get_remaining_amount(),
-            'spent_percentage': current_fiscal_year.get_spent_percentage(),
-            'budgets_count': current_fiscal_year.scholarship_budgets.count(),
+            'total_budget': total_budget,
+            'spent_amount': total_spent,
+            'remaining_amount': remaining_amount,
+            'spent_percentage': spent_percentage,
+            'budgets_count': active_budgets,
         }
 
-    # إجمالي الميزانيات والمصروفات
-    # تعديل: حساب فقط الميزانيات النشطة
-    total_budget_amount = ScholarshipBudget.objects.filter(status='active').aggregate(total=Sum('total_amount'))['total'] or 0
-    total_expense_amount = Expense.objects.filter(status='approved').aggregate(total=Sum('amount'))['total'] or 0
+    # إجمالي الميزانيات والمصروفات - فقط للسنة المالية الحالية
+    total_budget_amount = current_fiscal_year.total_budget if current_fiscal_year else 0
 
-    # أحدث 5 ميزانيات
-    latest_budgets = ScholarshipBudget.objects.all().order_by('-created_at')[:5]
+    total_expense_amount = Expense.objects.filter(
+        fiscal_year=current_fiscal_year,
+        status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
 
-    # أحدث 5 مصروفات
-    latest_expenses = Expense.objects.all().order_by('-created_at')[:5]
+    # أحدث 5 ميزانيات (بغض النظر عن السنة المالية)
+    latest_budgets = ScholarshipBudget.objects.filter(
+        status='active'
+    ).order_by('-created_at')[:5]
+
+    # أحدث 5 مصروفات - فقط للسنة المالية الحالية
+    latest_expenses = Expense.objects.filter(
+        fiscal_year=current_fiscal_year
+    ).order_by('-created_at')[:5]
 
     # السنوات المالية
     fiscal_years = FiscalYear.objects.all().order_by('-year')[:5]
@@ -757,105 +781,68 @@ def budget_list(request):
 @login_required
 @permission_required('finance.view_scholarshipbudget', raise_exception=True)
 def budget_detail(request, budget_id):
+    """عرض تفاصيل الميزانية"""
     budget = get_object_or_404(ScholarshipBudget, id=budget_id)
 
-    # الحصول على تكاليف السنوات المرتبطة بهذه الميزانية
-    yearly_costs = budget.yearly_costs.all().order_by('year_number')
+    # الحصول على السنة المالية من الاستعلام أو استخدام السنة المالية الحالية
+    fiscal_year_id = request.GET.get('fiscal_year')
+    current_fiscal_year = None
 
-    # الحصول على المصروفات - استعلامات منفصلة
-    recent_expenses = budget.expenses.all().order_by('-date')[:10]  # للعرض في الجدول
-    approved_expenses = budget.expenses.filter(status='approved')  # للحسابات
-
-    # الحصول على التعديلات المرتبطة بهذه الميزانية
-    adjustments = budget.adjustments.all().order_by('-date')[:5]
-
-    # الحصول على سجلات العمليات المرتبطة بهذه الميزانية
-    logs = budget.logs.all().order_by('-created_at')[:10]
-
-    # حساب المصروفات حسب الفئة من المصروفات المعتمدة
-    expenses_by_category = approved_expenses.values('category__name').annotate(
-        total=models.Sum('amount')
-    ).order_by('-total')
-
-    # حساب القيم مع تقريب دقيق باستخدام Decimal
-    from decimal import Decimal, ROUND_HALF_UP
-
-    spent_amount = budget.get_spent_amount()
-    remaining_amount = budget.get_remaining_amount()
-
-    # حساب إجمالي تكاليف السنوات الأساسية فقط (بدون تأمين أو نسبة إضافية)
-    yearly_costs_total = Decimal('0.00')
-    for cost in yearly_costs:
-        # حساب تكلفة كل سنة بشكل أساسي
-        monthly_total = (cost.monthly_allowance * cost.monthly_duration).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        year_cost = (
-            cost.travel_tickets +
-            monthly_total +
-            cost.visa_fees +
-            cost.health_insurance +
-            cost.tuition_fees_local
-        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
-        yearly_costs_total += year_cost
-
-    # تقريب دقيق لجميع القيم
-    spent_amount = spent_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-    remaining_amount = remaining_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-    yearly_costs_total = yearly_costs_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
-    # حساب النسبة المئوية مع تقريب دقيق
-    if budget.total_amount > 0:
-        spent_percentage = (spent_amount / budget.total_amount * 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    if fiscal_year_id:
+        current_fiscal_year = get_object_or_404(FiscalYear, id=fiscal_year_id)
     else:
-        spent_percentage = Decimal('0.00')
+        # استخدام السنة المالية الحالية
+        settings = ScholarshipSettings.objects.first()
+        if settings and settings.current_fiscal_year:
+            current_fiscal_year = settings.current_fiscal_year
+        else:
+            current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
 
-    # الحصول على الإعدادات للعرض في القالب
-    settings = ScholarshipSettings.objects.first()
-    if not settings:
-        settings = ScholarshipSettings.objects.create(
-            life_insurance_rate=Decimal('0.0034'),
-            add_percentage=Decimal('50.0')
-        )
+    # الحصول على المصروفات المرتبطة بهذه الميزانية في السنة المالية المحددة
+    expenses = Expense.objects.filter(
+        budget=budget,
+        fiscal_year=current_fiscal_year
+    ).order_by('-date')
 
-    # حساب التأمين والنسبة الإضافية
-    # حساب مبلغ التأمين
-    insurance_amount = (yearly_costs_total * settings.life_insurance_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    # حساب المبلغ المصروف في السنة المالية المحددة
+    spent_amount = Expense.objects.filter(
+        budget=budget,
+        fiscal_year=current_fiscal_year,
+        status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
 
-    # حساب التكلفة الحقيقية (الأساسي + التأمين)
-    true_cost = yearly_costs_total + insurance_amount
+    # المبلغ المتبقي (من إجمالي الميزانية)
+    remaining_amount = budget.total_amount - spent_amount
 
-    # حساب المبلغ الإضافي
-    additional_amount = (true_cost * settings.add_percentage / 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    # النسبة المئوية للصرف
+    spent_percentage = (spent_amount / budget.total_amount * 100) if budget.total_amount > 0 else 0
 
-    # حساب الإجمالي النهائي
-    final_total = true_cost + additional_amount
+    # الحصول على قائمة السنوات المالية التي تحتوي على مصروفات لهذه الميزانية
+    fiscal_years_with_expenses = FiscalYear.objects.filter(
+        expenses__budget=budget
+    ).distinct().order_by('-year')
 
-    # تنسيق معدلات النسبة للعرض
-    insurance_rate_display = (settings.life_insurance_rate * 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-    additional_rate_display = settings.add_percentage.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+    # الحصول على المصروفات حسب الفئة في السنة المالية الحالية
+    expenses_by_category = Expense.objects.filter(
+        budget=budget,
+        fiscal_year=current_fiscal_year,
+        status='approved'
+    ).values(
+        'category__name'
+    ).annotate(
+        total=Sum('amount')
+    ).order_by('-total')
 
     context = {
         'budget': budget,
-        'yearly_costs': yearly_costs,
-        'expenses': recent_expenses,
-        'adjustments': adjustments,
-        'logs': logs,
-        'expenses_by_category': expenses_by_category,
+        'expenses': expenses,
         'spent_amount': spent_amount,
         'remaining_amount': remaining_amount,
         'spent_percentage': spent_percentage,
-        'yearly_costs_total': yearly_costs_total,
-        'settings': settings,
-        'can_activate': budget.status == 'draft',  # هل يمكن التفعيل؟
-        'can_revert': budget.status == 'active' and not budget.expenses.filter(status='approved').exists(),  # هل يمكن الإرجاع؟
-        # القيم الجديدة المضافة
-        'insurance_amount': insurance_amount,
-        'additional_amount': additional_amount,
-        'final_total': final_total,
-        'insurance_rate_display': insurance_rate_display,
-        'additional_rate_display': additional_rate_display,
+        'current_fiscal_year': current_fiscal_year,
+        'fiscal_years_with_expenses': fiscal_years_with_expenses,
+        'expenses_by_category': expenses_by_category,
     }
-
     return render(request, 'finance/budget_detail.html', context)
 
 @login_required
@@ -1401,47 +1388,41 @@ def finance_dashboard(request):
             'spent_percentage': current_fiscal_year.get_spent_percentage(),
         }
 
-    # إحصائيات عامة
-    total_budgets = ScholarshipBudget.objects.count()
-    active_budgets = ScholarshipBudget.objects.filter(status='active').count()
-    pending_budgets = ScholarshipBudget.objects.filter(status='pending').count()
-    closed_budgets = ScholarshipBudget.objects.filter(status='closed').count()
+    # إحصائيات عامة - فقط للسنة المالية الحالية
+    total_budgets = ScholarshipBudget.objects.filter(fiscal_year=current_fiscal_year).count() if current_fiscal_year else 0
+    active_budgets = ScholarshipBudget.objects.filter(fiscal_year=current_fiscal_year, status='active').count() if current_fiscal_year else 0
+    pending_budgets = ScholarshipBudget.objects.filter(fiscal_year=current_fiscal_year, status='pending').count() if current_fiscal_year else 0
+    closed_budgets = ScholarshipBudget.objects.filter(fiscal_year=current_fiscal_year, status='closed').count() if current_fiscal_year else 0
 
     # حساب النسب المئوية للميزانيات
     active_budget_percentage = (active_budgets / total_budgets * 100) if total_budgets > 0 else 0
     pending_budget_percentage = (pending_budgets / total_budgets * 100) if total_budgets > 0 else 0
     closed_budget_percentage = (closed_budgets / total_budgets * 100) if total_budgets > 0 else 0
 
-    # المصروفات
-    total_expenses = Expense.objects.count()
-    pending_expense_count = Expense.objects.filter(status='pending').count()
-    pending_expense_amount = Expense.objects.filter(status='pending').aggregate(total=Sum('amount'))['total'] or 0
+    # المصروفات - فقط للسنة المالية الحالية
+    total_expenses = Expense.objects.filter(fiscal_year=current_fiscal_year).count() if current_fiscal_year else 0
+    pending_expense_count = Expense.objects.filter(fiscal_year=current_fiscal_year, status='pending').count() if current_fiscal_year else 0
+    pending_expense_amount = Expense.objects.filter(fiscal_year=current_fiscal_year, status='pending').aggregate(total=Sum('amount'))['total'] or 0
 
-    # إجمالي الميزانيات والمصروفات
-    # تعديل: حساب فقط الميزانيات النشطة
-    total_budget_amount = ScholarshipBudget.objects.filter(status='active').aggregate(total=Sum('total_amount'))['total'] or 0
+    # إجمالي الميزانيات والمصروفات - فقط للسنة المالية الحالية
+    total_budget_amount = ScholarshipBudget.objects.filter(
+        fiscal_year=current_fiscal_year,
+        status='active'
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
 
-    # إذا كانت هناك سنة مالية حالية، احسب المصروفات المعتمدة فيها فقط
-    if current_fiscal_year:
-        total_expense_amount = Expense.objects.filter(
-            fiscal_year=current_fiscal_year,
-            status='approved'
-        ).aggregate(total=Sum('amount'))['total'] or 0
-    else:
-        # وإلا احسب جميع المصروفات المعتمدة
-        total_expense_amount = Expense.objects.filter(
-            status='approved'
-        ).aggregate(total=Sum('amount'))['total'] or 0
+    total_expense_amount = Expense.objects.filter(
+        fiscal_year=current_fiscal_year,
+        status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
 
     remaining_budget = total_budget_amount - total_expense_amount
     budget_percentage = (total_expense_amount / total_budget_amount * 100) if total_budget_amount > 0 else 0
 
     # حساب التغير في المصروفات
-    # يمكن حساب التغير بمقارنة الشهر الحالي مع الشهر السابق
     this_month = timezone.now().replace(day=1)
     last_month = (this_month - datetime.timedelta(days=1)).replace(day=1)
 
-    # إذا كانت هناك سنة مالية حالية، احسب المصروفات الشهرية فيها فقط
+    # حساب المصروفات الشهرية - فقط للسنة المالية الحالية
     if current_fiscal_year:
         this_month_expenses = Expense.objects.filter(
             fiscal_year=current_fiscal_year,
@@ -1455,16 +1436,8 @@ def finance_dashboard(request):
             status='approved'
         ).aggregate(total=Sum('amount'))['total'] or 0
     else:
-        # وإلا احسب جميع المصروفات الشهرية
-        this_month_expenses = Expense.objects.filter(
-            date__gte=this_month,
-            status='approved'
-        ).aggregate(total=Sum('amount'))['total'] or 0
-
-        last_month_expenses = Expense.objects.filter(
-            date__gte=last_month, date__lt=this_month,
-            status='approved'
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        this_month_expenses = 0
+        last_month_expenses = 0
 
     expense_change = ((this_month_expenses - last_month_expenses) / last_month_expenses * 100) if last_month_expenses > 0 else 0
 
@@ -1473,7 +1446,7 @@ def finance_dashboard(request):
     month_start = today.replace(day=1)
     days_passed = (today - month_start).days + 1
 
-    # إذا كانت هناك سنة مالية حالية، احسب معدل الصرف اليومي فيها فقط
+    # حساب معدل الصرف اليومي - فقط للسنة المالية الحالية
     if current_fiscal_year:
         monthly_expenses = Expense.objects.filter(
             fiscal_year=current_fiscal_year,
@@ -1481,26 +1454,20 @@ def finance_dashboard(request):
             status='approved'
         ).aggregate(total=Sum('amount'))['total'] or 0
     else:
-        # وإلا احسب معدل الصرف اليومي لجميع المصروفات
-        monthly_expenses = Expense.objects.filter(
-            date__gte=month_start, date__lte=today,
-            status='approved'
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        monthly_expenses = 0
 
     daily_spend_rate = monthly_expenses / days_passed if days_passed > 0 else 0
 
     # آخر تحديث
     last_update = today
 
-    # الحصول على أحدث المصروفات
-    # إذا كانت هناك سنة مالية حالية، اعرض أحدث المصروفات فيها فقط
+    # الحصول على أحدث المصروفات - فقط للسنة المالية الحالية
     if current_fiscal_year:
         recent_expenses = Expense.objects.filter(
             fiscal_year=current_fiscal_year
         ).order_by('-date')[:10]
     else:
-        # وإلا اعرض أحدث المصروفات عمومًا
-        recent_expenses = Expense.objects.all().order_by('-date')[:10]
+        recent_expenses = []
 
     context = {
         # قيم ضرورية للقالب
@@ -1529,7 +1496,6 @@ def finance_dashboard(request):
         'total_expense_amount': total_expense_amount,
     }
     return render(request, 'finance/dashboard.html', context)
-
 
 @login_required
 @permission_required('finance.change_scholarshipbudget', raise_exception=True)
@@ -2983,13 +2949,14 @@ def generate_budget_summary_data(filters):
     end_date = filters.get('end_date')
     fiscal_year_id = filters.get('fiscal_year_id')
 
-    # إنشاء استعلام أساسي - تعديل لاسترجاع فقط الميزانيات النشطة
+    # إنشاء استعلام أساسي - تعديل لاسترجاع فقط الميزانيات النشطة للسنة المالية المحددة
     budgets_query = ScholarshipBudget.objects.filter(status='active')
 
-    # تطبيق الفلاتر
+    # تطبيق الفلاتر - التركيز على السنة المالية
     if fiscal_year_id:
         budgets_query = budgets_query.filter(fiscal_year_id=fiscal_year_id)
     else:
+        # في حالة عدم وجود سنة مالية، استخدم التاريخ
         if start_date:
             budgets_query = budgets_query.filter(start_date__gte=start_date)
         if end_date:
@@ -3001,9 +2968,18 @@ def generate_budget_summary_data(filters):
     # حساب المصروفات لكل ميزانية
     budgets_data = []
     for budget in budgets_query:
-        spent_amount = budget.get_spent_amount()
-        remaining_amount = budget.get_remaining_amount()
-        spent_percentage = budget.get_spent_percentage()
+        # التحقق من المصروفات فقط في السنة المالية المحددة
+        if fiscal_year_id:
+            spent_amount = Expense.objects.filter(
+                budget=budget,
+                fiscal_year_id=fiscal_year_id,
+                status='approved'
+            ).aggregate(total=Sum('amount'))['total'] or 0
+        else:
+            spent_amount = budget.get_spent_amount()
+
+        remaining_amount = budget.total_amount - spent_amount
+        spent_percentage = (spent_amount / budget.total_amount * 100) if budget.total_amount > 0 else 0
 
         budgets_data.append({
             'id': budget.id,
@@ -3444,7 +3420,16 @@ def api_budget_summary(request):
                 'end_date': fiscal_year.end_date,
             }
         else:
-            filters = {}
+            # أحدث سنة مالية مفتوحة
+            fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+            if fiscal_year:
+                filters = {
+                    'fiscal_year_id': fiscal_year.id,
+                    'start_date': fiscal_year.start_date,
+                    'end_date': fiscal_year.end_date,
+                }
+            else:
+                filters = {}
 
     # حساب إجماليات الميزانية والمصروفات
     report_data = generate_budget_summary_data(filters)
@@ -3488,18 +3473,31 @@ def api_expense_categories(request):
     # إنشاء استعلام أساسي
     expenses_query = Expense.objects.filter(status='approved')
 
-    # تطبيق فلتر السنة المالية
+    # تطبيق فلتر السنة المالية - التركيز على السنة المالية الحالية
     if fiscal_year_id:
         try:
             fiscal_year = FiscalYear.objects.get(id=fiscal_year_id)
             expenses_query = expenses_query.filter(fiscal_year=fiscal_year)
         except FiscalYear.DoesNotExist:
-            pass
+            # البحث عن السنة المالية الحالية
+            settings = ScholarshipSettings.objects.first()
+            if settings and settings.current_fiscal_year:
+                expenses_query = expenses_query.filter(fiscal_year=settings.current_fiscal_year)
+            else:
+                # أحدث سنة مالية مفتوحة
+                fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+                if fiscal_year:
+                    expenses_query = expenses_query.filter(fiscal_year=fiscal_year)
     else:
         # البحث عن السنة المالية الحالية
         settings = ScholarshipSettings.objects.first()
         if settings and settings.current_fiscal_year:
             expenses_query = expenses_query.filter(fiscal_year=settings.current_fiscal_year)
+        else:
+            # أحدث سنة مالية مفتوحة
+            fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+            if fiscal_year:
+                expenses_query = expenses_query.filter(fiscal_year=fiscal_year)
 
     # تجميع المصروفات حسب الفئة
     expenses_by_category = expenses_query.values(
@@ -4514,3 +4512,173 @@ def api_validate_budget_calculation(request, budget_id):
             'add_percentage': float(settings.add_percentage)
         }
     })
+
+
+def update_existing_expenses_fiscal_year():
+    """
+    تحديث السنة المالية للمصروفات الموجودة
+    يمكن تشغيل هذه الدالة كأمر إدارة أو بعد ترقية النظام
+    """
+    from django.db import transaction
+    from .models import Expense, FiscalYear, ScholarshipSettings
+
+    with transaction.atomic():
+        # الحصول على جميع المصروفات التي ليس لها سنة مالية
+        expenses_without_fiscal_year = Expense.objects.filter(fiscal_year__isnull=True)
+
+        if not expenses_without_fiscal_year.exists():
+            print("لا توجد مصروفات بدون سنة مالية")
+            return
+
+        print(f"تحديث السنة المالية لـ {expenses_without_fiscal_year.count()} مصروف...")
+
+        # الحصول على جميع السنوات المالية
+        fiscal_years = FiscalYear.objects.all().order_by('start_date')
+        if not fiscal_years.exists():
+            print("لا توجد سنوات مالية، تخطي التحديث")
+            return
+
+        # الحصول على السنة المالية الحالية
+        settings = ScholarshipSettings.objects.first()
+        current_fiscal_year = None
+        if settings and settings.current_fiscal_year:
+            current_fiscal_year = settings.current_fiscal_year
+        else:
+            current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+
+        # تحديث المصروفات
+        for expense in expenses_without_fiscal_year:
+            # البحث عن السنة المالية المناسبة لتاريخ المصروف
+            matched_fiscal_year = None
+            for fiscal_year in fiscal_years:
+                if fiscal_year.start_date <= expense.date <= fiscal_year.end_date:
+                    matched_fiscal_year = fiscal_year
+                    break
+
+            # إذا لم يتم العثور على سنة مالية مناسبة، استخدم السنة المالية الحالية
+            if not matched_fiscal_year and current_fiscal_year:
+                matched_fiscal_year = current_fiscal_year
+
+            # تحديث المصروف
+            if matched_fiscal_year:
+                expense.fiscal_year = matched_fiscal_year
+                expense.save(update_fields=['fiscal_year'])
+            else:
+                print(f"لم يتم العثور على سنة مالية مناسبة للمصروف {expense.id}")
+
+        print("تم تحديث السنة المالية للمصروفات بنجاح")
+
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def budget_all_expenses(request, budget_id):
+    """عرض جميع مصروفات الميزانية عبر السنوات المالية"""
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # الحصول على جميع المصروفات لهذه الميزانية
+    expenses = Expense.objects.filter(budget=budget).order_by('-date')
+
+    # حساب إجماليات لكل سنة مالية
+    fiscal_year_totals = Expense.objects.filter(
+        budget=budget,
+        status='approved'
+    ).values(
+        'fiscal_year__year',
+        'fiscal_year__name'
+    ).annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-fiscal_year__year')
+
+    # حساب المبلغ الإجمالي المصروف
+    total_spent = Expense.objects.filter(
+        budget=budget,
+        status='approved'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # المبلغ المتبقي
+    remaining_amount = budget.total_amount - total_spent
+
+    # النسبة المئوية للصرف
+    spent_percentage = (total_spent / budget.total_amount * 100) if budget.total_amount > 0 else 0
+
+    context = {
+        'budget': budget,
+        'expenses': expenses,
+        'fiscal_year_totals': fiscal_year_totals,
+        'total_spent': total_spent,
+        'remaining_amount': remaining_amount,
+        'spent_percentage': spent_percentage,
+    }
+    return render(request, 'finance/budget_all_expenses.html', context)
+
+
+@login_required
+@permission_required('finance.change_fiscalyear', raise_exception=True)
+def close_fiscal_year_and_open_new(request):
+    """إغلاق السنة المالية الحالية وفتح سنة جديدة"""
+    if request.method == 'POST':
+        form = CloseFiscalYearForm(request.POST)
+        if form.is_valid():
+            # الحصول على السنة المالية الحالية
+            current_fiscal_year = form.cleaned_data['current_fiscal_year']
+            new_year_date = form.cleaned_data['new_year_date']
+
+            try:
+                # إغلاق السنة المالية الحالية وفتح سنة جديدة
+                from django.db import transaction
+                from datetime import date
+
+                with transaction.atomic():
+                    # 1. إغلاق السنة المالية الحالية
+                    current_fiscal_year.status = 'closed'
+                    current_fiscal_year.save()
+
+                    # 2. إنشاء سنة مالية جديدة
+                    if not new_year_date:
+                        # افتراضياً، استخدم نفس اليوم والشهر من السنة الحالية
+                        current_date = date.today()
+                        new_year_date = date(current_date.year + 1, current_fiscal_year.start_date.month, current_fiscal_year.start_date.day)
+
+                    # إنشاء سنة مالية جديدة
+                    new_year = FiscalYear.objects.create(
+                        year=current_fiscal_year.year + 1,
+                        name=f"السنة المالية {current_fiscal_year.year + 1}",
+                        start_date=new_year_date,
+                        end_date=date(new_year_date.year + 1, new_year_date.month, new_year_date.day - 1),
+                        total_budget=current_fiscal_year.total_budget,  # نسخ إجمالي الميزانية من السنة السابقة
+                        status='open'
+                    )
+
+                    # 3. تحديث إعدادات النظام لتعيين السنة المالية الجديدة كحالية
+                    settings = ScholarshipSettings.objects.first()
+                    if settings:
+                        settings.current_fiscal_year = new_year
+                        settings.save()
+
+                messages.success(request, _(f'تم إغلاق السنة المالية {current_fiscal_year.year} وفتح السنة المالية {new_year.year} بنجاح'))
+                return redirect('fiscal_year_list')
+
+            except Exception as e:
+                messages.error(request, _(f'حدث خطأ أثناء إغلاق السنة المالية: {str(e)}'))
+                return redirect('fiscal_year_list')
+    else:
+        # الحصول على السنة المالية الحالية
+        settings = ScholarshipSettings.objects.first()
+        current_fiscal_year = None
+        if settings and settings.current_fiscal_year:
+            current_fiscal_year = settings.current_fiscal_year
+        else:
+            current_fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+
+        if not current_fiscal_year:
+            messages.error(request, _('لا توجد سنة مالية مفتوحة لإغلاقها'))
+            return redirect('fiscal_year_list')
+
+        form = CloseFiscalYearForm(initial={'current_fiscal_year': current_fiscal_year})
+
+    context = {
+        'form': form,
+        'current_fiscal_year': current_fiscal_year,
+    }
+    return render(request, 'finance/close_fiscal_year.html', context)

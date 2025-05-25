@@ -498,18 +498,18 @@ class ExpenseAdmin(BaseFinanceAdmin):
 
     list_display = [
         'budget_applicant', 'date', 'category',
-        'amount_display', 'status_display', 'approval_info'
+        'amount_display', 'status_display'
     ]
 
     list_filter = [
         'status', 'category', 'fiscal_year',
-        'date', 'approval_date'
+        'date'  # إزالة approval_date من القائمة
     ]
 
     search_fields = [
         'budget__application__applicant__first_name',
         'budget__application__applicant__last_name',
-        'description', 'receipt_number'
+        'description'  # إزالة receipt_number
     ]
 
     ordering = ['-date']
@@ -519,23 +519,17 @@ class ExpenseAdmin(BaseFinanceAdmin):
             'fields': ('budget', 'fiscal_year', 'category')
         }),
         (_('تفاصيل المصروف'), {
-            'fields': ('date', 'amount', 'description', 'receipt_number')
+            'fields': ('date', 'amount', 'description')  # إزالة receipt_number
         }),
-        (_('المرفقات'), {
-            'fields': ('receipt_file',),
-            'classes': ('collapse',)
-        }),
+        # إزالة قسم المرفقات الذي يحتوي على receipt_file
         (_('الموافقة'), {
-            'fields': ('status', 'approved_by', 'approval_date', 'rejection_reason'),
+            'fields': ('status',),  # إزالة approved_by, approval_date, rejection_reason
             'classes': ('collapse',)
         }),
-        (_('معلومات التتبع'), {
-            'fields': ('created_by',),
-            'classes': ('collapse',)
-        }),
+        # إزالة قسم معلومات التتبع الذي يحتوي على created_by
     )
 
-    readonly_fields = ['created_by', 'approved_by', 'approval_date']
+    readonly_fields = []  # إزالة created_by, approved_by, approval_date
 
     actions = ['approve_expenses', 'reject_expenses']
 
@@ -565,23 +559,15 @@ class ExpenseAdmin(BaseFinanceAdmin):
 
     status_display.short_description = 'الحالة'
 
-    def approval_info(self, obj):
-        """معلومات الموافقة"""
-        if obj.status == 'approved' and obj.approved_by:
-            approval_date = obj.approval_date.strftime('%Y-%m-%d') if obj.approval_date else '-'
-            return safe_format('<small>بواسطة: {}<br>في: {}</small>', obj.approved_by.get_full_name(), approval_date)
-        elif obj.status == 'rejected':
-            return safe_format('<small style="color: #dc3545;">مرفوض</small>')
-        return '-'
-
-    approval_info.short_description = 'معلومات الموافقة'
+    # إزالة دالة approval_info التي تستخدم حقول غير موجودة
 
     def approve_expenses(self, request, queryset):
         """الموافقة على المصروفات المحددة"""
         updated = queryset.filter(status='pending').update(
-            status='approved',
-            approved_by=request.user,
-            approval_date=datetime.datetime.now()
+            status='approved'
+            # إزالة الحقول غير الموجودة:
+            # approved_by=request.user,
+            # approval_date=datetime.datetime.now()
         )
         message = 'تمت الموافقة على {} مصروف'.format(updated)
         self.message_user(request, message, messages.SUCCESS)
@@ -591,9 +577,10 @@ class ExpenseAdmin(BaseFinanceAdmin):
     def reject_expenses(self, request, queryset):
         """رفض المصروفات المحددة"""
         updated = queryset.filter(status='pending').update(
-            status='rejected',
-            approved_by=request.user,
-            approval_date=datetime.datetime.now()
+            status='rejected'
+            # إزالة الحقول غير الموجودة:
+            # approved_by=request.user,
+            # approval_date=datetime.datetime.now()
         )
         message = 'تم رفض {} مصروف'.format(updated)
         self.message_user(request, message, messages.WARNING)

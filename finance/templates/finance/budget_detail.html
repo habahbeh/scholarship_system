@@ -284,9 +284,6 @@
                             <a href="{% url 'finance:update_budget' budget.id %}" class="btn btn-primary">
                                 <i class="bi bi-pencil me-1"></i>{% trans "تعديل المسودة" %}
                             </a>
-{#                            <a href="{% url 'finance:add_scholarship_year' budget.id %}" class="btn btn-info" >#}
-{#                                <i class="bi bi-calendar-plus me-1"></i>{% trans "إضافة سنة دراسية" %}#}
-{#                            </a>#}
                         {% endif %}
 
                         <!-- أزرار خاصة بالميزانيات النشطة -->
@@ -300,9 +297,6 @@
                             <a href="{% url 'finance:create_adjustment' budget.id %}" class="btn btn-warning">
                                 <i class="bi bi-cash-stack me-1"></i>{% trans "تعديل مبلغ الميزانية" %}
                             </a>
-{#                            <a href="{% url 'finance:add_scholarship_year' budget.id %}" class="btn btn-info">#}
-{#                                <i class="bi bi-calendar-plus me-1"></i>{% trans "إضافة سنة دراسية" %}#}
-{#                            </a>#}
 
                             <!-- زر الإرجاع إلى مسودة (إذا لم توجد مصروفات معتمدة) -->
                             {% if can_revert %}

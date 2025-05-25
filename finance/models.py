@@ -773,28 +773,41 @@ class ExpenseCategory(models.Model):
         return self.name
 
 
+
 class Expense(models.Model):
-    """نموذج المصروفات المالية"""
-    budget = models.ForeignKey(ScholarshipBudget, on_delete=models.CASCADE,
-                               verbose_name=_("الميزانية"),
-                               related_name="expenses")
-    category = models.ForeignKey(ExpenseCategory, on_delete=models.PROTECT,
-                                 verbose_name=_("فئة المصروف"),
-                                 related_name="expenses")
-    amount = models.DecimalField(_("المبلغ"), max_digits=12, decimal_places=2)
-    date = models.DateField(_("تاريخ المصروف"))
-    description = models.TextField(_("وصف المصروف"))
-    receipt_number = models.CharField(_("رقم الإيصال"), max_length=100, blank=True, null=True)
-    receipt_file = models.FileField(_("ملف الإيصال"), upload_to='finance/receipts/%Y/%m/', blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE,
-                                   verbose_name=_("تم الإنشاء بواسطة"),
-                                   related_name="created_expenses")
-    created_at = models.DateTimeField(_("تاريخ الإنشاء"), auto_now_add=True)
-    updated_at = models.DateTimeField(_("تاريخ التحديث"), auto_now=True)
-    fiscal_year = models.ForeignKey(FiscalYear, on_delete=models.SET_NULL,
-                                    verbose_name=_("السنة المالية"),
-                                    related_name="expenses",
-                                    null=True, blank=True)
+    """نموذج المصروفات"""
+    # الحقول الحالية
+    budget = models.ForeignKey(
+        ScholarshipBudget,
+        related_name='expenses',
+        on_delete=models.CASCADE,
+        verbose_name=_("الميزانية")
+    )
+    category = models.ForeignKey(
+        ExpenseCategory,
+        related_name='expenses',
+        on_delete=models.PROTECT,
+        verbose_name=_("الفئة")
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name=_("المبلغ")
+    )
+    date = models.DateField(
+        verbose_name=_("تاريخ المصروف")
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("الوصف")
+    )
+    receipt = models.FileField(
+        upload_to='expenses/receipts/',
+        blank=True,
+        null=True,
+        verbose_name=_("إيصال المصروف")
+    )
 
     # حالة المصروف
     STATUS_CHOICES = [
@@ -802,15 +815,24 @@ class Expense(models.Model):
         ('approved', _('تمت الموافقة')),
         ('rejected', _('مرفوض')),
     ]
-    status = models.CharField(_("حالة المصروف"), max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    # تفاصيل الموافقة أو الرفض
-    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL,
-                                    verbose_name=_("تمت الموافقة/الرفض بواسطة"),
-                                    related_name="approved_expenses",
-                                    blank=True, null=True)
-    approval_date = models.DateTimeField(_("تاريخ الموافقة/الرفض"), blank=True, null=True)
-    approval_notes = models.TextField(_("ملاحظات الموافقة/الرفض"), blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name=_("الحالة")
+    )
+    # إضافة حقل السنة المالية
+    fiscal_year = models.ForeignKey(
+        FiscalYear,
+        related_name='expenses',
+        on_delete=models.PROTECT,
+        null=True,  # نسمح بأن تكون فارغة مؤقتاً (سيتم ملؤها تلقائياً)
+        verbose_name=_("السنة المالية")
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = _("مصروف")
@@ -818,18 +840,30 @@ class Expense(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        return f"{self.budget.application.applicant.get_full_name()} - {self.category.name} - {self.amount}"
-
-    def get_absolute_url(self):
-        return reverse('finance:expense_detail', args=[self.id])
+        return f"{self.budget} - {self.amount} - {self.date}"
 
     def save(self, *args, **kwargs):
-        # التحقق من تعيين السنة المالية تلقائيًا
-        if not self.fiscal_year and self.budget and self.budget.fiscal_year:
-            self.fiscal_year = self.budget.fiscal_year
+        """حفظ المصروف مع التحقق من السنة المالية"""
+        # إذا لم تكن السنة المالية محددة، استخدم السنة المالية المفتوحة
+        if not self.fiscal_year:
+            # أولاً، حاول العثور على السنة المالية التي تتضمن تاريخ المصروف
+            fiscal_year = FiscalYear.objects.filter(
+                start_date__lte=self.date,
+                end_date__gte=self.date,
+                status='open'
+            ).first()
+
+            # إذا لم يتم العثور على سنة مالية، استخدم السنة المالية المفتوحة الحالية
+            if not fiscal_year:
+                settings = ScholarshipSettings.objects.first()
+                if settings and settings.current_fiscal_year:
+                    fiscal_year = settings.current_fiscal_year
+                else:
+                    fiscal_year = FiscalYear.objects.filter(status='open').order_by('-year').first()
+
+            self.fiscal_year = fiscal_year
 
         super().save(*args, **kwargs)
-
 
 class FinancialReport(models.Model):
     """نموذج التقارير المالية"""
