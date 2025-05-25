@@ -809,16 +809,16 @@ def budget_detail(request, budget_id):
         ).order_by('-date')
 
     # حساب إجمالي المصروفات المعتمدة (كل السنوات المالية)
-    total_spent = Expense.objects.filter(
+    spent_amount = Expense.objects.filter(
         budget=budget,
         status='approved'
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     # المبلغ المتبقي (من إجمالي الميزانية)
-    remaining_amount = budget.total_amount - total_spent
+    remaining_amount = budget.total_amount - spent_amount
 
     # النسبة المئوية للصرف
-    spent_percentage = (total_spent / budget.total_amount * 100) if budget.total_amount > 0 else 0
+    spent_percentage = (spent_amount / budget.total_amount * 100) if budget.total_amount > 0 else 0
 
     # الحصول على قائمة السنوات المالية التي تحتوي على مصروفات لهذه الميزانية
     fiscal_years_with_expenses = FiscalYear.objects.filter(
@@ -837,21 +837,63 @@ def budget_detail(request, budget_id):
 
     # إضافة النسبة المئوية لكل فئة
     for category in expenses_by_category:
-        if total_spent > 0:
-            category['percentage'] = (category['total'] / total_spent * 100)
+        if spent_amount > 0:
+            category['percentage'] = (category['total'] / spent_amount * 100)
         else:
             category['percentage'] = 0
+
+    # التحقق مما إذا كان بإمكان إعادة الميزانية إلى حالة مسودة
+    can_revert = budget.status == 'active' and not Expense.objects.filter(
+        budget=budget,
+        status='approved'
+    ).exists()
+
+    # الحصول على تكاليف السنوات الدراسية إذا وجدت
+    yearly_costs = YearlyScholarshipCosts.objects.filter(
+        budget=budget
+    ).order_by('year_number')
+
+    # حساب إجمالي تكاليف السنوات
+    yearly_costs_total = sum(cost.total_year_cost() for cost in yearly_costs) if yearly_costs.exists() else 0
+
+    # الحصول على إعدادات المنح الدراسية
+    settings = ScholarshipSettings.objects.first()
+
+    # حساب مبلغ التأمين
+    insurance_rate = settings.life_insurance_rate if settings else 0.0034
+    insurance_amount = yearly_costs_total * insurance_rate
+
+    # حساب المبلغ الإضافي
+    additional_rate = settings.add_percentage if settings else 50.0
+    true_cost = yearly_costs_total + insurance_amount
+    additional_amount = true_cost * (additional_rate / 100)
+
+    # حساب الإجمالي النهائي
+    final_total = true_cost + additional_amount
+
+    # تحويل معدلات النسبة للعرض
+    insurance_rate_display = insurance_rate * 100
+    additional_rate_display = additional_rate
 
     context = {
         'budget': budget,
         'expenses': expenses,
-        'total_spent': total_spent,
+        'spent_amount': spent_amount,  # تغيير من total_spent إلى spent_amount
         'remaining_amount': remaining_amount,
         'spent_percentage': spent_percentage,
         'current_fiscal_year': current_fiscal_year,
         'fiscal_years_with_expenses': fiscal_years_with_expenses,
         'expenses_by_category': expenses_by_category,
         'fiscal_year_id': fiscal_year_id,  # لاستخدامه في قالب العرض
+        'can_revert': can_revert,
+        'yearly_costs': yearly_costs,
+        'yearly_costs_total': yearly_costs_total,
+        'insurance_amount': insurance_amount,
+        'additional_amount': additional_amount,
+        'final_total': final_total,
+        'insurance_rate_display': insurance_rate_display,
+        'additional_rate_display': additional_rate_display,
+        'adjustments': BudgetAdjustment.objects.filter(budget=budget).order_by('-date'),  # إضافة تعديلات الميزانية
     }
     return render(request, 'finance/budget_detail.html', context)
 
