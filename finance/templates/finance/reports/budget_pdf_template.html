@@ -10,13 +10,15 @@
     <style>
         @page {
             size: A4;
-            margin: 2cm;
+            margin: 1.2cm;
         }
         body {
             font-family: 'Arial', 'Tahoma', sans-serif;
-            font-size: 12pt;
-            line-height: 1.5;
+            font-size: 10pt;
+            line-height: 1.2;
             direction: rtl;
+            margin: 0;
+            padding: 0;
         }
         .container {
             width: 100%;
@@ -25,41 +27,49 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2cm;
-            border-bottom: 2px solid #000;
-            padding-bottom: 0.5cm;
+            margin-bottom: 0.7cm;
+            border-bottom: 1px solid #000;
+            padding-bottom: 0.2cm;
         }
         .header-left, .header-center, .header-right {
             width: 30%;
         }
         .header-left {
             text-align: left;
+            font-size: 9pt;
         }
         .header-center {
             text-align: center;
         }
         .header-right {
             text-align: right;
+            font-size: 9pt;
         }
         h1, h2, h3, h4 {
+            margin: 0.2cm 0;
+            text-align: center;
+        }
+        h3 {
+            font-size: 13pt;
+        }
+        h4 {
+            font-size: 11pt;
+        }
+        .title {
             margin: 0.5cm 0;
             text-align: center;
         }
-        .title {
-            margin: 1cm 0;
-            text-align: center;
-        }
         .content {
-            margin-top: 1cm;
+            margin-top: 0.3cm;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 1cm 0;
+            margin: 0.3cm 0;
         }
         th, td {
             border: 1px solid #000;
-            padding: 8px;
+            padding: 3px;
             text-align: right;
         }
         th {
@@ -77,10 +87,11 @@
         .footer {
             display: flex;
             justify-content: space-between;
-            margin-top: 2cm;
+            margin-top: 0.5cm;
         }
         .footer-left, .footer-right {
             width: 45%;
+            font-size: 9pt;
         }
         .footer-left {
             text-align: left;
@@ -100,22 +111,21 @@
             </div>
             <div class="header-center">
                 <div>
-                    <!-- Comentado porque no estamos seguros de la disponibilidad de la imagen -->
-                    <!-- <img src="{% static 'finance/img/university-logo.png' %}" alt="University Logo" height="80"> -->
-                    <h3>جامعة البترا</h3>
+                    <img src="{% static 'images/petra_logo.png' %}" alt="University Logo" height="50">
+                    <h3 style="margin-top: 0.1cm; font-size: 12pt;">جامعة البترا</h3>
                 </div>
             </div>
             <div class="header-right">
                 <div>جامعة البتراء</div>
                 <div>جامعة معتمدة</div>
-                <div>مكتب الابتعاث</div>
+                <div>مكتب الايفاد</div>
             </div>
         </div>
 
         <div class="title">
-            <h3>المبالغ المترتبة على السيد {{ budget.application.applicant.get_full_name }}</h3>
-            <h4>للحصول على درجة الدكتوراه في: {{ budget.application.major|default:"أمن المعلومات" }}</h4>
-            <h4>من {{ budget.application.university|default:"University of Loughborough" }} في {{ budget.application.country|default:"بريطانيا" }}</h4>
+            <h3 style="margin-bottom: 0.1cm;">المبالغ المترتبة على السيد {{ budget.application.applicant.get_full_name }}</h3>
+            <h4 style="margin-top: 0; margin-bottom: 0.1cm;">للحصول على درجة الدكتوراه في: {{ budget.application.major|default:"أمن المعلومات" }}</h4>
+            <h4 style="margin-top: 0;">من {{ budget.application.university|default:"University of Loughborough" }} في {{ budget.application.country|default:"بريطانيا" }}</h4>
         </div>
 
         <div class="content">
@@ -127,130 +137,74 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Year 1 -->
-                    <tr>
-                        <td colspan="2" class="section-header">السنة الأولى</td>
-                    </tr>
-
                     {% for cost in yearly_costs %}
-                        {% if cost.year_number == 1 %}
-                            <tr>
-                                <td>دينار تذكرة سفر</td>
-                                <td class="text-center">{{ cost.travel_tickets|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>دينار أردني مخصصات شهرية لمدة {{ cost.monthly_duration }} شهر</td>
-                                <td class="text-center">{{ cost.monthly_duration }} * {{ cost.monthly_allowance|currency }} = {{ cost.monthly_allowance|multiply:cost.monthly_duration|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>دينار رسوم الحصول على فيزا</td>
-                                <td class="text-center">{{ cost.visa_fees|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>دينار رسوم التأمين الصحي</td>
-                                <td class="text-center">{{ cost.health_insurance|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>جنيه استرليني رسوم تسجيل للدكتوراه للسنة الأولى</td>
-                                <td class="text-center">{{ cost.tuition_fees_foreign|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>دينار أردني رسوم تسجيل للدكتوراه للسنة الأولى</td>
-                                <td class="text-center">{{ cost.tuition_fees_local|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; background-color: #f2f2f2;">مجموع تكاليف السنة الأولى</td>
-                                <td class="text-center" style="font-weight: bold; background-color: #f2f2f2;">{{ cost.total_year_cost|currency }}</td>
-                            </tr>
+                        <!-- بداية قسم جديد لكل سنة دراسية -->
+                        <tr>
+                            <td colspan="2" class="section-header">
+                                {% if cost.year_number == 1 %}
+                                    السنة الأولى
+                                {% elif cost.year_number == 2 %}
+                                    السنة الثانية
+                                {% elif cost.year_number == 3 %}
+                                    السنة الثالثة
+                                {% elif cost.year_number == 4 %}
+                                    السنة الرابعة
+                                {% elif cost.year_number == 5 %}
+                                    السنة الخامسة
+                                {% elif cost.year_number == 6 %}
+                                    السنة السادسة
+                                {% else %}
+                                    السنة {{ cost.year_number }}
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        {% if cost.travel_tickets > 0 %}
+                        <tr>
+                            <td>دينار تذكرة سفر</td>
+                            <td class="text-center">{{ cost.travel_tickets|currency }}</td>
+                        </tr>
                         {% endif %}
-                    {% endfor %}
 
-                    <!-- Year 2 -->
-                    <tr>
-                        <td colspan="2" class="section-header">السنة الثانية</td>
-                    </tr>
-
-                    {% for cost in yearly_costs %}
-                        {% if cost.year_number == 2 %}
-                            <tr>
-                                <td>دينار أردني مخصصات شهرية لمدة {{ cost.monthly_duration }} شهر</td>
-                                <td class="text-center">{{ cost.monthly_duration }} * {{ cost.monthly_allowance|currency }} = {{ cost.monthly_allowance|multiply:cost.monthly_duration|currency }}</td>
-                            </tr>
-                            {% if cost.travel_tickets > 0 %}
-                            <tr>
-                                <td>دينار تذكرة سفر</td>
-                                <td class="text-center">{{ cost.travel_tickets|currency }}</td>
-                            </tr>
-                            {% endif %}
-                            {% if cost.visa_fees > 0 %}
-                            <tr>
-                                <td>دينار رسوم الحصول على فيزا</td>
-                                <td class="text-center">{{ cost.visa_fees|currency }}</td>
-                            </tr>
-                            {% endif %}
-                            {% if cost.health_insurance > 0 %}
-                            <tr>
-                                <td>دينار رسوم التأمين الصحي</td>
-                                <td class="text-center">{{ cost.health_insurance|currency }}</td>
-                            </tr>
-                            {% endif %}
-                            <tr>
-                                <td>جنيه استرليني رسوم تسجيل للدكتوراه للسنة الثانية</td>
-                                <td class="text-center">{{ cost.tuition_fees_foreign|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>دينار أردني رسوم تسجيل للدكتوراه للسنة الثانية</td>
-                                <td class="text-center">{{ cost.tuition_fees_local|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; background-color: #f2f2f2;">مجموع تكاليف السنة الثانية</td>
-                                <td class="text-center" style="font-weight: bold; background-color: #f2f2f2;">{{ cost.total_year_cost|currency }}</td>
-                            </tr>
+                        {% if cost.monthly_allowance > 0 and cost.monthly_duration > 0 %}
+                        <tr>
+                            <td>دينار أردني مخصصات شهرية لمدة {{ cost.monthly_duration }} شهر</td>
+                            <td class="text-center">{{ cost.monthly_duration }} * {{ cost.monthly_allowance|currency }} = {{ cost.monthly_allowance|multiply:cost.monthly_duration|currency }}</td>
+                        </tr>
                         {% endif %}
-                    {% endfor %}
 
-                    <!-- Year 3 -->
-                    <tr>
-                        <td colspan="2" class="section-header">السنة الثالثة</td>
-                    </tr>
-
-                    {% for cost in yearly_costs %}
-                        {% if cost.year_number == 3 %}
-                            <tr>
-                                <td>دينار أردني مخصصات شهرية لمدة {{ cost.monthly_duration }} شهر</td>
-                                <td class="text-center">{{ cost.monthly_duration }} * {{ cost.monthly_allowance|currency }} = {{ cost.monthly_allowance|multiply:cost.monthly_duration|currency }}</td>
-                            </tr>
-                            {% if cost.travel_tickets > 0 %}
-                            <tr>
-                                <td>دينار تذكرة سفر</td>
-                                <td class="text-center">{{ cost.travel_tickets|currency }}</td>
-                            </tr>
-                            {% endif %}
-                            {% if cost.visa_fees > 0 %}
-                            <tr>
-                                <td>دينار رسوم الحصول على فيزا</td>
-                                <td class="text-center">{{ cost.visa_fees|currency }}</td>
-                            </tr>
-                            {% endif %}
-                            {% if cost.health_insurance > 0 %}
-                            <tr>
-                                <td>دينار رسوم التأمين الصحي</td>
-                                <td class="text-center">{{ cost.health_insurance|currency }}</td>
-                            </tr>
-                            {% endif %}
-                            <tr>
-                                <td>جنيه استرليني رسوم تسجيل للدكتوراه للسنة الثالثة</td>
-                                <td class="text-center">{{ cost.tuition_fees_foreign|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td>دينار أردني رسوم تسجيل للدكتوراه للسنة الثالثة</td>
-                                <td class="text-center">{{ cost.tuition_fees_local|currency }}</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: bold; background-color: #f2f2f2;">مجموع تكاليف السنة الثالثة</td>
-                                <td class="text-center" style="font-weight: bold; background-color: #f2f2f2;">{{ cost.total_year_cost|currency }}</td>
-                            </tr>
+                        {% if cost.visa_fees > 0 %}
+                        <tr>
+                            <td>دينار رسوم الحصول على فيزا</td>
+                            <td class="text-center">{{ cost.visa_fees|currency }}</td>
+                        </tr>
                         {% endif %}
+
+                        {% if cost.health_insurance > 0 %}
+                        <tr>
+                            <td>دينار رسوم التأمين الصحي</td>
+                            <td class="text-center">{{ cost.health_insurance|currency }}</td>
+                        </tr>
+                        {% endif %}
+
+                        {% if cost.tuition_fees_foreign > 0 %}
+                        <tr>
+                            <td>{{ budget.foreign_currency }} رسوم تسجيل للدكتوراه للسنة {% if cost.year_number == 1 %}الأولى{% elif cost.year_number == 2 %}الثانية{% elif cost.year_number == 3 %}الثالثة{% elif cost.year_number == 4 %}الرابعة{% elif cost.year_number == 5 %}الخامسة{% elif cost.year_number == 6 %}السادسة{% else %}{{ cost.year_number }}{% endif %}</td>
+                            <td class="text-center">{{ cost.tuition_fees_foreign|currency }}</td>
+                        </tr>
+                        {% endif %}
+
+                        {% if cost.tuition_fees_local > 0 %}
+                        <tr>
+                            <td>دينار أردني رسوم تسجيل للدكتوراه للسنة {% if cost.year_number == 1 %}الأولى{% elif cost.year_number == 2 %}الثانية{% elif cost.year_number == 3 %}الثالثة{% elif cost.year_number == 4 %}الرابعة{% elif cost.year_number == 5 %}الخامسة{% elif cost.year_number == 6 %}السادسة{% else %}{{ cost.year_number }}{% endif %}</td>
+                            <td class="text-center">{{ cost.tuition_fees_local|currency }}</td>
+                        </tr>
+                        {% endif %}
+
+                        <tr>
+                            <td style="font-weight: bold; background-color: #f2f2f2;">مجموع تكاليف السنة {% if cost.year_number == 1 %}الأولى{% elif cost.year_number == 2 %}الثانية{% elif cost.year_number == 3 %}الثالثة{% elif cost.year_number == 4 %}الرابعة{% elif cost.year_number == 5 %}الخامسة{% elif cost.year_number == 6 %}السادسة{% else %}{{ cost.year_number }}{% endif %}</td>
+                            <td class="text-center" style="font-weight: bold; background-color: #f2f2f2;">{{ cost.total_year_cost|currency }}</td>
+                        </tr>
                     {% endfor %}
 
                     <!-- Totals Section -->
@@ -259,15 +213,11 @@
                         <td class="text-center">{{ yearly_costs_total|currency }}</td>
                     </tr>
                     <tr>
-                        <td>التأمين على الحياة ({{ insurance_rate_display }}‰ * المجموع / 1000)</td>
+                        <td>التأمين على الحياة ({{ insurance_rate_display }}‰)</td>
                         <td class="text-center">{{ insurance_amount|currency }}</td>
                     </tr>
                     <tr>
-                        <td>مجموع التكلفة الحقيقية</td>
-                        <td class="text-center">{{ true_cost|currency }}</td>
-                    </tr>
-                    <tr>
-                        <td>المجموع + {{ additional_rate_display }}%</td>
+                        <td>مجموع التكلفة الحقيقية + {{ additional_rate_display }}%</td>
                         <td class="text-center">{{ final_total|currency }}</td>
                     </tr>
                 </tbody>
@@ -275,11 +225,11 @@
 
             <div class="footer">
                 <div class="footer-left">
-                    <p>سعر صرف الجنيه الإسترليني: {{ budget.exchange_rate }} دينار</p>
+                    <p>سعر صرف {{ budget.foreign_currency }}: {{ budget.exchange_rate }} دينار</p>
                 </div>
                 <div class="footer-right">
-                    <p>مكتب الإبتعاث</p>
-                    <p>د. {{ budget.created_by.get_full_name|default:"مسؤول الإبتعاث" }}</p>
+                    <p>مكتب الايفاد</p>
+                    <p>د.  فيصل ابو الرب</p>
                     <p>{{ today|date:"d/m/Y" }}</p>
                 </div>
             </div>
