@@ -145,3 +145,56 @@ def amount_with_currency(value, decimal_places=2):
     """
     formatted = format_number(value, decimal_places)
     return f"{formatted} د.أ"
+
+
+@register.filter
+def multiply(value, arg):
+    """
+    Multiplica el valor por el argumento.
+
+    Ejemplo: {{ value|multiply:10 }}
+    """
+    try:
+        value = Decimal(str(value))
+        arg = Decimal(str(arg))
+        result = value * arg
+        # Redondear a 2 decimales
+        return result.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    except (ValueError, TypeError):
+        return value
+
+
+@register.filter
+def divide(value, arg):
+    """
+    Divide el valor por el argumento.
+
+    Ejemplo: {{ value|divide:10 }}
+    """
+    try:
+        value = Decimal(str(value))
+        arg = Decimal(str(arg))
+        if arg == 0:
+            return 0
+        result = value / arg
+        # Redondear a 2 decimales
+        return result.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    except (ValueError, TypeError):
+        return value
+
+
+@register.filter
+def subtract(value, arg):
+    """
+    Resta el argumento del valor.
+
+    Ejemplo: {{ value|subtract:10 }}
+    """
+    try:
+        value = Decimal(str(value))
+        arg = Decimal(str(arg))
+        result = value - arg
+        # Redondear a 2 decimales
+        return result.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    except (ValueError, TypeError):
+        return value

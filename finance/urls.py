@@ -97,4 +97,6 @@ urlpatterns = [
 
     # مسار لإغلاق السنة المالية الحالية وفتح سنة جديدة
     path('fiscal-years/close-and-open-new/', views.close_fiscal_year_and_open_new, name='close_fiscal_year_and_open_new'),
+
+    path('budgets/<int:budget_id>/pdf/', views.generate_budget_pdf, name='generate_budget_pdf'),
 ]

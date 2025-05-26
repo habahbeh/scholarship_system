@@ -4767,3 +4767,81 @@ def close_fiscal_year_and_open_new(request):
         'current_fiscal_year': current_fiscal_year,
     }
     return render(request, 'finance/close_fiscal_year.html', context)
+
+
+@login_required
+@permission_required('finance.view_scholarshipbudget', raise_exception=True)
+def generate_budget_pdf(request, budget_id):
+    """توليد تقرير PDF للميزانية."""
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    import weasyprint
+    from decimal import Decimal
+
+    budget = get_object_or_404(ScholarshipBudget, id=budget_id)
+
+    # الحصول على التكاليف السنوية مرتبة حسب رقم السنة
+    yearly_costs = YearlyScholarshipCosts.objects.filter(budget=budget).order_by('year_number')
+
+    # حساب إجمالي التكاليف
+    yearly_costs_total = sum(cost.total_year_cost() for cost in yearly_costs) if yearly_costs.exists() else Decimal('0.00')
+
+    # الحصول على إعدادات المنح الدراسية
+    settings = ScholarshipSettings.objects.first()
+    if not settings:
+        settings = ScholarshipSettings.objects.create(
+            life_insurance_rate=Decimal('0.0034'),
+            add_percentage=Decimal('50.0')
+        )
+
+    # حسابات للتقرير
+    insurance_rate = settings.life_insurance_rate
+    insurance_rate_display = insurance_rate * 100
+    insurance_amount = yearly_costs_total * insurance_rate
+
+    additional_rate = settings.add_percentage
+    additional_rate_display = additional_rate
+    true_cost = yearly_costs_total + insurance_amount
+    additional_amount = true_cost * (additional_rate / Decimal('100'))
+
+    final_total = true_cost + additional_amount
+
+    # السياق للقالب - هذا هو الجزء المفقود
+    context = {
+        'budget': budget,
+        'yearly_costs': yearly_costs,
+        'yearly_costs_total': yearly_costs_total,
+        'insurance_rate': insurance_rate,
+        'insurance_rate_display': insurance_rate_display,
+        'insurance_amount': insurance_amount,
+        'additional_rate': additional_rate,
+        'additional_rate_display': additional_rate_display,
+        'true_cost': true_cost,
+        'additional_amount': additional_amount,
+        'final_total': final_total,
+        'today': timezone.now().date(),
+    }
+
+    # تقديم قالب HTML
+    html_string = render_to_string('finance/reports/budget_pdf_template.html', context)
+
+    # إنشاء استجابة HTTP مع محتوى PDF
+    response = HttpResponse(content_type='application/pdf')
+
+    # إنشاء اسم ملف بتنسيق: تقرير_ميزانية_[الاسم]_[التاريخ].pdf
+    applicant_name = budget.application.applicant.get_full_name().replace(' ', '_')
+    filename = f"تقرير_ميزانية_{applicant_name}_{timezone.now().strftime('%Y%m%d')}.pdf"
+
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # إنشاء ملف PDF باستخدام WeasyPrint
+    html = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+    pdf = html.write_pdf(
+        stylesheets=[
+            weasyprint.CSS(string='@page { size: A4; margin: 1cm }')
+        ],
+        presentational_hints=True
+    )
+
+    response.write(pdf)
+    return response
